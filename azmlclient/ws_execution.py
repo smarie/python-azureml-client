@@ -1,20 +1,19 @@
-import ssl
-import urllib
-import json
-
-import dateutil
-import pandas
-import typing
-from datetime import datetime
-from azure.storage.blob import BlobService
-import numpy as np
-import datetime
-import tempfile
-import os
 import csv
+import datetime
 import io
+import json
+import os
+import ssl
+import tempfile
+import typing
+import urllib
+from datetime import datetime
 
-from matplotlib.pyplot import cla
+import numpy as np
+import pandas
+from azure.storage.blob import BlockBlobService
+from azure.storage.blob import ContentSettings
+
 
 class IllegalJobStateException(Exception):
     """ This is raised whenever a job has illegal state"""
@@ -199,7 +198,7 @@ class BaseExecution(object):
         return resultsDict
 
     @staticmethod
-    def azureMlTablesDict_to_dataFramesDict(dictDict: typing.Dict[str, typing.Dict[str, typing.List]]) -> typing.Dict[str, pandas.core.frame.DataFrame]:
+    def azureMlTablesDict_to_dataFramesDict(dictDict: typing.Dict[str, typing.Dict[str, typing.List]], isAzureMlOutput:bool=False) -> typing.Dict[str, pandas.core.frame.DataFrame]:
 
         # check input
         if not isinstance(dictDict, dict) or dictDict is None:
@@ -212,42 +211,60 @@ class BaseExecution(object):
         # loop all provided resultsDict and add them as dictionaries with "ColumnNames" and "Values"
         for dfName, dictio in dictDict.items():
             if isinstance(dictio, dict):
-                if 'ColumnNames' in dictio.keys() and 'Values' in dictio.keys():
-                    values = dictio['Values']
-                    if len(values) > 0:
-                        # # create dataframe
-                        # c = pandas.DataFrame(np.array(values), columns=dictio['ColumnNames'])
-                        #
-                        # # auto-parse dates and floats
-                        # for column in dictio['ColumnNames']:
-                        #     # try to parse as datetime
-                        #     try:
-                        #         c[column] = c[column].apply(dateutil.parser.parse)
-                        #     except ValueError:
-                        #         pass
-                        #
-                        #     #try to parse as float
-                        #     # ...
-
-                        # use pandas parser to infer most of the types
-                        #for that we dump in a buffer in a CSV format
-                        buffer = io.StringIO(initial_value='', newline='\n')
-                        writer = csv.writer(buffer, dialect='unix')
-                        writer.writerows([dictio['ColumnNames']])
-                        writer.writerows(values)
-                        resultsDict[dfName] = pandas.read_csv(io.StringIO(buffer.getvalue()), sep=',', decimal='.', infer_datetime_format=True, parse_dates=[0])
-                        buffer.close()
-                    else:
-                        #empty dataframe
-                        resultsDict[dfName] = pandas.DataFrame(columns=dictio['ColumnNames'])
-                else:
-                    raise ValueError(
-                        'object should be a dictionary with two fields ColumnNames and Values, found: ' + str(
-                            dictio.keys()) + ' for table object: ' + dfName)
+                resultsDict[dfName] = BaseExecution.azureMldictToDf(dictio, isAzureMlOutput=isAzureMlOutput, name=dfName)
             else:
                 raise TypeError('object should be a dictionary with two fields ColumnNames and values, found: ' + type(dictio) + ' for table object: ' + dfName)
 
         return resultsDict
+
+    @staticmethod
+    def azureMldictToDf(dictio:dict, isAzureMlOutput:bool = False, name='<unknown>'):
+        if isAzureMlOutput:
+            if 'type' in dictio.keys() and 'value' in dictio.keys():
+                if dictio['type'] == 'table':
+                    # use this method in 'not output' mode
+                    return BaseExecution.azureMldictToDf(dictio['value'], name=name)
+                else:
+                    raise ValueError('This method is able to read table objects, found type=' + dictio['type'])
+            else:
+                raise ValueError(
+                    'object should be a dictionary with two fields "type" and "value", found: ' + str(
+                        dictio.keys()) + ' for table object: ' + name)
+        else:
+            if 'ColumnNames' in dictio.keys() and 'Values' in dictio.keys():
+                values = dictio['Values']
+                if len(values) > 0:
+                    # # create dataframe
+                    # c = pandas.DataFrame(np.array(values), columns=dictio['ColumnNames'])
+                    #
+                    # # auto-parse dates and floats
+                    # for column in dictio['ColumnNames']:
+                    #     # try to parse as datetime
+                    #     try:
+                    #         c[column] = c[column].apply(dateutil.parser.parse)
+                    #     except ValueError:
+                    #         pass
+                    #
+                    #     #try to parse as float
+                    #     # ...
+
+                    # use pandas parser to infer most of the types
+                    # for that we dump in a buffer in a CSV format
+                    buffer = io.StringIO(initial_value='', newline='\n')
+                    writer = csv.writer(buffer, dialect='unix')
+                    writer.writerows([dictio['ColumnNames']])
+                    writer.writerows(values)
+                    res = pandas.read_csv(io.StringIO(buffer.getvalue()), sep=',', decimal='.', infer_datetime_format=True,
+                                          parse_dates=[0])
+                    buffer.close()
+                else:
+                    # empty dataframe
+                    res = pandas.DataFrame(columns=dictio['ColumnNames'])
+            else:
+                raise ValueError(
+                    'object should be a dictionary with two fields ColumnNames and Values, found: ' + str(
+                        dictio.keys()) + ' for table object: ' + name)
+            return res
 
     @staticmethod
     def paramDf_to_Dict(paramsDataframe: pandas.core.frame.DataFrame) -> typing.Dict[str, str]:
@@ -284,16 +301,16 @@ class BaseExecution(object):
         :return:
         """
 
-        if isinstance(obj, bool) or np.issubdtype(type(obj), bool):
-            # Booleans are converted to string representation
-            return bool(obj) #str(obj)
-        elif isinstance(obj, np.integer):
+        if isinstance(obj, np.integer):
+            # since ints are bool, do ints first
             return int(obj)
+        elif isinstance(obj, bool):
+            return bool(obj)
         elif isinstance(obj, np.floating):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, datetime) or np.issubdtype(type(obj), datetime):
+        elif isinstance(obj, datetime.datetime) or np.issubdtype(type(obj), datetime.datetime):
             # Datetime are written as ISO format string
             return obj.isoformat()
         else:
@@ -453,14 +470,20 @@ class RequestResponseExecution(BaseExecution):
 
         # first read the json as a dictionary
         resultAsJsonDict = json.loads(jsonBodyStr)
-        print(json.dumps(resultAsJsonDict, indent=4)) # TODO remove this print
+        #print(json.dumps(resultAsJsonDict, indent=4)) # TODO remove this print
 
         # then transform it into a dataframe
-        resultAsDfDict = BaseExecution.azureMlTablesDict_to_dataFramesDict(resultAsJsonDict['Outputs'])
+        resultAsDfDict = BaseExecution.azureMlTablesDict_to_dataFramesDict(resultAsJsonDict['Results'], isAzureMlOutput=True)
         if outputNames is None:
             return resultAsDfDict
         else:
-            return resultAsDfDict[outputNames]
+            if len(set(outputNames) - set(resultAsDfDict.keys())) > 0:
+                missings = list(set(outputNames) - set(resultAsDfDict.keys()))
+                raise Exception(
+                    'Error : the following outputs are missing in the results : ' + missings)
+            else:
+                slicedDictionary = {k: v for k, v in resultAsDfDict.items() if k in outputNames}
+            return slicedDictionary
 
     @staticmethod
     def decodeRequestJsonBody(jsonBodyStr: str, ) -> typing.Tuple[pandas.DataFrame, typing.Dict]:
@@ -514,7 +537,7 @@ class BatchExecution(BaseExecution):
             raise TypeError('Blob path prefix should be a valid string or not be provided (default is empty string)')
 
         # create the Blob storage client for this account
-        blob_service = BlobService(account_name=account_name, account_key=account_key)
+        blob_service = BlockBlobService(account_name=account_name, account_key=account_key)
 
         # unique naming prefix
         now = datetime.datetime.now()
@@ -531,13 +554,14 @@ class BatchExecution(BaseExecution):
                 # 1- write the input to this file
                 file = os.fdopen(fileDescriptor, mode='w', encoding=charset)
                 file.write(inputJsonStr)
+                file.flush()
 
                 # 2- push the file into an uniquely named blob on the cloud
                 # -- generate unique blob name : use the date at the microsecond level
 
                 blob_name = uniqueBlobNamePrefix + "-" + inputName + ".csv"
                 # -- push the file to the blob storage
-                blob_service.put_block_blob_from_path(container_name, blob_name, filePath)
+                blob_service.create_blob_from_path(container_name, blob_name, filePath, content_settings=ContentSettings(content_type='text.csv'))
 
                 # 3- remember it
                 inputBlobsNames[inputName] = container_name + "/" + blob_name

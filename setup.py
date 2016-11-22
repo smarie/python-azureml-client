@@ -5,21 +5,21 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-# To use a consistent encoding
 from codecs import open
 from os import path
 
+from setuptools import setup
+
 here = path.abspath(path.dirname(__file__))
 
-DISTNAME = 'azureml-client'
+DISTNAME = 'azmlclient'
 DESCRIPTION = 'A Python 3 client for AzureMl web services'
 MAINTAINER = 'Sylvain Marié'
 MAINTAINER_EMAIL = '"Sylvain Marié" <sylvain.marie@schneider-electric.com>'
-URL = 'https://github.schneider-electric.com/SE-AAP/python-azureml-client'
+URL = 'https://github.com/smarie/python-azureml-client'
 LICENSE = 'Proprietary'
-DOWNLOAD_URL = 'https://github.schneider-electric.com/SE-AAP/python-azureml-client/archive/master.zip'
-KEYWORDS = 'azureML web services client'
+DOWNLOAD_URL = 'https://github.com/smarie/python-azureml-client/archive/master.zip'
+KEYWORDS = 'Azure Machine Learning AzureML web services client'
 
 # Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
@@ -79,7 +79,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    packages=['azmlclient'], #find_packages(exclude=['contrib', 'docs', 'tests']),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
