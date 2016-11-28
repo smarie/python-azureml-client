@@ -39,7 +39,7 @@ Then create
 
 Finally call in Request-Response mode:
 
-    outputs = ac.executeRequestResponse(apiKey, baseUrl, inputs, params, outputNames)
+    outputs = ac.executeRequestResponse(apiKey, baseUrl, inputs=inputs, params=params, outputNames=outputNames)
 
 Or in Batch mode. In this case you also need to configure the Blob storage to be used:
 
@@ -47,10 +47,12 @@ Or in Batch mode. In this case you also need to configure the Blob storage to be
     blob_account = '<account_id>'
     blob_apikey = '<api_key>'
     blob_container = '<container>'
+    blob_path_prefix = '<path_prefix>'
     
     # Perform the call (polling is done continuously until job end)
-    outputs = ac.executeBatch(apiKey, baseUrl, blob_account, blob_apikey,
-                                        blob_container, inputs, params, outputNames)
+    outputs = ac.executeBatch(apiKey, baseUrl,
+                            blob_storage_account, blob_storage_apikey, blob_container_for_ios, blob_path_prefix=blob_path_prefix,
+                            inputs=inputs, params=params, outputNames=outputNames)
 
 
 ## Advanced usage
