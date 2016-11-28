@@ -106,18 +106,17 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
 
     # 2a- Push inputs to blob storage
     wsInputs_ReferenceDict, uniqueBlobNamePrefix = BatchExecution.pushAllInputsToBlobStorage(wsInputs_CsvDict,
-                                                                                    account_name=blob_storage_account,
-                                                                                    account_key=blob_storage_apikey,
-                                                                                    container_name=blob_container_for_ios,
-                                                                                    blobPathPrefix=blob_path_prefix,
-                                                                                    charset=blob_charset
-                                                                                    )
+                                                                                             account_name=blob_storage_account,
+                                                                                             account_key=blob_storage_apikey,
+                                                                                             container_name=blob_container_for_ios,
+                                                                                             blobPathPrefix=blob_path_prefix,
+                                                                                             charset=blob_charset)
 
     # 2b- Create outputs reference on blob storage
     wsOutputs_ReferenceDict = BatchExecution.createOutputReferences(outputNames, account_name=blob_storage_account,
-                                                                                    account_key=blob_storage_apikey,
-                                                                                    container_name=blob_container_for_ios,
-                                                                                    uniqueBlobNamePrefix=uniqueBlobNamePrefix)
+                                                                    account_key=blob_storage_apikey,
+                                                                    container_name=blob_container_for_ios,
+                                                                    uniqueBlobNamePrefix=uniqueBlobNamePrefix)
 
     # 3- Create the query body
     requestBody_JsonDict = BatchExecution.createRequestJsonBody(wsInputs_ReferenceDict, params, wsOutputs_ReferenceDict)
@@ -127,16 +126,15 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
     try:
         # -- a) create the job
         print('Creating job')
-        jsonJobId = BatchExecution.execute_batch_createJob(baseUrl, apiKey,
-                                                                        requestBody_JsonDict,
-                                                                        useNewWebServices=useNewWebServices,
-                                                                        useFiddler=useFiddlerProxy)
+        jsonJobId = BatchExecution.execute_batch_createJob(baseUrl, apiKey, requestBody_JsonDict,
+                                                           useNewWebServices=useNewWebServices,
+                                                           useFiddler=useFiddlerProxy)
 
         # -- b) start the job
         print('Starting job ' + str(jsonJobId))
         BatchExecution.execute_batch_startJob(baseUrl, apiKey, jsonJobId,
-                                                           useNewWebServices=useNewWebServices,
-                                                           useFiddler=useFiddlerProxy)
+                                              useNewWebServices=useNewWebServices,
+                                              useFiddler=useFiddlerProxy)
         print('Job ' + str(jsonJobId) + ' started')
 
         # -- polling loop
@@ -144,16 +142,12 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
         while outputsDict is None:
             # -- c) poll job status
             print('Polling job status for id' + str(jsonJobId))
-            statusOrResult = BatchExecution.execute_batch_getJobStatusOrResult(baseUrl, apiKey,
-                                                                                            jsonJobId,
-                                                                                            useNewWebServices=useNewWebServices,
-                                                                                            useFiddler=useFiddlerProxy)
+            statusOrResult = BatchExecution.execute_batch_getJobStatusOrResult(baseUrl, apiKey, jsonJobId,
+                                                                               useNewWebServices=useNewWebServices,
+                                                                               useFiddler=useFiddlerProxy)
 
             # -- e) check the job status and read response into a dictionary
             outputsDict = BatchExecution.readStatusOrResultJson(statusOrResult)
-
-            # print status
-            print(json.dumps(outputsDict, indent=4))
 
             # wait
             print('Waiting ' + str(nbSecondsBetweenJobStatusQueries) + 's until next call.')
@@ -162,13 +156,16 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
     finally:
         # -- e) delete the job
         if not (jsonJobId is None):
-            BatchExecution.execute_batch_deleteJob(baseUrl, apiKey,
-                                                                jsonJobId,
-                                                                useNewWebServices=useNewWebServices,
-                                                                useFiddler=useFiddlerProxy)
+            BatchExecution.execute_batch_deleteJob(baseUrl, apiKey, jsonJobId,
+                                                   useNewWebServices=useNewWebServices,
+                                                   useFiddler=useFiddlerProxy)
 
     # 5- Retrieve the outputs
-    print('Job ' + str(jsonJobId) + ' completed, retrieving the outputs')
+    print('Job ' + str(jsonJobId) + ' completed, results: ')
+    # print status
+    print(json.dumps(outputsDict, indent=4))
+
+    print('Retrieving the outputs on the blob storage')
     resultDataframes = BatchExecution.readResponseJsonFilesByReference(outputsDict, outputNames)
 
     return resultDataframes
@@ -620,7 +617,7 @@ class BatchExecution(BaseExecution):
                 # 2- push the file into an uniquely named blob on the cloud
                 # -- generate unique blob name : use the date at the microsecond level
 
-                blob_name = uniqueBlobNamePrefix + "-" + inputName + ".csv"
+                blob_name = uniqueBlobNamePrefix + "-input-" + inputName + ".csv"
                 # -- push the file to the blob storage
                 blob_service.create_blob_from_path(container_name, blob_name, filePath, content_settings=ContentSettings(content_type='text.csv'))
 
@@ -664,7 +661,7 @@ class BatchExecution(BaseExecution):
 
         outputsByReference = {}
         for outputName in outputNames:
-            outputsByReference[outputName] = {"ConnectionString": connectionString, "RelativeLocation": container_name + "/" + uniqueBlobNamePrefix + "-" + outputName + ".csv"}
+            outputsByReference[outputName] = {"ConnectionString": connectionString, "RelativeLocation": container_name + "/" + uniqueBlobNamePrefix + "-output-" + outputName + ".csv"}
 
         return outputsByReference
 
