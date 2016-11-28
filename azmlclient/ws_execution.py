@@ -1,5 +1,4 @@
 import csv
-import datetime
 import io
 import json
 import os
@@ -344,7 +343,7 @@ class BaseExecution(object):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, datetime.datetime) or np.issubdtype(type(obj), datetime.datetime):
+        elif isinstance(obj, datetime) or np.issubdtype(type(obj), datetime):
             # Datetime are written as ISO format string
             return obj.isoformat()
         else:
