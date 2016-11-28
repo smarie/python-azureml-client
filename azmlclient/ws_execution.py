@@ -21,24 +21,50 @@ class IllegalJobStateException(Exception):
 class JobExecutionException(Exception):
     """ This is raised whenever a job ended in failed mode"""
 
+class AzmlException(Exception):
+    """
+    Represents an AzureMl exception, built from an HTTP error body received from AzureML.
+    """
 
-def executeRequestResponse(apiKey, baseUrl, wsInputs_DfDict, parameters, outputNames, useFiddlerProxy,
-                           useNewWebServices):
+    def __init__(self, httpError: urllib.error.HTTPError):
+
+        # Try to decode the error body and print it
+        jsonError = str(object=httpError.read(), encoding=httpError.headers.get_content_charset())
+        errorAsDict = json.loads(jsonError)
+
+        # store it for reference
+        self.__errorAsDict = errorAsDict
+
+
+    def __str__(self):
+
+        # if 'error' in self.__errorAsDict:
+        #     # this is an azureML standard error
+        #     if self.__errorAsDict['error']['code'] == 'LibraryExecutionError':
+        #         if self.__errorAsDict['error']['details'][0]['code'] == 'TableSchemaColumnCountMismatch':
+        #             return 'Dynamic schema validation is not supported in Request-Response mode, you should maybe use the BATCH response mode by setting useBatchMode to true in python'
+
+        return json.dumps(self.__errorAsDict, indent=4)
+
+
+def executeRequestResponse(apiKey: str, baseUrl: str, inputs: typing.Dict[str, pandas.DataFrame]=None,
+                           params= None, outputNames: typing.List[str]=None,
+                           useFiddlerProxy: bool=False, useNewWebServices:bool=False) -> typing.Dict[str, pandas.DataFrame]:
     """
     Utility method to execute an AzureMl web service in request response mode
 
-    :param apiKey:
-    :param baseUrl:
-    :param wsInputs_DfDict:
-    :param parameters:
-    :param outputNames:
-    :param useFiddlerProxy:
-    :param useNewWebServices:
-    :return:
+    :param apiKey: the api key for the service to call
+    :param baseUrl: the URL of the service to call
+    :param inputs: an optional dictionary containing the inputs, by name. Inputs should be dataframes.
+    :param params: an optional dictionary containing the parameters by name, or a dataframe containing the parameters.
+    :param outputNames: an optional list of expected output names
+    :param useFiddlerProxy: if True, calls will use localhost:8888 as a proxy, with deactivated SSL certificate validation, so that you may debug your calls using Fiddler.
+    :param useNewWebServices: if True, calls will use the AzureML 'new Web services' format
+    :return: a dictionary of outputs, by name. Outputs are dataframes
     """
 
     # 1- Create the query body
-    requestBody_JsonDict = RequestResponseExecution.createRequestJsonBody(wsInputs_DfDict, parameters)
+    requestBody_JsonDict = RequestResponseExecution.createRequestJsonBody(inputs, params)
 
     # 2- Execute the query and receive the response body
     responseBody = RequestResponseExecution.execute_requestresponse(baseUrl, apiKey, requestBody_JsonDict,
@@ -49,36 +75,41 @@ def executeRequestResponse(apiKey, baseUrl, wsInputs_DfDict, parameters, outputN
     return resultDataframes
 
 
-def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blob_container_for_ios, wsInputs_DfDict,
-                 parameters, outputNames, useFiddlerProxy, useNewWebServices):
+def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blob_container_for_ios,
+                            blob_path_prefix='', blob_charset='utf-8',
+                            inputs: typing.Dict[str, pandas.DataFrame]=None,
+                            params= None, outputNames: typing.List[str]=None,
+                            useFiddlerProxy: bool=False, useNewWebServices:bool=False):
     """
     Utility method to execute an azureML web service in batch mode
 
-    :param apiKey:
-    :param baseUrl:
-    :param blob_storage_account:
-    :param blob_storage_apikey:
-    :param blob_container_for_ios:
-    :param wsInputs_DfDict:
-    :param parameters:
-    :param outputNames:
-    :param useFiddlerProxy:
-    :param useNewWebServices:
-    :return:
+    :param apiKey: the api key for the service to call
+    :param baseUrl: the URL of the service to call
+    :param blob_storage_account: the storage account to use to store the inputs and outputs
+    :param blob_storage_apikey: the storage api key to use to store the inputs and outputs
+    :param blob_container_for_ios: the container in the blob storage, that will be used to store the inputs and outputs
+    :param blob_path_prefix: an optional prefix that will be used to store the blobs
+    :param blob_charset: optional encoding of files used on the blob storage
+    :param inputs: an optional dictionary containing the inputs, by name. Inputs should be dataframes.
+    :param params: an optional dictionary containing the parameters by name, or a dataframe containing the parameters.
+    :param outputNames: an optional list of expected output names
+    :param useFiddlerProxy: if True, calls will use localhost:8888 as a proxy, with deactivated SSL certificate validation, so that you may debug your calls using Fiddler.
+    :param useNewWebServices: if True, calls will use the AzureML 'new Web services' format
+    :return: a dictionary of outputs, by name. Outputs are dataframes
     """
 
     # 1- Transform the inputs into appropriate format.
     # NOTE : in batch the format is CSV not JSON !
     # wsInputs_JsonDict = BatchExecution.inputsDfDict_to_JsonDict(wsInputs_DfDict)
-    wsInputs_CsvDict = BatchExecution.inputsDfDict_to_CsvDict(wsInputs_DfDict)
+    wsInputs_CsvDict = Converters.DfDict_to_CsvDict(inputs)
 
     # 2a- Push inputs to blob storage
     wsInputs_ReferenceDict, uniqueBlobNamePrefix = BatchExecution.pushAllInputsToBlobStorage(wsInputs_CsvDict,
                                                                                     account_name=blob_storage_account,
                                                                                     account_key=blob_storage_apikey,
                                                                                     container_name=blob_container_for_ios,
-                                                                                    blobPathPrefix='virtualSensorQueries/',
-                                                                                    charset='utf-8'
+                                                                                    blobPathPrefix=blob_path_prefix,
+                                                                                    charset=blob_charset
                                                                                     )
 
     # 2b- Create outputs reference on blob storage
@@ -88,7 +119,7 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
                                                                                     uniqueBlobNamePrefix=uniqueBlobNamePrefix)
 
     # 3- Create the query body
-    requestBody_JsonDict = BatchExecution.createRequestJsonBody(wsInputs_ReferenceDict, parameters, wsOutputs_ReferenceDict)
+    requestBody_JsonDict = BatchExecution.createRequestJsonBody(wsInputs_ReferenceDict, params, wsOutputs_ReferenceDict)
 
     # 4- Perform the call
     jsonJobId = None
@@ -129,49 +160,33 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
 
     return resultDataframes
 
-
-class BaseExecution(object):
-
+class Converters(object):
 
     @staticmethod
-    def inputsDfDict_to_CsvDict(inputDataframes: typing.Dict[str, pandas.core.frame.DataFrame]) -> typing.Dict[
+    def DfDict_to_CsvDict(inputDataframes: typing.Dict[str, pandas.core.frame.DataFrame] = None) -> typing.Dict[
         str, str]:
         """
-        Helper method to create Csv AzureML web service inputs, from input dataframes
+        Helper method to create Csv compliant with AzureML web service inputs, from a dictionary of input dataframes
 
         :param inputDataframes: a dictionary containing input names and input content (each input content is a dataframe)
         :return: a dictionary containing the string representations of the Csv inputs to store on the blob storage
         """
 
+        if inputDataframes is None:
+            inputDataframes = {}
+
         # serialize each input to CSV separately
         inputCsvDict = {}
-        for inputName, inputDataframe  in inputDataframes.items():
-            inputCsvDict[inputName] = inputDataframe.to_csv(path_or_buf=None, sep=',', decimal='.', na_rep='NA', index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
+        for inputName, inputDataframe in inputDataframes.items():
+            inputCsvDict[inputName] = inputDataframe.to_csv(path_or_buf=None, sep=',', decimal='.', na_rep='NA',
+                                                            index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
 
         return inputCsvDict
 
-    @staticmethod
-    def inputsDfDict_to_JsonDict(inputDataframes: typing.Dict[str, pandas.core.frame.DataFrame]) -> typing.Dict[str, str]:
-        """
-        Helper method to create JSON AzureML web service inputs, from input dataframes
-
-        :param inputDataframes: a dictionary containing input names and input content (each input content is a dataframe)
-        :return: a dictionary containing the string representations of the JSON inputs to store on the blob storage
-        """
-
-        # fill the input dictionary
-        inputs = BaseExecution.dataFramesDict_to_azureMlTablesDict(inputDataframes)
-
-        # serialize each input to JSON separately
-        inputJsonDict = {}
-        for inputName, inputDict in inputs.items():
-            inputJsonDict[inputName] = BaseExecution._serializeDictAsJson(inputDict)
-
-        return inputJsonDict
-
 
     @staticmethod
-    def dataFramesDict_to_azureMlTablesDict(dataframesDict: typing.Dict[str, pandas.core.frame.DataFrame]) -> typing.Dict[str, typing.Dict[str, typing.List]]:
+    def DfDict_to_AzmlTablesDict(dataframesDict: typing.Dict[str, pandas.core.frame.DataFrame]) -> typing.Dict[
+        str, typing.Dict[str, typing.List]]:
         """
         Converts a dictionary of dataframes into a dictionary of dictionaries following the structure
         required for AzureML JSON conversion
@@ -182,7 +197,8 @@ class BaseExecution(object):
 
         # check input
         if not isinstance(dataframesDict, dict) or dataframesDict is None:
-            raise TypeError('dataframesDict should be a non-None dictionnary of dataframes, found: ' + type(dataframesDict))
+            raise TypeError(
+                'dataframesDict should be a non-None dictionnary of dataframes, found: ' + type(dataframesDict))
 
         # init the dictionary
         resultsDict = {}
@@ -197,8 +213,10 @@ class BaseExecution(object):
 
         return resultsDict
 
+
     @staticmethod
-    def azureMlTablesDict_to_dataFramesDict(dictDict: typing.Dict[str, typing.Dict[str, typing.List]], isAzureMlOutput:bool=False) -> typing.Dict[str, pandas.core.frame.DataFrame]:
+    def AzmlTablesDict_to_DfDict(dictDict: typing.Dict[str, typing.Dict[str, typing.List]],
+                                 isAzureMlOutput: bool = False) -> typing.Dict[str, pandas.core.frame.DataFrame]:
 
         # check input
         if not isinstance(dictDict, dict) or dictDict is None:
@@ -211,19 +229,22 @@ class BaseExecution(object):
         # loop all provided resultsDict and add them as dictionaries with "ColumnNames" and "Values"
         for dfName, dictio in dictDict.items():
             if isinstance(dictio, dict):
-                resultsDict[dfName] = BaseExecution.azureMldictToDf(dictio, isAzureMlOutput=isAzureMlOutput, name=dfName)
+                resultsDict[dfName] = Converters.AzmlTable_to_Df(dictio, isAzureMlOutput=isAzureMlOutput,
+                                                                    name=dfName)
             else:
-                raise TypeError('object should be a dictionary with two fields ColumnNames and values, found: ' + type(dictio) + ' for table object: ' + dfName)
+                raise TypeError('object should be a dictionary with two fields ColumnNames and values, found: ' + type(
+                    dictio) + ' for table object: ' + dfName)
 
         return resultsDict
 
+
     @staticmethod
-    def azureMldictToDf(dictio:dict, isAzureMlOutput:bool = False, name='<unknown>'):
+    def AzmlTable_to_Df(dictio: dict, isAzureMlOutput: bool = False, name='<unknown>'):
         if isAzureMlOutput:
             if 'type' in dictio.keys() and 'value' in dictio.keys():
                 if dictio['type'] == 'table':
                     # use this method in 'not output' mode
-                    return BaseExecution.azureMldictToDf(dictio['value'], name=name)
+                    return Converters.AzmlTable_to_Df(dictio['value'], name=name)
                 else:
                     raise ValueError('This method is able to read table objects, found type=' + dictio['type'])
             else:
@@ -254,7 +275,8 @@ class BaseExecution(object):
                     writer = csv.writer(buffer, dialect='unix')
                     writer.writerows([dictio['ColumnNames']])
                     writer.writerows(values)
-                    res = pandas.read_csv(io.StringIO(buffer.getvalue()), sep=',', decimal='.', infer_datetime_format=True,
+                    res = pandas.read_csv(io.StringIO(buffer.getvalue()), sep=',', decimal='.',
+                                          infer_datetime_format=True,
                                           parse_dates=[0])
                     buffer.close()
                 else:
@@ -265,6 +287,10 @@ class BaseExecution(object):
                     'object should be a dictionary with two fields ColumnNames and Values, found: ' + str(
                         dictio.keys()) + ' for table object: ' + name)
             return res
+
+    @staticmethod
+    def HttpError_to_AzmlError(httpError:urllib.error.HTTPError) -> AzmlException:
+        return AzmlException(httpError)
 
     @staticmethod
     def paramDf_to_Dict(paramsDataframe: pandas.core.frame.DataFrame) -> typing.Dict[str, str]:
@@ -285,9 +311,18 @@ class BaseExecution(object):
             params[paramName] = paramsDataframe.at[0, paramName]
         return params
 
+    pass
+
+class BaseExecution(object):
 
     @staticmethod
     def _serializeDictAsJson(bodyDict):
+        """
+        Transforms a dictionary to a JSON string. Datetimes are converted using ISO format.
+
+        :param bodyDict:
+        :return:
+        """
         jsonBodyStr = json.dumps(bodyDict, default=BaseExecution.__json_serial)
         return jsonBodyStr
 
@@ -300,7 +335,6 @@ class BaseExecution(object):
         :param obj:
         :return:
         """
-
         if isinstance(obj, np.integer):
             # since ints are bool, do ints first
             return int(obj)
@@ -319,7 +353,17 @@ class BaseExecution(object):
 
     @staticmethod
     def _azureMl_httpCall(api_key, requestJsonBodyStr, url, method, useFiddler, useNewWebServices):
+        """
+        Utility method to perform an HTTP request to AzureML service.
 
+        :param api_key:
+        :param requestJsonBodyStr:
+        :param url:
+        :param method:
+        :param useFiddler:
+        :param useNewWebServices:
+        :return:
+        """
         # TODO
         if useNewWebServices:
             raise Exception('The AzureML *new* web services are not supported')
@@ -335,7 +379,6 @@ class BaseExecution(object):
         else:
             jsonBodyEncodedWithCharset = None
 
-
         # finally execute
         jsonResult = BaseExecution._httpCall(jsonBodyEncodedWithCharset, headers, method, url, useFiddler)
 
@@ -343,7 +386,7 @@ class BaseExecution(object):
 
 
     @staticmethod
-    def _httpCall(body, headers, method: str, url, useFiddler):
+    def _httpCall(body, headers, method: str, url, useFiddler:bool=False):
         """
         Sub-routine for HTTP web service call. If Body is None, a GET is performed
 
@@ -395,19 +438,8 @@ class BaseExecution(object):
             # Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
             print(error.info())
 
-            # Try to decode the error body and print it
-            jsonError = str(object=error.read(), encoding=error.headers.get_content_charset())
-            errorAsDict = json.loads(jsonError)
-            print(json.dumps(errorAsDict, indent=4))
+            raise Converters.HttpError_to_AzmlError(error)
 
-            if 'error' in errorAsDict:
-                # this is an azureML standard error
-                if errorAsDict['error']['code'] == 'LibraryExecutionError':
-                    if errorAsDict['error']['details'][0]['code'] == 'TableSchemaColumnCountMismatch':
-                        raise Exception(
-                            'Dynamic schema validation is not supported in Request-Response mode, you should maybe use the BATCH response mode by setting useBatchMode to true in python')
-
-            raise error
 
 class RequestResponseExecution(BaseExecution):
     """
@@ -415,7 +447,8 @@ class RequestResponseExecution(BaseExecution):
     """
 
     @staticmethod
-    def createRequestJsonBody(inputDataframes: typing.Dict[str, pandas.core.frame.DataFrame], paramsDataframe: pandas.core.frame.DataFrame) -> str:
+    def createRequestJsonBody(inputDataframes: typing.Dict[str, pandas.core.frame.DataFrame]=None,
+                              paramsDfOrDict: pandas.core.frame.DataFrame=None) -> str:
         """
         Helper method to create a JSON AzureML web service input from inputs and parameters dataframes
 
@@ -424,10 +457,22 @@ class RequestResponseExecution(BaseExecution):
         :return: a string representation of the request JSON body (not yet encoded in bytes)
         """
 
-        # fill the inputs and params dictionaries
+        if inputDataframes is None:
+            inputDataframes = {}
+        if paramsDfOrDict is None:
+            paramsDfOrDict = {}
+
+        # inputs
         # TODO maybe this method should be extracted so that users may check that the conversion to dict was ok. (and for symmetry with the Batch mode)
-        inputs = BaseExecution.dataFramesDict_to_azureMlTablesDict(inputDataframes)
-        params = BaseExecution.paramDf_to_Dict(paramsDataframe)
+        inputs = Converters.DfDict_to_AzmlTablesDict(inputDataframes)
+
+        # params
+        if isinstance(paramsDfOrDict, dict):
+            params = paramsDfOrDict
+        elif isinstance(paramsDfOrDict, pandas.core.frame.DataFrame):
+            params = Converters.paramDf_to_Dict(paramsDfOrDict)
+        else:
+            raise TypeError('paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + type(paramsDfOrDict))
 
         # final body : combine them into a single dictionary ...
         bodyDict = {'Inputs': inputs, 'GlobalParameters': params}
@@ -459,7 +504,7 @@ class RequestResponseExecution(BaseExecution):
 
 
     @staticmethod
-    def readResponseJsonBody(jsonBodyStr: str, outputNames: typing.List[str]) -> typing.Dict[str, pandas.DataFrame]:
+    def readResponseJsonBody(jsonBodyStr: str, outputNames: typing.List[str]=None) -> typing.Dict[str, pandas.DataFrame]:
         """
         Reads a response body from a request-response web service call, into a dictionary of pandas dataframe
 
@@ -473,7 +518,7 @@ class RequestResponseExecution(BaseExecution):
         #print(json.dumps(resultAsJsonDict, indent=4)) # TODO remove this print
 
         # then transform it into a dataframe
-        resultAsDfDict = BaseExecution.azureMlTablesDict_to_dataFramesDict(resultAsJsonDict['Results'], isAzureMlOutput=True)
+        resultAsDfDict = Converters.AzmlTablesDict_to_DfDict(resultAsJsonDict['Results'], isAzureMlOutput=True)
         if outputNames is None:
             return resultAsDfDict
         else:
@@ -484,6 +529,7 @@ class RequestResponseExecution(BaseExecution):
             else:
                 slicedDictionary = {k: v for k, v in resultAsDfDict.items() if k in outputNames}
             return slicedDictionary
+
 
     @staticmethod
     def decodeRequestJsonBody(jsonBodyStr: str, ) -> typing.Tuple[pandas.DataFrame, typing.Dict]:
@@ -497,7 +543,7 @@ class RequestResponseExecution(BaseExecution):
         # first read the json as a dictionary
         resultAsJsonDict = json.loads(jsonBodyStr)
 
-        return BaseExecution.azureMlTablesDict_to_dataFramesDict(resultAsJsonDict['Inputs']), resultAsJsonDict['GlobalParameters']
+        return Converters.AzmlTablesDict_to_DfDict(resultAsJsonDict['Inputs']), resultAsJsonDict['GlobalParameters']
 
 class BatchExecution(BaseExecution):
     """ This class provides static methods to call AzureML services in batch mode"""
@@ -609,9 +655,9 @@ class BatchExecution(BaseExecution):
 
 
     @staticmethod
-    def createRequestJsonBody(inputReferences: typing.Dict[str, typing.Dict[str, str]],
-                              paramsDataframe: pandas.core.frame.DataFrame,
-                              outputReferences: typing.Dict[str, typing.Dict[str, str]]) -> str:
+    def createRequestJsonBody(inputReferences: typing.Dict[str, typing.Dict[str, str]]=None,
+                              paramsDfOrDict=None,
+                              outputReferences: typing.Dict[str, typing.Dict[str, str]]=None) -> str:
         """
         Helper method to create a JSON AzureML web service input in Batch mode, from 'by reference' inputs, and parameters as dataframe
 
@@ -621,8 +667,17 @@ class BatchExecution(BaseExecution):
         :return: a string representation of the request JSON body (not yet encoded in bytes)
         """
 
-        # fill the inputs and params dictionaries
-        params = BaseExecution.paramDf_to_Dict(paramsDataframe)
+        # params
+        if paramsDfOrDict is None:
+            paramsDfOrDict = {}
+
+        if isinstance(paramsDfOrDict, dict):
+            params = paramsDfOrDict
+        elif isinstance(paramsDfOrDict, pandas.core.frame.DataFrame):
+            params = Converters.paramDf_to_Dict(paramsDfOrDict)
+        else:
+            raise TypeError(
+                'paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + type(paramsDfOrDict))
 
         # final body : combine them into a single dictionary ...
         bodyDict = {'Inputs': inputReferences, 'GlobalParameters': params, 'Outputs': outputReferences}
