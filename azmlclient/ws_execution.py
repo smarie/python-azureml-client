@@ -4,6 +4,7 @@ import json
 import os
 import ssl
 import tempfile
+import time
 import typing
 import urllib
 from datetime import datetime
@@ -78,9 +79,10 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
                             blob_path_prefix='', blob_charset='utf-8',
                             inputs: typing.Dict[str, pandas.DataFrame]=None,
                             params= None, outputNames: typing.List[str]=None,
+                            nbSecondsBetweenJobStatusQueries:int=5,
                             useFiddlerProxy: bool=False, useNewWebServices:bool=False):
     """
-    Utility method to execute an azureML web service in batch mode
+    Utility method to execute an azureML web service in batch mode. Job status is queried every 5 seconds by default, you may wish to change that number.
 
     :param apiKey: the api key for the service to call
     :param baseUrl: the URL of the service to call
@@ -124,20 +126,24 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
     jsonJobId = None
     try:
         # -- a) create the job
+        print('Creating job')
         jsonJobId = BatchExecution.execute_batch_createJob(baseUrl, apiKey,
                                                                         requestBody_JsonDict,
                                                                         useNewWebServices=useNewWebServices,
                                                                         useFiddler=useFiddlerProxy)
 
         # -- b) start the job
+        print('Starting job ' + str(jsonJobId))
         BatchExecution.execute_batch_startJob(baseUrl, apiKey, jsonJobId,
                                                            useNewWebServices=useNewWebServices,
                                                            useFiddler=useFiddlerProxy)
+        print('Job ' + str(jsonJobId) + ' started')
 
         # -- polling loop
         outputsDict = None
         while outputsDict is None:
             # -- c) poll job status
+            print('Polling job status for id' + str(jsonJobId))
             statusOrResult = BatchExecution.execute_batch_getJobStatusOrResult(baseUrl, apiKey,
                                                                                             jsonJobId,
                                                                                             useNewWebServices=useNewWebServices,
@@ -145,6 +151,13 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
 
             # -- e) check the job status and read response into a dictionary
             outputsDict = BatchExecution.readStatusOrResultJson(statusOrResult)
+
+            # print status
+            print(json.dumps(outputsDict, indent=4))
+
+            # wait
+            print('Waiting ' + str(nbSecondsBetweenJobStatusQueries) + 's until next call.')
+            time.sleep(nbSecondsBetweenJobStatusQueries)
 
     finally:
         # -- e) delete the job
@@ -155,9 +168,11 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
                                                                 useFiddler=useFiddlerProxy)
 
     # 5- Retrieve the outputs
+    print('Job ' + str(jsonJobId) + ' completed, retrieving the outputs')
     resultDataframes = BatchExecution.readResponseJsonFilesByReference(outputsDict, outputNames)
 
     return resultDataframes
+
 
 class Converters(object):
 
@@ -769,7 +784,6 @@ class BatchExecution(BaseExecution):
 
         # first read the json as a dictionary
         resultAsJsonDict = json.loads(jsonJobStatusOrResult)
-        print(json.dumps(resultAsJsonDict, indent=4))  # TODO remove this print
 
         if resultAsJsonDict['StatusCode'] in ['3','Cancelled']:
             raise IllegalJobStateException('The job state is ' + resultAsJsonDict['StatusCode'] + ' : cannot read the outcome')
