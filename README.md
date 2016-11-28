@@ -49,7 +49,7 @@ Or in Batch mode. In this case you also need to configure the Blob storage to be
     blob_container = '<container>'
     blob_path_prefix = '<path_prefix>'
     
-    # Perform the call (polling is done continuously until job end)
+    # Perform the call (polling is done every 5s until job end)
     outputs = ac.executeBatch(apiKey, baseUrl,
                             blob_storage_account, blob_storage_apikey, blob_container_for_ios, blob_path_prefix=blob_path_prefix,
                             inputs=inputs, params=params, outputNames=outputNames)

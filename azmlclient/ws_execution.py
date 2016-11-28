@@ -192,7 +192,8 @@ class Converters(object):
         # serialize each input to CSV separately
         inputCsvDict = {}
         for inputName, inputDataframe in inputDataframes.items():
-            inputCsvDict[inputName] = inputDataframe.to_csv(path_or_buf=None, sep=',', decimal='.', na_rep='NA',
+            # make sure the na_rep is copliant with AzureML
+            inputCsvDict[inputName] = inputDataframe.to_csv(path_or_buf=None, sep=',', decimal='.', na_rep='',
                                                             index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
 
         return inputCsvDict
@@ -606,14 +607,14 @@ class BatchExecution(BaseExecution):
 
         # A/ send all inputs to the blob storage
         inputBlobsNames = {}  # a variable to remember the blob names
-        for inputName, inputJsonStr in csvInputs.items():
+        for inputName, inputCsvStr in csvInputs.items():
 
             # 0- open a temporary file on this computer to write the input
             (fileDescriptor, filePath) = tempfile.mkstemp()
             try:
                 # 1- write the input to this file
                 file = os.fdopen(fileDescriptor, mode='w', encoding=charset)
-                file.write(inputJsonStr)
+                file.write(inputCsvStr)
                 file.flush()
 
                 # 2- push the file into an uniquely named blob on the cloud
