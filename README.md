@@ -1,75 +1,99 @@
 # python-azureml-client
-a generic client stack for azureML web services, working with python 3 (https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage)
+A generic client stack for azureML web services, working with python 3.
+ 
+Contrary to the 'complete' AzureML client library (https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage), this simple library is only focused on calling the deployed web services. It does not require your workspace credentials, only the deployed services' URL and API key.
+
+You may use it for example 
+* to show to your customers how to consume your AzureML cloud services.
+* to make simple 'edge' devices (with python support :) ) consume your AzureML cloud services.
 
 
-## 1. Overview
+## Main features
 
-## What's new
+* Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too
+* Maps the errors to more friendly python exceptions
+* Supports both Request/Response and Batch mode
+* In Batch mode, performs all the Blob storage and retrieval for you.
+* Properly handles file encoding in both modes
 
 
-## 2. Getting started
+## Examples
 
-### *A - Installing the package*
+First create variables holding the access information provided by AzureML
 
-#### Recommended : create a clean virtual environment
+    baseUrl = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
+    apiKey = '<apiKey>'
+    useNewWebServices = <False/True>
 
-Note: we strongly recommend that you create a new conda environment (or a pip virtualenv) before installing in order to avoid packages conflicts. Once you are in a virtual environment, open a terminal and check that the python is really the one from your virtual environment:
+Then create 
+* the inputs - a dictionary containing all you inputs as dataframe objects
+        
+        inputs = {"trainDataset": trainingDataDf, "input2": input2Df}
+* the parameters - a dictionary
+   
+        params = {"param1": "val1", "param2": "val2"}
+
+* and optionally provide a list of expected output names
+        
+        outputNames = ["my_out1","my_out2"]
+
+Finally call in Request-Response mode:
+
+    outputs = ac.executeRequestResponse(apiKey, baseUrl, inputs, params, outputNames)
+
+Or in Batch mode. In this case you also need to configure the Blob storage to be used:
+
+    # Define the blob storage to use for storing inputs and outputs
+    blob_account = '<account_id>'
+    blob_apikey = '<api_key>'
+    blob_container = '<container>'
+    
+    # Perform the call (polling is done continuously until job end)
+    outputs = ac.executeBatch(apiKey, baseUrl, blob_account, blob_apikey,
+                                        blob_container, inputs, params, outputNames)
+
+
+## Advanced usage
+
+Advanced users may directly use the static methods in *BatchExecution* and *RequestResponseExecution* classes to better control what's happening.
+
+Also two optional parameters allow to work with a local Fiddler proxy (*useFiddler=True*) and with the 'new web services' mode (*useNewWebService=True* - still evolving on MS side, so will need to be updated).
+
+
+## Installing the package
+
+### Recommended : create a clean virtual environment
+
+We strongly recommend that you create a new conda *environment* or pip *virtualenv*/*venv* before installing in order to avoid packages conflicts. Once you are in your virtual environment, open a terminal and check that the python interpreter is correct:
 
     (Windows)>  where python
-    (Linux)$    which python
+    (Linux)  $  which python
 
-The first python executable that should show up should be the one from the environment you think you're in.
+The first executable that should show up should be the one from the virtual environment.
 
-#### Simple install - 'let me just use it'
 
-If you don't plan to improve and contribute to this package, the easiest way to go is the following commands, executed from a terminal (in your conda or virtualenv environment). You will be able to debug in the sources if required, but you won't be able to edit the code and contribute to the project.
+### Simple install
+
+If you don't plan to improve and contribute to this package, the easiest way to go is the following commands. You will be able to debug in the sources if required, but you won't be able to edit the code and contribute to the project.
 
 * using **pip** to install from a release (wheel): **TODO**
 
-* using **pip** to install from sources ([ref](https://packaging.python.org/installing/#installing-from-vcs)):
+* using **pip** to install from git sources ([ref](https://packaging.python.org/installing/#installing-from-vcs)):
 
         pip install git+https://github.com/smarie/python-azureml-client.git#egg=azmlclient-1.0.0.dev1
 
 
-#### Installation for developers - 'let me use it and I might help to improve it'
+### Note for conda users
 
-If you want to be able to edit and commit improvements on github, then you'll have to perform the two steps separately. First let's clone the project : in PyCharm
-
-    *VCS > Git > Clone* *https://github.com/smarie/python-azureml-client.git* (accept 'open the project in current window' with 'add to current project' option)
-
-Alternatively you can do it using the following commandline but you'll have to import the project later in PyCharm:
-
-    cd <your_workspace_parent_folder>
-    git clone https://github.com/smarie/python-azureml-client.git
-      
-Then you may install the package from the local folder in editable mode (meaning that your modifications in the code will be taken into account - you may need to restart the python terminal though) ([ref](https://packaging.python.org/installing/#installing-from-a-local-src-tree)):    
-            
-    pip install -e <path_to_python-azureml-client_folder>
-
-
-#### Note for conda users
-
-The only drawback of the methods above using pip, is that during install all dependencies (numpy, scikit-learn, etc.) are installed using *pip* too, and therefore are not downloaded from validated *conda* repositories. If you prefer to install them from *conda*, the workaround is to run the following command **before** to execute the above installation:
+The only drawback of the methods above using pip, is that during install all dependencies (numpy, pandas, azure-storage) are installed using *pip* too, and therefore are not downloaded from validated *conda* repositories. If you prefer to install them from *conda*, the workaround is to run the following command **before** to execute the above installation:
 
     conda install numpy, pandas, azure-storage==0.33.0
-    
 
-#### Uninstalling
+
+### Uninstalling
 
 As usual : 
 
     pip uninstall azmlclient
     
 
-### C - Examples
-
-First create variables holding the access information provided by AzureML
-
-    baseUrl = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
-    apiKey = '<apiKey>'
-    useNewWebServices = False
-
-Then create a dictionary containing all you inputs, as dataframe objects
-
-    wsInputs_DfDict = {"trainDataset": trainingData, "input2": input2, }
-    outputNames = ["model","trainingSet","diagInfo","modelPerformance","trainingSetStatistics", "driversUsed"]
