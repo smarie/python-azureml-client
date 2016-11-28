@@ -162,7 +162,7 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
 class Converters(object):
 
     @staticmethod
-    def DfDict_to_CsvDict(inputDataframes: typing.Dict[str, pandas.core.frame.DataFrame] = None) -> typing.Dict[
+    def DfDict_to_CsvDict(inputDataframes: typing.Dict[str, pandas.DataFrame] = None) -> typing.Dict[
         str, str]:
         """
         Helper method to create Csv compliant with AzureML web service inputs, from a dictionary of input dataframes
@@ -184,7 +184,7 @@ class Converters(object):
 
 
     @staticmethod
-    def DfDict_to_AzmlTablesDict(dataframesDict: typing.Dict[str, pandas.core.frame.DataFrame]) -> typing.Dict[
+    def DfDict_to_AzmlTablesDict(dataframesDict: typing.Dict[str, pandas.DataFrame]) -> typing.Dict[
         str, typing.Dict[str, typing.List]]:
         """
         Converts a dictionary of dataframes into a dictionary of dictionaries following the structure
@@ -204,18 +204,18 @@ class Converters(object):
 
         # loop all provided resultsDict and add them as dictionaries with "ColumnNames" and "Values"
         for dfName, df in dataframesDict.items():
-            if isinstance(df, pandas.core.frame.DataFrame):
+            if isinstance(df, pandas.DataFrame):
                 # create one dictionary entry for this input
                 resultsDict[dfName] = {'ColumnNames': df.columns.values.tolist(), "Values": df.values.tolist()}
             else:
-                raise TypeError('object should be a dataframe, found: ' + type(df) + ' for table object: ' + dfName)
+                raise TypeError('object should be a dataframe, found: ' + str(type(df)) + ' for table object: ' + dfName)
 
         return resultsDict
 
 
     @staticmethod
     def AzmlTablesDict_to_DfDict(dictDict: typing.Dict[str, typing.Dict[str, typing.List]],
-                                 isAzureMlOutput: bool = False) -> typing.Dict[str, pandas.core.frame.DataFrame]:
+                                 isAzureMlOutput: bool = False) -> typing.Dict[str, pandas.DataFrame]:
 
         # check input
         if not isinstance(dictDict, dict) or dictDict is None:
@@ -231,8 +231,8 @@ class Converters(object):
                 resultsDict[dfName] = Converters.AzmlTable_to_Df(dictio, isAzureMlOutput=isAzureMlOutput,
                                                                     name=dfName)
             else:
-                raise TypeError('object should be a dictionary with two fields ColumnNames and values, found: ' + type(
-                    dictio) + ' for table object: ' + dfName)
+                raise TypeError('object should be a dictionary with two fields ColumnNames and values, found: ' + str(type(
+                    dictio)) + ' for table object: ' + dfName)
 
         return resultsDict
 
@@ -292,7 +292,7 @@ class Converters(object):
         return AzmlException(httpError)
 
     @staticmethod
-    def paramDf_to_Dict(paramsDataframe: pandas.core.frame.DataFrame) -> typing.Dict[str, str]:
+    def paramDf_to_Dict(paramsDataframe: pandas.DataFrame) -> typing.Dict[str, str]:
         """
         Converts a parameter dataframe into a dictionary following the structure required for JSON conversion
 
@@ -301,8 +301,8 @@ class Converters(object):
         """
 
         # check params
-        if not isinstance(paramsDataframe, pandas.core.frame.DataFrame):
-            raise TypeError('paramsDataframe should be a dataframe or None, found: ' + type(paramsDataframe))
+        if not isinstance(paramsDataframe, pandas.DataFrame):
+            raise TypeError('paramsDataframe should be a dataframe or None, found: ' + str(type(paramsDataframe)))
 
         # convert into dictionary
         params = {}
@@ -446,13 +446,13 @@ class RequestResponseExecution(BaseExecution):
     """
 
     @staticmethod
-    def createRequestJsonBody(inputDataframes: typing.Dict[str, pandas.core.frame.DataFrame]=None,
-                              paramsDfOrDict: pandas.core.frame.DataFrame=None) -> str:
+    def createRequestJsonBody(inputDataframes: typing.Dict[str, pandas.DataFrame]=None,
+                              paramsDfOrDict: pandas.DataFrame=None) -> str:
         """
         Helper method to create a JSON AzureML web service input from inputs and parameters dataframes
 
         :param inputDataframes: a dictionary containing input names and input content (each input content is a dataframe)
-        :param paramsDataframe: a dictionary of parameter names and values
+        :param paramsDfOrDict: a dictionary of parameter names and values
         :return: a string representation of the request JSON body (not yet encoded in bytes)
         """
 
@@ -468,7 +468,7 @@ class RequestResponseExecution(BaseExecution):
         # params
         if isinstance(paramsDfOrDict, dict):
             params = paramsDfOrDict
-        elif isinstance(paramsDfOrDict, pandas.core.frame.DataFrame):
+        elif isinstance(paramsDfOrDict, pandas.DataFrame):
             params = Converters.paramDf_to_Dict(paramsDfOrDict)
         else:
             raise TypeError('paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + type(paramsDfOrDict))
@@ -524,14 +524,14 @@ class RequestResponseExecution(BaseExecution):
             if len(set(outputNames) - set(resultAsDfDict.keys())) > 0:
                 missings = list(set(outputNames) - set(resultAsDfDict.keys()))
                 raise Exception(
-                    'Error : the following outputs are missing in the results : ' + missings)
+                    'Error : the following outputs are missing in the results : ' + str(missings))
             else:
                 slicedDictionary = {k: v for k, v in resultAsDfDict.items() if k in outputNames}
             return slicedDictionary
 
 
     @staticmethod
-    def decodeRequestJsonBody(jsonBodyStr: str, ) -> typing.Tuple[pandas.DataFrame, typing.Dict]:
+    def decodeRequestJsonBody(jsonBodyStr: str, ) -> typing.Tuple[typing.Dict[str, pandas.DataFrame], typing.Dict]:
         """
         Reads a request body from a request-response web service call, into a dictionary of pandas dataframe + a dictionary of parameters
 
@@ -585,7 +585,7 @@ class BatchExecution(BaseExecution):
         blob_service = BlockBlobService(account_name=account_name, account_key=account_key)
 
         # unique naming prefix
-        now = datetime.datetime.now()
+        now = datetime.now()
         dtime = now.strftime("%Y-%m-%d_%H%M%S_%f")
         uniqueBlobNamePrefix = blobPathPrefix + dtime
 
@@ -661,7 +661,7 @@ class BatchExecution(BaseExecution):
         Helper method to create a JSON AzureML web service input in Batch mode, from 'by reference' inputs, and parameters as dataframe
 
         :param inputReferences: a dictionary containing input names and input references (each input reference is a dictionary)
-        :param paramsDataframe: a dictionary of parameter names and values
+        :param paramsDfOrDict: a dictionary of parameter names and values
         :param outputReferences: a dictionary containing output names and output references (each output reference is a dictionary)
         :return: a string representation of the request JSON body (not yet encoded in bytes)
         """
@@ -672,7 +672,7 @@ class BatchExecution(BaseExecution):
 
         if isinstance(paramsDfOrDict, dict):
             params = paramsDfOrDict
-        elif isinstance(paramsDfOrDict, pandas.core.frame.DataFrame):
+        elif isinstance(paramsDfOrDict, pandas.DataFrame):
             params = Converters.paramDf_to_Dict(paramsDfOrDict)
         else:
             raise TypeError(
@@ -758,7 +758,7 @@ class BatchExecution(BaseExecution):
 
     # {"StatusCode":"Running","Results":null,"Details":null,"CreatedAt":"2016-10-14T14:52:33.979Z","StartTime":"2016-10-14T14:52:52.168Z","EndTime":"0001-01-01T00:00:00+00:00"}'
     @staticmethod
-    def readStatusOrResultJson(jsonJobStatusOrResult: str) -> str:
+    def readStatusOrResultJson(jsonJobStatusOrResult: str) -> typing.Dict[str, typing.Dict[str, str]]:
         """
         Reads the status or the result of an AzureML Batch job (asynchronous, by reference).
         Throws an error if the status is an error, or an empty result if the status is a
