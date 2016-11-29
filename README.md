@@ -69,8 +69,9 @@ blob_path_prefix = '<path_prefix>'
 
 # Perform the call (polling is done every 5s until job end)
 outputs = ac.executeBatch(apiKey, baseUrl,
-                        blob_storage_account, blob_storage_apikey, blob_container_for_ios, blob_path_prefix=blob_path_prefix,
-                        inputs=inputs, params=params, outputNames=outputNames)
+                          blob_storage_account, blob_storage_apikey, blob_container_for_ios, 
+                          blob_path_prefix=blob_path_prefix,
+                          inputs=inputs, params=params, outputNames=outputNames)
 ```
 
 ## Advanced usage
@@ -80,11 +81,11 @@ Advanced users may directly use the static methods in *BatchExecution* and *Requ
 Also two optional parameters allow to work with a local Fiddler proxy (*useFiddler=True*) and with the 'new web services' mode (*useNewWebService=True* - still evolving on MS side, so will need to be updated).
 
 
-## Installing the package
+## Installation
 
 ### Recommended : create a clean virtual environment
 
-We strongly recommend that you create a new conda *environment* or pip *virtualenv*/*venv* before installing in order to avoid packages conflicts. Once you are in your virtual environment, open a terminal and check that the python interpreter is correct:
+We strongly recommend that you use conda *environment* or pip *virtualenv*/*venv* in order to better manage packages. Once you are in your virtual environment, open a terminal and check that the python interpreter is correct:
 
 ```bash
 (Windows)>  where python
@@ -96,10 +97,11 @@ The first executable that should show up should be the one from the virtual envi
 
 ### Simple install
 
-If you don't plan to improve and contribute to this package, the easiest way to go is the following commands. You will be able to debug in the sources if required, but you won't be able to edit the code and contribute to the project.
+* using **pip** to install from a release
 
-* using **pip** to install from a release (wheel): **TODO**
-
+    ```bash
+    > pip install azmlclient
+    ```
 * using **pip** to install from git sources ([ref](https://packaging.python.org/installing/#installing-from-vcs)):
 
     ```bash

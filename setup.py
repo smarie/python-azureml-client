@@ -9,27 +9,37 @@ from codecs import open
 from os import path
 
 from setuptools import setup
+from setuptools_scm import get_version
 
 here = path.abspath(path.dirname(__file__))
 
+# ************** ID card *****************
 DISTNAME = 'azmlclient'
 DESCRIPTION = 'A Python 3 client for AzureMl web services'
 MAINTAINER = 'Sylvain Marié'
 MAINTAINER_EMAIL = '"Sylvain Marié" <sylvain.marie@schneider-electric.com>'
 URL = 'https://github.com/smarie/python-azureml-client'
-LICENSE = 'Proprietary'
-DOWNLOAD_URL = 'https://github.com/smarie/python-azureml-client/archive/master.zip'
-KEYWORDS = 'Azure Machine Learning AzureML web services client'
+LICENSE = 'MIT'
 
-# Get the long description from the README file
+version_for_download_url = get_version()#local_scheme='dirty-tag')
+
+DOWNLOAD_URL = 'https://github.com/smarie/python-azureml-client/tarball/' + version_for_download_url
+KEYWORDS = 'Azure Machine Learning AzureML web services client'
+# --Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
-# Get the Version number from VERSION file, see https://packaging.python.org/single_source_version/ option 4.
-with open(path.join(here, 'VERSION')) as version_file:
-    VERSION = version_file.read().strip()
+# ************* VERSION AND DEPENDENCIES **************
+# --Get the Version number from VERSION file, see https://packaging.python.org/single_source_version/ option 4.
+# THIS IS DEPRECATED AS WE NOW USE GIT TO MANAGE VERSION
+# with open(path.join(here, 'VERSION')) as version_file:
+#    VERSION = version_file.read().strip()
 
 INSTALL_REQUIRES = ['numpy', 'pandas', 'azure-storage==0.33.0']
+DEPENDENCY_LINKS = []
+SETUP_REQUIRES = ['setuptools_scm']
+TESTS_REQUIRE = ['nose']
+EXTRAS_REQUIRE = {}
 
 setup(
     name=DISTNAME,
@@ -39,7 +49,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=VERSION,
+    #version=VERSION, NOW HANDLED BY GIT
 
     maintainer=MAINTAINER,
     maintainer_email=MAINTAINER_EMAIL,
@@ -61,7 +71,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: Other/Proprietary License',
+        'License :: OSI Approved :: MIT License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
@@ -90,15 +100,22 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=INSTALL_REQUIRES,
+    dependency_links=DEPENDENCY_LINKS,
+
+    # we're using git
+    use_scm_version=True, # this provides the version + adds the date if local non-commited changes.
+    #use_scm_version={'local_scheme':'dirty-tag'}, # this provides the version + adds '+dirty' if local non-commited changes.
+    setup_requires=SETUP_REQUIRES,
+
+    # test
+    test_suite='nose.collector',
+    tests_require=TESTS_REQUIRE,
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    # extras_require={
-    #     'dev': ['check-manifest'],
-    #     'test': ['coverage'],
-    # },
+    extras_require=EXTRAS_REQUIRE
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
