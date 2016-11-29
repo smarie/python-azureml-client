@@ -21,11 +21,11 @@ You may use it for example
 
 First create variables holding the access information provided by AzureML
 
-    ```python
-    baseUrl = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
-    apiKey = '<apiKey>'
-    useNewWebServices = <False/True>
-    ```
+```python
+baseUrl = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
+apiKey = '<apiKey>'
+useNewWebServices = <False/True>
+```
 
 Then create 
 * the inputs - a dictionary containing all you inputs as dataframe objects
