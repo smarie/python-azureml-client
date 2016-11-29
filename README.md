@@ -88,7 +88,7 @@ We strongly recommend that you create a new conda *environment* or pip *virtuale
 
 ```bash
 (Windows)>  where python
-(Linux)  $  which python
+(Linux)  >  which python
 ```
 
 The first executable that should show up should be the one from the virtual environment.
@@ -103,7 +103,7 @@ If you don't plan to improve and contribute to this package, the easiest way to 
 * using **pip** to install from git sources ([ref](https://packaging.python.org/installing/#installing-from-vcs)):
 
     ```bash
-    pip install git+https://github.com/smarie/python-azureml-client.git#egg=azmlclient-1.0.0.dev1
+    > pip install git+https://github.com/smarie/python-azureml-client.git#egg=azmlclient-1.0.0.dev1
     ```
 
 ### Note for conda users
@@ -111,7 +111,7 @@ If you don't plan to improve and contribute to this package, the easiest way to 
 The only drawback of the methods above using pip, is that during install all dependencies (numpy, pandas, azure-storage) are installed using *pip* too, and therefore are not downloaded from validated *conda* repositories. If you prefer to install them from *conda*, the workaround is to run the following command **before** to execute the above installation:
 
 ```bash
-conda install numpy, pandas, azure-storage==0.33.0
+> conda install numpy, pandas, azure-storage==0.33.0
 ```
 
 ### Uninstalling
@@ -119,6 +119,6 @@ conda install numpy, pandas, azure-storage==0.33.0
 As usual : 
 
 ```bash
-pip uninstall azmlclient
+> pip uninstall azmlclient
 ```
 
