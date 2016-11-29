@@ -30,9 +30,9 @@ useNewWebServices = <False/True>
 Then create 
 * the inputs - a dictionary containing all you inputs as dataframe objects
         
-        ```python
-        inputs = {"trainDataset": trainingDataDf, "input2": input2Df}
-        ```
+	```python
+	inputs = {"trainDataset": trainingDataDf, "input2": input2Df}
+	```
         
 * the parameters - a dictionary
         
