@@ -19,53 +19,59 @@ You may use it for example
 
 ## Examples
 
-First create variables holding the access information provided by AzureML
+First import the package
 
-    ```python
-    baseUrl = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
-    apiKey = '<apiKey>'
-    useNewWebServices = <False/True>
-    ```
+```python
+import azmlclient as ac  
+```
+
+Then create variables holding the access information provided by AzureML
+
+```python
+baseUrl = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
+apiKey = '<apiKey>'
+useNewWebServices = <False/True>
+```
 
 Then create 
 * the inputs - a dictionary containing all you inputs as dataframe objects
         
-        ```python
-        inputs = {"trainDataset": trainingDataDf, "input2": input2Df}
-        ```
+    ```python
+    inputs = {"trainDataset": trainingDataDf, "input2": input2Df}
+    ```
         
 * the parameters - a dictionary
         
-        ```python
-        params = {"param1": "val1", "param2": "val2"}
-        ```
+    ```python
+    params = {"param1": "val1", "param2": "val2"}
+    ```
 
 * and optionally provide a list of expected output names
         
-        ```python
-        outputNames = ["my_out1","my_out2"]
-        ```
+    ```python
+    outputNames = ["my_out1","my_out2"]
+    ```
 
 Finally call in Request-Response mode:
 
-    ```python
-    outputs = ac.executeRequestResponse(apiKey, baseUrl, inputs=inputs, params=params, outputNames=outputNames)
-    ```
+```python
+outputs = ac.executeRequestResponse(apiKey, baseUrl, inputs=inputs, params=params, outputNames=outputNames)
+```
 
 Or in Batch mode. In this case you also need to configure the Blob storage to be used:
 
-    ```python
-    # Define the blob storage to use for storing inputs and outputs
-    blob_account = '<account_id>'
-    blob_apikey = '<api_key>'
-    blob_container = '<container>'
-    blob_path_prefix = '<path_prefix>'
-    
-    # Perform the call (polling is done every 5s until job end)
-    outputs = ac.executeBatch(apiKey, baseUrl,
-                            blob_storage_account, blob_storage_apikey, blob_container_for_ios, blob_path_prefix=blob_path_prefix,
-                            inputs=inputs, params=params, outputNames=outputNames)
-    ```
+```python
+# Define the blob storage to use for storing inputs and outputs
+blob_account = '<account_id>'
+blob_apikey = '<api_key>'
+blob_container = '<container>'
+blob_path_prefix = '<path_prefix>'
+
+# Perform the call (polling is done every 5s until job end)
+outputs = ac.executeBatch(apiKey, baseUrl,
+                        blob_storage_account, blob_storage_apikey, blob_container_for_ios, blob_path_prefix=blob_path_prefix,
+                        inputs=inputs, params=params, outputNames=outputNames)
+```
 
 ## Advanced usage
 
@@ -80,10 +86,10 @@ Also two optional parameters allow to work with a local Fiddler proxy (*useFiddl
 
 We strongly recommend that you create a new conda *environment* or pip *virtualenv*/*venv* before installing in order to avoid packages conflicts. Once you are in your virtual environment, open a terminal and check that the python interpreter is correct:
 
-    ```bash
-    (Windows)>  where python
-    (Linux)  $  which python
-    ```
+```bash
+(Windows)>  where python
+(Linux)  $  which python
+```
 
 The first executable that should show up should be the one from the virtual environment.
 
@@ -96,23 +102,23 @@ If you don't plan to improve and contribute to this package, the easiest way to 
 
 * using **pip** to install from git sources ([ref](https://packaging.python.org/installing/#installing-from-vcs)):
 
-        ```bash
-        pip install git+https://github.com/smarie/python-azureml-client.git#egg=azmlclient-1.0.0.dev1
-        ```
+    ```bash
+    pip install git+https://github.com/smarie/python-azureml-client.git#egg=azmlclient-1.0.0.dev1
+    ```
 
 ### Note for conda users
 
 The only drawback of the methods above using pip, is that during install all dependencies (numpy, pandas, azure-storage) are installed using *pip* too, and therefore are not downloaded from validated *conda* repositories. If you prefer to install them from *conda*, the workaround is to run the following command **before** to execute the above installation:
 
-    ```bash
-    conda install numpy, pandas, azure-storage==0.33.0
-    ```
+```bash
+conda install numpy, pandas, azure-storage==0.33.0
+```
 
 ### Uninstalling
 
 As usual : 
 
-    ```bash
-    pip uninstall azmlclient
-    ```
+```bash
+pip uninstall azmlclient
+```
 
