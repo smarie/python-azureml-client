@@ -8,6 +8,7 @@ import time
 import typing
 import urllib
 from datetime import datetime
+from io import StringIO
 
 import numpy as np
 import pandas
@@ -76,7 +77,7 @@ def executeRequestResponse(apiKey: str, baseUrl: str, inputs: typing.Dict[str, p
 
 
 def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blob_container_for_ios,
-                            blob_path_prefix='', blob_charset='utf-8',
+                            blob_path_prefix:str = None, blob_charset:str=None,
                             inputs: typing.Dict[str, pandas.DataFrame]=None,
                             params= None, outputNames: typing.List[str]=None,
                             nbSecondsBetweenJobStatusQueries:int=5,
@@ -99,29 +100,22 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
     :return: a dictionary of outputs, by name. Outputs are dataframes
     """
 
-    # 1- Transform the inputs into appropriate format.
-    # NOTE : in batch the format is CSV not JSON !
-    # wsInputs_JsonDict = BatchExecution.inputsDfDict_to_JsonDict(wsInputs_DfDict)
-    wsInputs_CsvDict = Converters.DfDict_to_CsvDict(inputs)
 
-    # 2a- Push inputs to blob storage
-    wsInputs_ReferenceDict, uniqueBlobNamePrefix = BatchExecution.pushAllInputsToBlobStorage(wsInputs_CsvDict,
-                                                                                             account_name=blob_storage_account,
-                                                                                             account_key=blob_storage_apikey,
-                                                                                             container_name=blob_container_for_ios,
-                                                                                             blobPathPrefix=blob_path_prefix,
-                                                                                             charset=blob_charset)
+    blob_service = BlockBlobService(account_name=blob_storage_account, account_key=blob_storage_apikey)
 
-    # 2b- Create outputs reference on blob storage
-    wsOutputs_ReferenceDict = BatchExecution.createOutputReferences(outputNames, account_name=blob_storage_account,
-                                                                    account_key=blob_storage_apikey,
-                                                                    container_name=blob_container_for_ios,
-                                                                    uniqueBlobNamePrefix=uniqueBlobNamePrefix)
+    # 1- Push inputs to blob storage and create output references
+    print('Pushing inputs to blob storage')
+    inputRefs, outputRefs = BatchExecution.pushInputsToBlobStorage_and_CreateOutputsReferences(inputs,
+                                                                                               outputNames=outputNames,
+                                                                                               blob_service=blob_service,
+                                                                                               blob_container=blob_container_for_ios,
+                                                                                               blob_path_prefix=blob_path_prefix,
+                                                                                               charset=blob_charset)
 
-    # 3- Create the query body
-    requestBody_JsonDict = BatchExecution.createRequestJsonBody(wsInputs_ReferenceDict, params, wsOutputs_ReferenceDict)
+    # 2- Create the query body
+    requestBody_JsonDict = BatchExecution.createRequestJsonBody(inputRefs, params, outputRefs)
 
-    # 4- Perform the call
+    # 3- Perform the call
     jsonJobId = None
     try:
         # -- a) create the job
@@ -141,7 +135,7 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
         outputsDict = None
         while outputsDict is None:
             # -- c) poll job status
-            print('Polling job status for id' + str(jsonJobId))
+            print('Polling job status for job ' + str(jsonJobId))
             statusOrResult = BatchExecution.execute_batch_getJobStatusOrResult(baseUrl, apiKey, jsonJobId,
                                                                                useNewWebServices=useNewWebServices,
                                                                                useFiddler=useFiddlerProxy)
@@ -156,116 +150,128 @@ def executeBatch(apiKey, baseUrl, blob_storage_account, blob_storage_apikey, blo
     finally:
         # -- e) delete the job
         if not (jsonJobId is None):
+            print('Deleting job ' + str(jsonJobId))
             BatchExecution.execute_batch_deleteJob(baseUrl, apiKey, jsonJobId,
                                                    useNewWebServices=useNewWebServices,
                                                    useFiddler=useFiddlerProxy)
 
-    # 5- Retrieve the outputs
+    # 4- Retrieve the outputs
     print('Job ' + str(jsonJobId) + ' completed, results: ')
-    # print status
     print(json.dumps(outputsDict, indent=4))
 
-    print('Retrieving the outputs on the blob storage')
-    resultDataframes = BatchExecution.readResponseJsonFilesByReference(outputsDict, outputNames)
+    print('Retrieving the outputs from the blob storage')
+    # dont use the output of the status, it does not contain the connectionString
+    # resultDataframes = ByReference_Converters.readResponseJsonFilesByReference(outputsDict)
+    resultDataframes = Collection_Converters.BlobCsvRefDict_to_DfDict(outputRefs)
 
     return resultDataframes
+
+
+def _check_not_none_and_typed(var, varType=None, varName=None):
+    """
+    Helper method to check that an object is not none and possibly f a certain type
+
+    :param var: the object
+    :param varType: the type
+    :param varName: the name of the varioable to be used in error messages
+    :return:
+    """
+
+    if (var is None):
+        if varName is None:
+            raise TypeError('Error, object should be non-None')
+        else:
+            raise TypeError('Error, object with name "'+varName+'" should be non-None')
+    elif not (varType is None):
+        if not isinstance(var, varType):
+            if varName is None:
+                raise TypeError('Error, object should be a ' + varType + ', found: ' + str(
+                    type(var)))
+            else:
+                raise TypeError('Error, object with name "' + varName + '" should be a ' + varType + ', found: ' + str(
+                    type(var)))
+    return
 
 
 class Converters(object):
 
     @staticmethod
-    def DfDict_to_CsvDict(inputDataframes: typing.Dict[str, pandas.DataFrame] = None) -> typing.Dict[
-        str, str]:
+    def Df_to_Csv(df: pandas.DataFrame, dfName:str = None, charset:str = None) -> str:
         """
-        Helper method to create Csv compliant with AzureML web service inputs, from a dictionary of input dataframes
+        Converts the provided dataframe to a csv, to store it on blob storage for AzureML calls.
+        WARNING: datetime columns are converted in ISO format but the milliseconds are ignored and set to zero.
 
-        :param inputDataframes: a dictionary containing input names and input content (each input content is a dataframe)
-        :return: a dictionary containing the string representations of the Csv inputs to store on the blob storage
+        :param df:
+        :param dfName:
+        :return:
         """
+        _check_not_none_and_typed(df, varType=pandas.DataFrame, varName=dfName)
 
-        if inputDataframes is None:
-            inputDataframes = {}
+        # TODO what about timezone detail if not present, will the %z be ok ?
+        return df.to_csv(path_or_buf=None, sep=',', decimal='.', na_rep='', encoding=charset,
+                         index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
 
-        # serialize each input to CSV separately
-        inputCsvDict = {}
-        for inputName, inputDataframe in inputDataframes.items():
-            # make sure the na_rep is copliant with AzureML
-            inputCsvDict[inputName] = inputDataframe.to_csv(path_or_buf=None, sep=',', decimal='.', na_rep='',
-                                                            index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
+    @staticmethod
+    def Csv_to_Df(csv_buffer_or_filepath: str, csvName: str = None) -> pandas.DataFrame:
+        """
+        Converts the provided csv compliant with AzureML Batch calls, to a dataframe
 
-        return inputCsvDict
+        :param csv_buffer_or_filepath:
+        :param csvName:
+        :return:
+        """
+        _check_not_none_and_typed(csv_buffer_or_filepath, varName=csvName)
+
+        # TODO how to parse and set timezone correctly to utc without knowing which is the datetime column ?
+        return pandas.read_csv(csv_buffer_or_filepath, sep=',', decimal='.', infer_datetime_format=True, parse_dates=True)
 
 
     @staticmethod
-    def DfDict_to_AzmlTablesDict(dataframesDict: typing.Dict[str, pandas.DataFrame]) -> typing.Dict[
-        str, typing.Dict[str, typing.List]]:
+    def Df_to_AzmlTable(df: pandas.DataFrame, isAzureMlOutput: bool = False, dfName: str = None) -> typing.Dict[str, str]:
         """
-        Converts a dictionary of dataframes into a dictionary of dictionaries following the structure
-        required for AzureML JSON conversion
+        Converts the provided Dataframe to a dictionary in the same format than the JSON expected by AzureML in the
+        Request-Response services. Note that contents are kept as is (values are not converted to string yet)
 
-        :param dataframesDict: a dictionary containing input names and input content (each input content is a dataframe)
-        :return: a dictionary of tables represented as dictionaries
+        :param df:
+        :param dfName:
+        :return:
         """
+        _check_not_none_and_typed(df, varType=pandas.DataFrame, varName=dfName)
 
-        # check input
-        if not isinstance(dataframesDict, dict) or dataframesDict is None:
-            raise TypeError(
-                'dataframesDict should be a non-None dictionnary of dataframes, found: ' + type(dataframesDict))
-
-        # init the dictionary
-        resultsDict = {}
-
-        # loop all provided resultsDict and add them as dictionaries with "ColumnNames" and "Values"
-        for dfName, df in dataframesDict.items():
-            if isinstance(df, pandas.DataFrame):
-                # create one dictionary entry for this input
-                resultsDict[dfName] = {'ColumnNames': df.columns.values.tolist(), "Values": df.values.tolist()}
-            else:
-                raise TypeError('object should be a dataframe, found: ' + str(type(df)) + ' for table object: ' + dfName)
-
-        return resultsDict
-
-
-    @staticmethod
-    def AzmlTablesDict_to_DfDict(dictDict: typing.Dict[str, typing.Dict[str, typing.List]],
-                                 isAzureMlOutput: bool = False) -> typing.Dict[str, pandas.DataFrame]:
-
-        # check input
-        if not isinstance(dictDict, dict) or dictDict is None:
-            raise TypeError(
-                'dictDict should be a non-None dictionnary of dictionaries, found: ' + type(dictDict))
-
-        # init the dictionary
-        resultsDict = {}
-
-        # loop all provided resultsDict and add them as dictionaries with "ColumnNames" and "Values"
-        for dfName, dictio in dictDict.items():
-            if isinstance(dictio, dict):
-                resultsDict[dfName] = Converters.AzmlTable_to_Df(dictio, isAzureMlOutput=isAzureMlOutput,
-                                                                    name=dfName)
-            else:
-                raise TypeError('object should be a dictionary with two fields ColumnNames and values, found: ' + str(type(
-                    dictio)) + ' for table object: ' + dfName)
-
-        return resultsDict
-
-
-    @staticmethod
-    def AzmlTable_to_Df(dictio: dict, isAzureMlOutput: bool = False, name='<unknown>'):
         if isAzureMlOutput:
-            if 'type' in dictio.keys() and 'value' in dictio.keys():
-                if dictio['type'] == 'table':
-                    # use this method in 'not output' mode
-                    return Converters.AzmlTable_to_Df(dictio['value'], name=name)
+            # use this method recursively, in 'not output' mode
+            return {'type': 'table', 'value': Converters.Df_to_AzmlTable(df, dfName=dfName)}
+        else:
+            return {'ColumnNames': df.columns.values.tolist(), "Values": df.values.tolist()}
+
+
+    @staticmethod
+    def AzmlTable_to_Df(azmlTableDict: typing.Dict[str, str], isAzureMlOutput: bool = False, tableName: str = None) \
+            -> pandas.DataFrame:
+        """
+        Converts an AzureML table (JSON-like dictionary) into a dataframe. Since two formats exist (one for inputs and
+        one for outputs), there is a parameter you can use to specify which one to use.
+
+        :param isAzureMlOutput:
+        :param tableName:
+        :return:
+        """
+        _check_not_none_and_typed(azmlTableDict, varType=dict, varName=tableName)
+
+        if isAzureMlOutput:
+            if 'type' in azmlTableDict.keys() and 'value' in azmlTableDict.keys():
+                if azmlTableDict['type'] == 'table':
+                    # use this method recursively, in 'not output' mode
+                    return Converters.AzmlTable_to_Df(azmlTableDict['value'], tableName=tableName)
                 else:
-                    raise ValueError('This method is able to read table objects, found type=' + dictio['type'])
+                    raise ValueError('This method is able to read table objects, found type=' + azmlTableDict['type'])
             else:
                 raise ValueError(
                     'object should be a dictionary with two fields "type" and "value", found: ' + str(
-                        dictio.keys()) + ' for table object: ' + name)
+                        azmlTableDict.keys()) + ' for table object: ' + tableName)
         else:
-            if 'ColumnNames' in dictio.keys() and 'Values' in dictio.keys():
-                values = dictio['Values']
+            if 'ColumnNames' in azmlTableDict.keys() and 'Values' in azmlTableDict.keys():
+                values = azmlTableDict['Values']
                 if len(values) > 0:
                     # # create dataframe
                     # c = pandas.DataFrame(np.array(values), columns=dictio['ColumnNames'])
@@ -285,7 +291,7 @@ class Converters(object):
                     # for that we dump in a buffer in a CSV format
                     buffer = io.StringIO(initial_value='', newline='\n')
                     writer = csv.writer(buffer, dialect='unix')
-                    writer.writerows([dictio['ColumnNames']])
+                    writer.writerows([azmlTableDict['ColumnNames']])
                     writer.writerows(values)
                     res = pandas.read_csv(io.StringIO(buffer.getvalue()), sep=',', decimal='.',
                                           infer_datetime_format=True,
@@ -293,37 +299,438 @@ class Converters(object):
                     buffer.close()
                 else:
                     # empty dataframe
-                    res = pandas.DataFrame(columns=dictio['ColumnNames'])
+                    res = pandas.DataFrame(columns=azmlTableDict['ColumnNames'])
             else:
                 raise ValueError(
                     'object should be a dictionary with two fields ColumnNames and Values, found: ' + str(
-                        dictio.keys()) + ' for table object: ' + name)
+                        azmlTableDict.keys()) + ' for table object: ' + tableName)
             return res
 
-    @staticmethod
-    def HttpError_to_AzmlError(httpError:urllib.error.HTTPError) -> AzmlException:
-        return AzmlException(httpError)
 
     @staticmethod
-    def paramDf_to_Dict(paramsDataframe: pandas.DataFrame) -> typing.Dict[str, str]:
+    def ParamDf_to_ParamDict(paramsDataframe: pandas.DataFrame) -> typing.Dict[str, str]:
         """
         Converts a parameter dataframe into a dictionary following the structure required for JSON conversion
 
         :param paramsDataframe: a dictionary of parameter names and values
         :return: a dictionary of parameter names and values
         """
+        _check_not_none_and_typed(paramsDataframe, varType=pandas.DataFrame, varName='paramsDataframe')
 
-        # check params
-        if not isinstance(paramsDataframe, pandas.DataFrame):
-            raise TypeError('paramsDataframe should be a dataframe or None, found: ' + str(type(paramsDataframe)))
+        # params = {}
+        # for paramName in paramsDataframe.columns.values:
+        #     params[paramName] = paramsDataframe.at[0, paramName]
+        # return params
+        return { paramName: paramsDataframe.at[0, paramName] for paramName in paramsDataframe.columns.values }
 
-        # convert into dictionary
-        params = {}
-        for paramName in paramsDataframe.columns.values:
-            params[paramName] = paramsDataframe.at[0, paramName]
-        return params
 
-    pass
+    @staticmethod
+    def ParamDict_to_ParamDf(paramsDict: typing.Dict[str, typing.Any]) -> pandas.DataFrame:
+        """
+        Converts a parameter dictionary into a parameter dataframe
+
+        :param paramsDict:
+        :return:
+        """
+        _check_not_none_and_typed(paramsDict, varType=dict, varName='paramsDict')
+
+        return pandas.DataFrame(paramsDict, index=[0])
+
+
+    @staticmethod
+    def HttpError_to_AzmlError(httpError:urllib.error.HTTPError) -> AzmlException:
+        return AzmlException(httpError)
+
+
+# class BlobStorageContainer(object):
+#
+#     def __init__(self, blob_account_name: str, blob_account_key: str, blob_container_name: str):
+#         self.account_name = blob_account_name
+#         self.account_key = blob_account_key
+#         self.container_name = blob_container_name
+#
+#     def getBlockBlobService(self):
+#         lock = threading.RLock()
+#         lock.acquire()
+#         try:
+#             if self.__blob_service is None:
+#                 self.__blob_service = BlockBlobService(account_name=self.account_name, account_key=self.account_key)
+#             return self.__blob_service
+#         finally:
+#             lock.release()
+
+
+class ByReference_Converters(object):
+
+    @staticmethod
+    def _get_valid_blob_path_prefix(blob_path_prefix: str) -> str:
+        """
+        Utility method to get a valid blob path prefix from a provided one. A trailing slash is added if non-empty
+
+        :param blob_path_prefix:
+        :return:
+        """
+        if blob_path_prefix is None:
+            blob_path_prefix = ''
+        elif isinstance(blob_path_prefix, str):
+            if len(blob_path_prefix) > 0 and not blob_path_prefix.endswith('/'):
+                blob_path_prefix = blob_path_prefix + '/'
+        else:
+            raise TypeError('Blob path prefix should be a valid string or not be provided (default is empty string)')
+
+        return blob_path_prefix
+
+    @staticmethod
+    def _get_valid_blob_name_prefix(blob_name_prefix: str) -> str:
+        """
+        Utility method to get a valid blob path prefix from a provided one. A trailing slash is added if non-empty
+
+        :param blob_name_prefix:
+        :return:
+        """
+        if blob_name_prefix is None:
+            blob_name_prefix = ''
+        elif isinstance(blob_name_prefix, str):
+            if blob_name_prefix.__contains__('/') or blob_name_prefix.__contains__('\\'):
+                raise ValueError('Blob name prefix should not contain / nor \\')
+        else:
+            raise TypeError('Blob path prefix should be a valid string or not be provided (default is empty string)')
+
+        return blob_name_prefix
+
+    @staticmethod
+    def _getBlobServiceConnectionString(blob_service: BlockBlobService) -> str:
+        """
+        Utilty method to get the connection string for a blob storage service (currently the BlockBlobService does
+        not provide any method to do that)
+
+        :param blob_service:
+        :return:
+        """
+        _check_not_none_and_typed(blob_service, BlockBlobService, 'blob_service')
+
+        return 'DefaultEndpointsProtocol=https;AccountName=' + blob_service.account_name + ';AccountKey=' + blob_service.account_key
+
+
+    @staticmethod
+    def createBlobCsvRef(blob_service: BlockBlobService, blob_container: str,
+                             blob_name: str, blob_path_prefix: str = None, blob_name_prefix: str = None) \
+            -> typing.Dict[str, str]:
+        """
+        Utility method to create a reference to a blob, whether it exists or not
+
+        :param blob_service:
+        :param blob_container:
+        :param blob_name:
+        :param blob_path_prefix:
+        :param blob_name_prefix:
+        :return:
+        """
+        _check_not_none_and_typed(blob_container, str, 'blob_container')
+        _check_not_none_and_typed(blob_name, str, 'blob_name')
+
+        # fix the blob name
+        if blob_name.lower().endswith('.csv'):
+            blob_name = blob_name[:-4]
+
+        # validate blob service and get conection string
+        connectionString = ByReference_Converters._getBlobServiceConnectionString(blob_service)
+
+        # check the blob path prefix, append a trailing slash if necessary
+        blob_path_prefix = ByReference_Converters._get_valid_blob_path_prefix(blob_path_prefix)
+        blob_name_prefix = ByReference_Converters._get_valid_blob_name_prefix(blob_name_prefix)
+
+        # output reference
+        return {'ConnectionString': connectionString,
+                'RelativeLocation': blob_container + '/' + blob_path_prefix + blob_name_prefix + blob_name + '.csv'}
+
+
+    @staticmethod
+    def Csv_to_BlobCsvRef(csv_str: str, blob_service: BlockBlobService, blob_container: str,
+                          blob_name: str, blob_path_prefix: str = None, blob_name_prefix: str = None,
+                          charset: str = None) -> typing.Dict[str, str]:
+
+        # setup the charset used for file encoding
+        if charset is None:
+            charset = 'utf-8'
+        if charset != 'utf-8':
+            print('Warning: blobs can be written in any charset but currently only utf-8 blobs may be read back into '
+                  'dataframes. We recommend setting charset to None or utf-8 ')
+
+        _check_not_none_and_typed(csv_str, str, 'csv_str')
+        _check_not_none_and_typed(blob_name, str, 'blob_name')
+
+        # 1- first create the reference in order to check everything is ok
+        blob_reference = ByReference_Converters.createBlobCsvRef(blob_service=blob_service,
+                                                                 blob_container=blob_container,
+                                                                 blob_path_prefix=blob_path_prefix,
+                                                                 blob_name_prefix=blob_name_prefix,
+                                                                 blob_name=blob_name)
+
+        # 2- open a temporary file on this computer to write the csv
+        (fileDescriptor, filePath) = tempfile.mkstemp()
+        try:
+            # 3- write the input to this file
+            file = os.fdopen(fileDescriptor, mode='w', encoding=charset)
+            file.write(csv_str)
+            file.flush()
+
+            # 4- push the file into an uniquely named blob on the cloud
+            # -- remove trailing '.csv': this is what is done in createBlobCsvRef, we have to redo it here
+            if blob_name.lower().endswith('.csv'):
+                blob_name = blob_name[:-4]
+            blob_full_name = blob_path_prefix + blob_name_prefix + blob_name + '.csv'
+            # -- push
+            blob_service.create_blob_from_path(blob_container, blob_full_name, filePath,
+                                               content_settings=ContentSettings(content_type='text.csv', content_encoding=charset))
+
+            # 5- return reference
+            return blob_reference
+
+        except Exception as error:
+            print('Error while writing input ' + blob_name + ' to blob storage')
+            raise error
+
+        finally:
+            # Whatever the situation, close the input file and delete it
+            try:
+                os.close(fileDescriptor)
+            finally:
+                os.remove(filePath)
+
+
+    @staticmethod
+    def BlobCsvRef_to_Csv(blob_reference: dict, blob_name:str=None, encoding:str = None):
+        """
+        Reads a CSV referenced according to the format defined by AzureML, and transforms it into a Dataframe
+
+        :param blob_reference:
+        :param encoding:
+        :return:
+        """
+        _check_not_none_and_typed(blob_reference, varType=dict, varName=blob_name)
+
+        if not(encoding is None or encoding=='utf-8'):
+            raise ValueError('Unsupported encoding to retrieve blobs : ' + encoding)
+
+        if ('ConnectionString' in blob_reference.keys()) and ('RelativeLocation' in blob_reference.keys()):
+
+            # create the Blob storage client for this account
+            blob_service = BlockBlobService(connection_string=blob_reference['ConnectionString'])
+
+            # find the container and blob path
+            container, name = blob_reference['RelativeLocation'].split(sep='/', maxsplit=1)
+
+            # retrieve it and convert
+            # -- this works but is probably less optimized for big blobs that get chunked, than using streaming
+            blob_string = blob_service.get_blob_to_text(blob_name=name, container_name=container)
+            return blob_string.content
+
+        else:
+            raise ValueError('Blob reference is invalid: it should contain ConnectionString and RelativeLocation fields')
+
+    @staticmethod
+    def Df_to_BlobCsvRef(df: pandas.DataFrame, blob_service: BlockBlobService, blob_container: str,
+                          blob_name: str, blob_path_prefix: str = None, blob_name_prefix: str = None,
+                          charset: str = None) -> typing.Dict[str, str]:
+        """
+        right now in two steps : first create the csv, then upload it.
+
+        :param df:
+        :param blob_service:
+        :param blob_container:
+        :param blob_name:
+        :param blob_path_prefix:
+        :param blob_name_prefix:
+        :param charset:
+        :return:
+        """
+
+        # create the csv
+        csv_str = Converters.Df_to_Csv(df, dfName=blob_name, charset=charset)
+
+        # upload it
+        return ByReference_Converters.Csv_to_BlobCsvRef(csv_str, blob_service=blob_service,
+                                                             blob_container=blob_container,
+                                                             blob_path_prefix=blob_path_prefix,
+                                                             blob_name_prefix=blob_name_prefix,
+                                                             blob_name=blob_name, charset=charset)
+
+    @staticmethod
+    def BlobCsvRef_to_Df(blob_reference: dict, blob_name: str = None, encoding: str = None):
+        """
+        Reads a CSV blob referenced according to the format defined by AzureML, and transforms it into a Dataframe
+
+        :param blob_reference:
+        :param encoding:
+        :return:
+        """
+
+        # TODO copy the BlobCsvRef_to_Csv method here and handle the blob in streaming mode to be big blobs chunking-compliant.
+        # However how to manage the buffer correctly, create the StringIO with correct encoding, and know the number of chunks
+        # that should be read in pandas.read_csv ? A lot to dig here to get it right...
+        #
+        # from io import TextIOWrapper
+        # contents = TextIOWrapper(buffer, encoding=charset, ...)
+        # blob = blob_service.get_blob_to_stream(blob_name=name, container_name=container, encoding=charset, stream=contents)
+
+        blob_content = ByReference_Converters.BlobCsvRef_to_Csv(blob_reference, blob_name=blob_name, encoding=encoding)
+
+        if len(blob_content) > 0:
+            return Converters.Csv_to_Df(StringIO(blob_content), blob_name)
+        else:
+            return pandas.DataFrame()
+
+class Collection_Converters(object):
+
+    @staticmethod
+    def createBlobCsvRefDict(blob_service: BlockBlobService, blob_container: str,
+                             blob_names: typing.List[str], blob_path_prefix: str = None,
+                             blob_name_prefix:str = None) -> typing.Dict[str, typing.Dict[str, str]]:
+        """
+        Utility method to create one or several blob references on the same container on the same blob storage service.
+
+        :param blob_service:
+        :param blob_container:
+        :param blob_names:
+        :param blob_path_prefix: optional prefix to the blob names
+        :param blob_name_prefix:
+        :return:
+        """
+        _check_not_none_and_typed(blob_names, list, 'blob_names')
+
+        # output dict of references
+        return {blobName: ByReference_Converters.createBlobCsvRef(blob_service, blob_container, blobName,
+                                                                  blob_path_prefix=blob_path_prefix,
+                                                                  blob_name_prefix=blob_name_prefix)
+                for blobName in blob_names}
+
+    @staticmethod
+    def DfDict_to_CsvDict(dataframesDict: typing.Dict[str, pandas.DataFrame], charset: str = None) -> typing.Dict[
+        str, str]:
+        """
+        Helper method to create CSVs compliant with AzureML web service BATCH inputs, from a dictionary of input dataframes
+
+        :param dataframesDict: a dictionary containing input names and input content (each input content is a dataframe)
+        :return: a dictionary containing the string representations of the Csv inputs to store on the blob storage
+        """
+        _check_not_none_and_typed(dataframesDict, varType=dict, varName='dataframesDict')
+
+        return {inputName: Converters.Df_to_Csv(inputDf, dfName=inputName, charset=charset) for inputName, inputDf in dataframesDict.items()}
+
+
+    @staticmethod
+    def CsvDict_to_DfDict(csvsDict: typing.Dict[str, str]) -> typing.Dict[str, pandas.DataFrame]:
+        """
+        Helper method to read CSVs compliant with AzureML web service BATCH inputs/outputs, into a dictionary of Dataframes
+
+        :param csvsDict:
+        :return:
+        """
+        _check_not_none_and_typed(csvsDict, varType=dict, varName='csvsDict')
+
+        return {inputName: Converters.Csv_to_Df(inputCsv, csvName=inputName) for inputName, inputCsv in csvsDict.items()}
+
+
+    @staticmethod
+    def DfDict_to_AzmlTablesDict(dataframesDict: typing.Dict[str, pandas.DataFrame]) -> typing.Dict[
+        str, typing.Dict[str, typing.List]]:
+        """
+        Converts a dictionary of dataframes into a dictionary of dictionaries following the structure
+        required for AzureML JSON conversion
+
+        :param dataframesDict: a dictionary containing input names and input content (each input content is a dataframe)
+        :return: a dictionary of tables represented as dictionaries
+        """
+        _check_not_none_and_typed(dataframesDict, varType=dict, varName='dataframesDict')
+
+        # resultsDict = {}
+        # for dfName, df in dataframesDict.items():
+        #     resultsDict[dfName] = Converters.Df_to_AzmlTable(df, dfName)
+        # return resultsDict
+
+        return { dfName: Converters.Df_to_AzmlTable(df, dfName=dfName) for dfName, df in dataframesDict.items() }
+
+
+    @staticmethod
+    def AzmlTablesDict_to_DfDict(azmlTablesDict: typing.Dict[str, typing.Dict[str, typing.List]],
+                                 isAzureMlOutput: bool = False) -> typing.Dict[str, pandas.DataFrame]:
+
+        _check_not_none_and_typed(azmlTablesDict, varType=dict, varName='azmlTablesDict')
+
+        return { dfName: Converters.AzmlTable_to_Df(dictio, isAzureMlOutput=isAzureMlOutput, tableName=dfName)
+                 for dfName, dictio in azmlTablesDict.items()}
+
+
+    @staticmethod
+    def BlobCsvRefDict_to_CsvDict(blobcsvReferences: typing.Dict[str, typing.Dict[str, str]], charset: str = None) \
+            -> typing.Dict[str, str]:
+
+        _check_not_none_and_typed(blobcsvReferences, dict, 'blobcsvReferences')
+
+        return {blobName: ByReference_Converters.BlobCsvRef_to_Csv(csvBlobRef, encoding=charset, blob_name=blobName)
+                for blobName, csvBlobRef in blobcsvReferences.items()}
+
+
+    @staticmethod
+    def CsvDict_to_BlobCsvRefDict(csvsDict: typing.Dict[str, str], blob_service: BlockBlobService,
+                                  blob_container: str, blob_path_prefix: str = None,
+                                  blob_name_prefix: str = None, charset: str = None) \
+            -> typing.Dict[str, typing.Dict[str, str]]:
+        """
+        Utility method to push all inputs described in the provided dictionary into the selected blob storage on the cloud.
+        Each input is an entry of the dictionary and containg the description of the input reference as dictionary.
+        The string will be written to the blob using the provided charset.
+        Note: files created on the blob storage will have names generated from the current time and the input name, and will be stored in
+
+        :param csvsDict:
+        :param blob_service:
+        :param blob_container:
+        :param blob_path_prefix: the optional prefix that will be prepended to all created blobs in the container
+        :param blob_name_prefix: the optional prefix that will be prepended to all created blob names in the container
+        :param charset: an optional charset to be used, by default utf-8 is used
+        :return: a dictionary of "by reference" input descriptions as dictionaries
+        """
+
+        _check_not_none_and_typed(csvsDict, dict, 'csvsDict')
+
+        return {blobName: ByReference_Converters.Csv_to_BlobCsvRef(csvStr, blob_service=blob_service,
+                                                             blob_container=blob_container,
+                                                             blob_path_prefix=blob_path_prefix,
+                                                             blob_name_prefix=blob_name_prefix,
+                                                             blob_name=blobName, charset=charset)
+                for blobName, csvStr in csvsDict.items()}
+
+
+
+    @staticmethod
+    def BlobCsvRefDict_to_DfDict(blobReferences: typing.Dict[str, typing.Dict[str, str]], charset: str = None) \
+            -> typing.Dict[str, pandas.DataFrame]:
+        """
+        Reads Blob references, for example responses from an AzureMl Batch web service call, into a dictionary of
+        pandas dataframe
+
+        :param blobReferences: the json output description by reference for each output
+        :return: the dictionary of corresponding dataframes mapped to the output names
+        """
+        _check_not_none_and_typed(blobReferences, dict, 'blobReferences')
+
+        return {blobName: ByReference_Converters.BlobCsvRef_to_Df(csvBlobRef, encoding=charset, blob_name=blobName)
+                for blobName, csvBlobRef in blobReferences.items()}
+
+    @staticmethod
+    def DfDict_to_BlobCsvRefDict(dataframesDict: typing.Dict[str, pandas.DataFrame], blob_service: BlockBlobService,
+                                 blob_container: str, blob_path_prefix: str = None, blob_name_prefix: str = None,
+                                 charset: str = None) -> typing.Dict[str, typing.Dict[str, str]]:
+
+        _check_not_none_and_typed(dataframesDict, dict, 'dataframesDict')
+
+        return {blobName: ByReference_Converters.Df_to_BlobCsvRef(csvStr, blob_service=blob_service,
+                                                                   blob_container=blob_container,
+                                                                   blob_path_prefix=blob_path_prefix,
+                                                                   blob_name_prefix=blob_name_prefix,
+                                                                   blob_name=blobName, charset=charset)
+                for blobName, csvStr in dataframesDict.items()}
 
 class BaseExecution(object):
 
@@ -475,14 +882,13 @@ class RequestResponseExecution(BaseExecution):
             paramsDfOrDict = {}
 
         # inputs
-        # TODO maybe this method should be extracted so that users may check that the conversion to dict was ok. (and for symmetry with the Batch mode)
-        inputs = Converters.DfDict_to_AzmlTablesDict(inputDataframes)
+        inputs = Collection_Converters.DfDict_to_AzmlTablesDict(inputDataframes)
 
         # params
         if isinstance(paramsDfOrDict, dict):
             params = paramsDfOrDict
         elif isinstance(paramsDfOrDict, pandas.DataFrame):
-            params = Converters.paramDf_to_Dict(paramsDfOrDict)
+            params = Converters.ParamDf_to_ParamDict(paramsDfOrDict)
         else:
             raise TypeError('paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + type(paramsDfOrDict))
 
@@ -527,10 +933,11 @@ class RequestResponseExecution(BaseExecution):
 
         # first read the json as a dictionary
         resultAsJsonDict = json.loads(jsonBodyStr)
-        #print(json.dumps(resultAsJsonDict, indent=4)) # TODO remove this print
 
         # then transform it into a dataframe
-        resultAsDfDict = Converters.AzmlTablesDict_to_DfDict(resultAsJsonDict['Results'], isAzureMlOutput=True)
+        resultAsDfDict = Collection_Converters.AzmlTablesDict_to_DfDict(resultAsJsonDict['Results'], isAzureMlOutput=True)
+
+        # return the expected outputs
         if outputNames is None:
             return resultAsDfDict
         else:
@@ -557,113 +964,58 @@ class RequestResponseExecution(BaseExecution):
 
         return Converters.AzmlTablesDict_to_DfDict(resultAsJsonDict['Inputs']), resultAsJsonDict['GlobalParameters']
 
+
 class BatchExecution(BaseExecution):
     """ This class provides static methods to call AzureML services in batch mode"""
 
-    @staticmethod
-    def pushAllInputsToBlobStorage(csvInputs: typing.Dict[str, str], account_name: str, account_key: str,
-                                   container_name: str, blobPathPrefix: str, charset: str) -> typing.Tuple[typing.Dict[
-        str, typing.Dict[str, str]], str]:
-        """
-        Utility method to push all inputs described in the provided dictionary into the selected blob storage on the cloud.
-        Each input is an entry of the dictionary and containg the description of the input reference as dictionary.
-        The string will be written to the blob using the provided charset.
-        Note: files created on the blob storage will have names generated from the current time and the input name, and will be stored in
-
-        :param csvInputs:
-        :param account_name:
-        :param account_key:
-        :param container_name: the blob container name
-        :param blobPathPrefix: the prefix
-        :param charset:
-        :return: a tuple containing (1) a dictionary of "by reference" input descriptions as dictionaries
-                and (2) the unique naming prefix used to store the inputs
-        """
-
-        # setup the charset used for file encoding
-        if charset is None:
-            charset = 'utf-8'
-
-        # check the blob path prefix
-        if blobPathPrefix is None:
-            blobPathPrefix = ""
-        elif isinstance(blobPathPrefix, str):
-            if not blobPathPrefix.endswith('/'):
-                # append a trailing slash
-                blobPathPrefix = blobPathPrefix + '/'
-        else:
-            raise TypeError('Blob path prefix should be a valid string or not be provided (default is empty string)')
-
-        # create the Blob storage client for this account
-        blob_service = BlockBlobService(account_name=account_name, account_key=account_key)
-
-        # unique naming prefix
-        now = datetime.now()
-        dtime = now.strftime("%Y-%m-%d_%H%M%S_%f")
-        uniqueBlobNamePrefix = blobPathPrefix + dtime
-
-        # A/ send all inputs to the blob storage
-        inputBlobsNames = {}  # a variable to remember the blob names
-        for inputName, inputCsvStr in csvInputs.items():
-
-            # 0- open a temporary file on this computer to write the input
-            (fileDescriptor, filePath) = tempfile.mkstemp()
-            try:
-                # 1- write the input to this file
-                file = os.fdopen(fileDescriptor, mode='w', encoding=charset)
-                file.write(inputCsvStr)
-                file.flush()
-
-                # 2- push the file into an uniquely named blob on the cloud
-                # -- generate unique blob name : use the date at the microsecond level
-
-                blob_name = uniqueBlobNamePrefix + "-input-" + inputName + ".csv"
-                # -- push the file to the blob storage
-                blob_service.create_blob_from_path(container_name, blob_name, filePath, content_settings=ContentSettings(content_type='text.csv'))
-
-                # 3- remember it
-                inputBlobsNames[inputName] = container_name + "/" + blob_name
-
-            except Exception as error:
-                print('Error while writing input ' + inputName + ' to blob storage')
-                raise error
-
-            finally:
-                # Whatever the situation, close the input file and delete it
-                try:
-                    os.close(fileDescriptor)
-                finally:
-                    os.remove(filePath)
-
-        # B/ Finally create the description of these inputs "by reference"
-        # note: this is separate from the above loop just in case we want to split it in a separate function later on
-        connectionString = "DefaultEndpointsProtocol=https;AccountName=" + account_name + ";AccountKey=" + account_key
-        inputByReference = {}
-        for inputName, inputBlobName in inputBlobsNames.items():
-            inputByReference[inputName] = {"ConnectionString": connectionString, "RelativeLocation": inputBlobName}
-
-        return inputByReference, uniqueBlobNamePrefix
-
 
     @staticmethod
-    def createOutputReferences(outputNames: typing.List[str], account_name: str, account_key: str, container_name: str, uniqueBlobNamePrefix:str) -> typing.Dict[str, typing.Dict[str,str]]:
+    def pushInputsToBlobStorage_and_CreateOutputsReferences(inputsDfDict: typing.Dict[str, pandas.DataFrame],
+                                                            blob_service: BlockBlobService, blob_container: str,
+                                                            blob_path_prefix: str = None, charset: str = None,
+                                                            outputNames: typing.List[str] = []
+                                                            ) -> \
+        typing.Tuple[typing.Dict[str, typing.Dict[str, str]], typing.Dict[str, typing.Dict[str, str]]]:
         """
-        Utility method to create output references
+        Utility method to push all inputs from the provided dictionary into the selected blob storage on the cloud.
+        Each input is an entry of the dictionary and should be a Dataframe.
+        The inputs will be written to the blob using the provided charset.
 
-        :param account_name:
-        :param account_key:
-        :param container_name:
+        Files created on the blob storage will have a prefix generated from the current time, in order to
+        quickly identify inputs pushed at the same time. For convenience, this prefix is provided as an output of this
+        function so that outputs may be
+
+        :param inputsDfDict:
         :param outputNames:
-        :return:
+        :param blob_service:
+        :param blob_container: the blob container name
+        :param blob_path_prefix: the prefix to use for all blobs
+        :param charset:
+        :return: a tuple containing (1) a dictionary of "by reference" input descriptions
+                and (2) a dictionary of "by reference" output descriptions
         """
 
-        connectionString = "DefaultEndpointsProtocol=https;AccountName=" + account_name + ";AccountKey=" + account_key
+        # 1- create unique blob naming prefix
+        now = datetime.now()
+        uniqueBlobNamePrefix = now.strftime("%Y-%m-%d_%H%M%S_%f")
 
-        outputsByReference = {}
-        for outputName in outputNames:
-            outputsByReference[outputName] = {"ConnectionString": connectionString, "RelativeLocation": container_name + "/" + uniqueBlobNamePrefix + "-output-" + outputName + ".csv"}
+        # 2- store INPUTS and retrieve references
+        inputReferences = Collection_Converters.DfDict_to_BlobCsvRefDict(inputsDfDict, blob_service=blob_service,
+                                                                         blob_container=blob_container,
+                                                                         blob_path_prefix=blob_path_prefix,
+                                                                         blob_name_prefix=uniqueBlobNamePrefix + '-input-',
+                                                                         charset=charset)
 
-        return outputsByReference
+        # 3- create OUTPUT references
+        outputReferences = Collection_Converters.createBlobCsvRefDict(blob_names=outputNames, blob_service=blob_service,
+                                                                      blob_container=blob_container,
+                                                                      blob_path_prefix=blob_path_prefix,
+                                                                      blob_name_prefix=uniqueBlobNamePrefix + '-output-')
+
+        return inputReferences, outputReferences
+
+
+
 
 
     @staticmethod
@@ -686,7 +1038,7 @@ class BatchExecution(BaseExecution):
         if isinstance(paramsDfOrDict, dict):
             params = paramsDfOrDict
         elif isinstance(paramsDfOrDict, pandas.DataFrame):
-            params = Converters.paramDf_to_Dict(paramsDfOrDict)
+            params = Converters.ParamDf_to_ParamDict(paramsDfOrDict)
         else:
             raise TypeError(
                 'paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + type(paramsDfOrDict))
@@ -818,29 +1170,3 @@ class BatchExecution(BaseExecution):
         BatchExecution._azureMl_httpCall(api_key, None, batchUrl, method='DELETE',
                                                    useFiddler=useFiddler, useNewWebServices=useNewWebServices)
         return
-
-    @staticmethod
-    def readResponseJsonFilesByReference(jsonOutputs: typing.Dict[str, typing.Dict[str, str]], outputNames: typing.List[str]) -> typing.Dict[str, pandas.DataFrame]:
-        """
-        Reads responses from an AzureMl Batch web service call, into a dictionary of pandas dataframe
-
-        :param jsonOutputs: the json output description by reference for each output
-        :param outputNames: the names of the outputs to retrieve and read, or None for all
-        :return: the dictionary of corresponding dataframes mapped to the output names
-        """
-
-
-        # then transform it into a dataframe
-        resultAsDfDict = dict()
-        if outputNames is None:
-            for outputName, outputRefJson in jsonOutputs.items():
-                # todo complete
-                print(outputRefJson)
-                resultAsDfDict[outputName] = pandas.DataFrame(None, columns=None)
-        else:
-            for outputName in outputNames:
-                # todo complete
-                print(jsonOutputs[outputName])
-                resultAsDfDict[outputName] = pandas.DataFrame(None, columns=None)
-
-        return resultAsDfDict
