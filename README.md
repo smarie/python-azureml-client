@@ -76,7 +76,7 @@ outputs = ac.execute_bes(api_key, base_url,
 
 ## Debug and proxies
 
-Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use `Fiddler` as a proxy: 
+Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use `Fiddler` as a proxy to debug the web service calls: 
 
 ```python
 session = ac.create_session_for_proxy(http_proxyhost='localhost', http_proxyport=8888, use_http_for_https_proxy=True, ssl_verify=False)
