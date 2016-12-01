@@ -71,7 +71,8 @@ blob_path_prefix = '<path_prefix>'
 
 # Perform the call (polling is done every 5s until job end)
 outputs = ac.execute_bes(api_key, base_url,
-                          blob_storage_account, blob_storage_apikey, blob_container_for_ios, blob_path_prefix=blob_path_prefix,
+                          blob_storage_account, blob_storage_apikey, blob_container_for_ios, 
+						  blob_path_prefix=blob_path_prefix,
                           inputs=inputs, params=params, output_names=output_names)
 ```
 
@@ -80,7 +81,8 @@ outputs = ac.execute_bes(api_key, base_url,
 Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use `Fiddler` as a proxy to debug the web service calls: 
 
 ```python
-session = ac.create_session_for_proxy(http_proxyhost='localhost', http_proxyport=8888, use_http_for_https_proxy=True, ssl_verify=False)
+session = ac.create_session_for_proxy(http_proxyhost='localhost', http_proxyport=8888, 
+									  use_http_for_https_proxy=True, ssl_verify=False)
 ```
 
 Then you may use that object in the `requests_session` parameter of the methods: 
