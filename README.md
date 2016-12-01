@@ -142,10 +142,19 @@ As usual :
 > pip uninstall azmlclient
 ```
 
-## Developers : packaging
+## Developers
+
+### Packaging
 
 This project uses `setuptools_scm` to synchronise the version number. Therefore the following command should be used for development snapshots as well as official releases: 
 
 ```bash
 python setup.py egg_info bdist_wheel rotate -m.whl -k3
+```
+
+### Releasing memo
+
+```bash
+twine upload dist/* -r pypitest
+twine upload dist/*
 ```
