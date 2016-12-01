@@ -460,12 +460,14 @@ class ByReference_Converters(object):
         return blob_reference
 
     @staticmethod
-    def blobcsvref_to_csv(blob_reference: dict, blob_name:str=None, encoding:str = None):
+    def blobcsvref_to_csv(blob_reference: dict, blob_name:str=None, encoding:str = None,
+                          requests_session : requests.Session = None):
         """
         Reads a CSV referenced according to the format defined by AzureML, and transforms it into a Dataframe
 
         :param blob_reference:
         :param encoding:
+        :param requests_session: an optional Session object that should be used for the HTTP communication
         :return:
         """
         _check_not_none_and_typed(blob_reference, var_type=dict, var_name=blob_name)
@@ -476,7 +478,8 @@ class ByReference_Converters(object):
         if ('ConnectionString' in blob_reference.keys()) and ('RelativeLocation' in blob_reference.keys()):
 
             # create the Blob storage client for this account
-            blob_service = BlockBlobService(connection_string=blob_reference['ConnectionString'])
+            blob_service = BlockBlobService(connection_string=blob_reference['ConnectionString'],
+                                            request_session=requests_session)
 
             # find the container and blob path
             container, name = blob_reference['RelativeLocation'].split(sep='/', maxsplit=1)
@@ -517,12 +520,14 @@ class ByReference_Converters(object):
                                                         blob_name=blob_name, charset=charset)
 
     @staticmethod
-    def blobcsvref_to_df(blob_reference: dict, blob_name: str = None, encoding: str = None):
+    def blobcsvref_to_df(blob_reference: dict, blob_name: str = None, encoding: str = None,
+                         requests_session : requests.Session = None):
         """
         Reads a CSV blob referenced according to the format defined by AzureML, and transforms it into a Dataframe
 
         :param blob_reference:
         :param encoding:
+        :param requests_session: an optional Session object that should be used for the HTTP communication
         :return:
         """
 
@@ -534,7 +539,8 @@ class ByReference_Converters(object):
         # contents = TextIOWrapper(buffer, encoding=charset, ...)
         # blob = blob_service.get_blob_to_stream(blob_name=name, container_name=container, encoding=charset, stream=contents)
 
-        blob_content = ByReference_Converters.blobcsvref_to_csv(blob_reference, blob_name=blob_name, encoding=encoding)
+        blob_content = ByReference_Converters.blobcsvref_to_csv(blob_reference, blob_name=blob_name, encoding=encoding,
+                                                                requests_session=requests_session)
 
         if len(blob_content) > 0:
             return Converters.csv_to_df(StringIO(blob_content), blob_name)
@@ -624,12 +630,20 @@ class Collection_Converters(object):
 
 
     @staticmethod
-    def blobcsvrefdict_to_csvdict(blobcsvReferences: Dict[str, Dict[str, str]], charset: str = None) \
-            -> Dict[str, str]:
+    def blobcsvrefdict_to_csvdict(blobcsvReferences: Dict[str, Dict[str, str]], charset: str = None,
+                                  requests_session : requests.Session = None) -> Dict[str, str]:
+        """
+
+        :param blobcsvReferences:
+        :param charset:
+        :param requests_session: an optional Session object that should be used for the HTTP communication
+        :return:
+        """
 
         _check_not_none_and_typed(blobcsvReferences, dict, 'blobcsvReferences')
 
-        return {blobName: ByReference_Converters.blobcsvref_to_csv(csvBlobRef, encoding=charset, blob_name=blobName)
+        return {blobName: ByReference_Converters.blobcsvref_to_csv(csvBlobRef, encoding=charset, blob_name=blobName,
+                                                                   requests_session=requests_session)
                 for blobName, csvBlobRef in blobcsvReferences.items()}
 
 
@@ -665,18 +679,22 @@ class Collection_Converters(object):
 
 
     @staticmethod
-    def blobcsvrefdict_to_dfdict(blobReferences: Dict[str, Dict[str, str]], charset: str = None) \
+    def blobcsvrefdict_to_dfdict(blobReferences: Dict[str, Dict[str, str]], charset: str = None,
+                                 requests_session: requests.Session = None) \
             -> Dict[str, pandas.DataFrame]:
         """
         Reads Blob references, for example responses from an AzureMl Batch web service call, into a dictionary of
         pandas dataframe
 
         :param blobReferences: the json output description by reference for each output
+        :param charset:
+        :param requests_session: an optional Session object that should be used for the HTTP communication
         :return: the dictionary of corresponding dataframes mapped to the output names
         """
         _check_not_none_and_typed(blobReferences, dict, 'blobReferences')
 
-        return {blobName: ByReference_Converters.blobcsvref_to_df(csvBlobRef, encoding=charset, blob_name=blobName)
+        return {blobName: ByReference_Converters.blobcsvref_to_df(csvBlobRef, encoding=charset, blob_name=blobName,
+                                                                  requests_session=requests_session)
                 for blobName, csvBlobRef in blobReferences.items()}
 
     @staticmethod

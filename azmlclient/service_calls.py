@@ -193,8 +193,8 @@ def execute_bes(api_key: str, base_url: str, blob_storage_account: str, blob_sto
     print('Retrieving the outputs from the blob storage')
 
     # dont use the output of the status, it does not contain the connectionString
-    # resultDataframes = Collection_Converters.BlobCsvRefDict_to_DfDict(outputs_refs2)
-    resultDataframes = Collection_Converters.blobcsvrefdict_to_dfdict(output_refs)
+    # resultDataframes = Collection_Converters.BlobCsvRefDict_to_DfDict(outputs_refs2, requests_session=requests_session)
+    resultDataframes = Collection_Converters.blobcsvrefdict_to_dfdict(output_refs, requests_session=requests_session)
 
     return resultDataframes
 
