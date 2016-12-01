@@ -14,7 +14,8 @@ You may use it for example
 * Maps the errors to more friendly python exceptions
 * Supports both Request/Response and Batch mode
 * In Batch mode, performs all the Blob storage and retrieval for you.
-* Properly handles file encoding in both modes
+* Properly handles file encoding in both modes (`utf-8` is used by default as the pivot encoding)
+* Supports global `requests.Session` configuration to configure the HTTP clients behaviour (including the underlying blob storage client).
 
 
 ## Examples
@@ -28,9 +29,9 @@ import azmlclient as ac
 Then create variables holding the access information provided by AzureML
 
 ```python
-baseUrl = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
-apiKey = '<apiKey>'
-useNewWebServices = <False/True>
+base_url = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
+api_key = '<apiKey>'
+use_new_ws = False
 ```
 
 Then create 
@@ -55,7 +56,7 @@ Then create
 Finally call in Request-Response mode:
 
 ```python
-outputs = ac.executeRequestResponse(apiKey, baseUrl, inputs=inputs, params=params, outputNames=outputNames)
+outputs = ac.execute_rr(api_key, base_url, inputs=inputs, params=params, output_names=output_names)
 ```
 
 Or in Batch mode. In this case you also need to configure the Blob storage to be used:
@@ -68,17 +69,33 @@ blob_container = '<container>'
 blob_path_prefix = '<path_prefix>'
 
 # Perform the call (polling is done every 5s until job end)
-outputs = ac.executeBatch(apiKey, baseUrl,
-                          blob_storage_account, blob_storage_apikey, blob_container_for_ios, 
-                          blob_path_prefix=blob_path_prefix,
-                          inputs=inputs, params=params, outputNames=outputNames)
+outputs = ac.execute_bes(api_key, base_url,
+                          blob_storage_account, blob_storage_apikey, blob_container_for_ios, blob_path_prefix=blob_path_prefix,
+                          inputs=inputs, params=params, output_names=output_names)
 ```
+
+## Debug and proxies
+
+Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use `Fiddler` as a proxy: 
+
+```python
+session = ac.create_session_for_proxy(http_proxyhost='localhost', http_proxyport=8888, use_http_for_https_proxy=True, ssl_verify=False)
+```
+
+Then you may use that object in the `requests_session` parameter of the methods: 
+
+```python
+outputsRR = ac.execute_rr(..., requests_session=session)
+outputsB = ac.execute_bes(..., requests_session=session)
+```
+
+Note that the session object will be passed to the underlying azure blob storage client to ensure consistency.
 
 ## Advanced usage
 
-Advanced users may directly use the static methods in *BatchExecution* and *RequestResponseExecution* classes to better control what's happening.
+Advanced users may directly create `Batch_Client` or `RR_Client` classes to better control what's happening.
 
-Also two optional parameters allow to work with a local Fiddler proxy (*useFiddler=True*) and with the 'new web services' mode (*useNewWebService=True* - still evolving on MS side, so will need to be updated).
+An optional parameter allow to work with the 'new web services' mode (`use_new_ws = True` - still evolving on MS side, so will need to be updated).
 
 
 ## Installation

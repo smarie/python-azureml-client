@@ -5,42 +5,44 @@ import pandas as pd
 
 import azmlclient as ac
 
+class Test_DataBinding(TestCase):
 
-# do not subclass TestCase in order for the test generator to work correctly
-class TestConverters(TestCase):
-
-    def test_Df_AzmlTable_conversion(self):
-
+    def test_df_to_azmltable(self):
         df = readCsvTestFile('../test_data/dummy_data.csv')
+        azt = ac.Converters.df_to_azmltable(df)
+        df2 = ac.Converters.azmltable_to_df(azt)
+        self.assert_identical_df(df, df2)
 
-        azt = ac.Converters.Df_to_AzmlTable(df)
-        df2 = ac.Converters.AzmlTable_to_Df(azt)
+    def test_df_to_json(self):
+        df = readCsvTestFile('../test_data/dummy_data.csv')
+        azt = ac.Converters.df_to_azmltable(df)
+        js = ac.Converters.azmltable_to_jsonstr(azt)
+        azt2 = ac.Converters.jsonstr_to_azmltable(js)
+        df2 = ac.Converters.azmltable_to_df(azt2)
+        self.assert_identical_df(df, df2)
 
+    def test_df_to_csv(self):
+        df = readCsvTestFile('../test_data/dummy_data.csv')
+        csvstr = ac.Converters.df_to_csv(df)
+        df2 = ac.Converters.csv_to_df(csvstr)
+        self.assert_identical_df(df, df2)
+
+    def assert_identical_df(self, df, df2):
         for col in df.columns:
             print('Checking column ' + col)
-            #     TestConverters.test_Df_AzmlTable_conversion.__name__ = 'Df_to_Azml_conversion_' + col
-            #     yield self.check_column, df, df2, col
-            self.check_column(df, df2, col)
+            self.assert_identical_column(df, df2, col)
 
-        # TestConverters.test_Df_AzmlTable_conversion.__name__ = 'Df_to_Azml_conversion_final'
         assert df.equals(df2)
 
-    def check_column(self, df, df2, col):
+    def assert_identical_column(self, df, df2, col):
         assert df[col].equals(df2[col])
 
-
-class TestDatasetReadError(Exception):
-    """ This is raised whenever the dataset test file cannot be opened correctly """
 
 
 def readCsvTestFile(path_input, colSeparator=',', decimalChar='.'):
 
     inputdataframe = pd.read_csv(path_input, sep=colSeparator, decimal=decimalChar, infer_datetime_format=True,
                                      parse_dates=[0])
-    if 'object' in inputdataframe.dtypes:
-        raise TestDatasetReadError('Test dataset ' + path_input + ' can not be correctly imported, check the '
-                                                                  'column separator and decimal characters')
-
 
     datetimeColumns = [colName for colName, colType in inputdataframe.dtypes.items() if np.issubdtype(colType, np.datetime64)]
     for datetimeCol in datetimeColumns:
