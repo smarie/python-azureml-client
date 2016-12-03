@@ -19,6 +19,43 @@ You may use it for example
 * Supports global `requests.Session` configuration to configure the HTTP clients behaviour (including the underlying blob storage client).
 
 
+## Installation
+
+### Recommended : create a clean virtual environment
+
+We strongly recommend that you use conda *environment* or pip *virtualenv*/*venv* in order to better manage packages. Once you are in your virtual environment, open a terminal and check that the python interpreter is correct:
+
+```bash
+(Windows)>  where python
+(Linux)  >  which python
+```
+
+The first executable that should show up should be the one from the virtual environment.
+
+
+### Installation steps
+
+This package is available on `PyPI`. You may therefore use `pip` to install from a release
+
+```bash
+> pip install azmlclient
+```
+
+***Note for conda users***: The only drawback of the method above using `pip`, is that all dependencies (numpy, pandas, azure-storage) are automatically installed using `pip` too, and therefore are not downloaded from validated `conda` repositories. If you prefer to install them from `conda`, the workaround is to run the following command *before installing*:
+
+```bash
+> conda install numpy, pandas, azure-storage==0.33.0
+```
+
+### Uninstalling
+
+As usual : 
+
+```bash
+> pip uninstall azmlclient
+```
+
+
 ## Examples
 
 First import the package
@@ -100,49 +137,6 @@ Advanced users may directly create `Batch_Client` or `RR_Client` classes to bett
 
 An optional parameter allow to work with the 'new web services' mode (`use_new_ws = True` - still evolving on MS side, so will need to be updated).
 
-
-## Installation
-
-### Recommended : create a clean virtual environment
-
-We strongly recommend that you use conda *environment* or pip *virtualenv*/*venv* in order to better manage packages. Once you are in your virtual environment, open a terminal and check that the python interpreter is correct:
-
-```bash
-(Windows)>  where python
-(Linux)  >  which python
-```
-
-The first executable that should show up should be the one from the virtual environment.
-
-
-### Simple install
-
-* using **pip** to install from a release
-
-    ```bash
-    > pip install azmlclient
-    ```
-* using **pip** to install from git sources ([ref](https://packaging.python.org/installing/#installing-from-vcs)):
-
-    ```bash
-    > pip install git+https://github.com/smarie/python-azureml-client.git#egg=azmlclient-1.0.0.dev1
-    ```
-
-### Note for conda users
-
-The only drawback of the methods above using pip, is that during install all dependencies (numpy, pandas, azure-storage) are installed using *pip* too, and therefore are not downloaded from validated *conda* repositories. If you prefer to install them from *conda*, the workaround is to run the following command **before** to execute the above installation:
-
-```bash
-> conda install numpy, pandas, azure-storage==0.33.0
-```
-
-### Uninstalling
-
-As usual : 
-
-```bash
-> pip uninstall azmlclient
-```
 
 ## Developers
 

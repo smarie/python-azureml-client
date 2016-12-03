@@ -4,8 +4,6 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-# Always prefer setuptools over distutils
-from codecs import open
 from os import path
 
 from setuptools import setup
@@ -26,8 +24,13 @@ version_for_download_url = get_version()#local_scheme='dirty-tag')
 DOWNLOAD_URL = 'https://github.com/smarie/python-azureml-client/tarball/' + version_for_download_url
 KEYWORDS = 'Azure Machine Learning AzureML web services client'
 # --Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    LONG_DESCRIPTION = f.read()
+#with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+#    LONG_DESCRIPTION = f.read()
+#try:
+import pypandoc
+LONG_DESCRIPTION = pypandoc.convert(path.join(here, 'README.md'), 'rst').replace('\r', '')
+#except(IOError, ImportError):
+#    LONG_DESCRIPTION = open('README.md').read()
 
 # ************* VERSION AND DEPENDENCIES **************
 # --Get the Version number from VERSION file, see https://packaging.python.org/single_source_version/ option 4.
@@ -37,7 +40,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 INSTALL_REQUIRES = ['numpy', 'pandas', 'azure-storage==0.33.0']
 DEPENDENCY_LINKS = []
-SETUP_REQUIRES = ['setuptools_scm']
+SETUP_REQUIRES = ['setuptools_scm','pypandoc']
 TESTS_REQUIRE = ['nose']
 EXTRAS_REQUIRE = {}
 
