@@ -2,7 +2,7 @@
 
 An ***unofficial*** generic client stack for azureML web services, working with python 3.
  
-As opposed to the 'complete' [AzureML client library](https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage), this library is much simpler and is only focused on calling the deployed web services using python 3. It does not require your AzureML workspace id and API key, only the deployed services' URL and API key.
+As opposed to [AzureML client library](https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage), this library is much simpler and is only focused on consuming web services using python 3. It is compliant with all services deployed from AzureML experiments (using the AzureML drag'n drop UI), and should also work with python and R "dataframe" web services (not checked though). It does not require your AzureML workspace id and API key, only the deployed services' URL and API key.
 
 You may use it for example 
 * to show to your customers how to consume your AzureML cloud services.
