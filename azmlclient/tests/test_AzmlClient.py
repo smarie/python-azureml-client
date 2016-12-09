@@ -6,6 +6,9 @@ import pandas as pd
 import azmlclient as ac
 
 class Test_DataBinding(TestCase):
+    """
+    A basic test case to test the various data transformation methods.
+    """
 
     def test_df_to_azmltable(self):
         df = readCsvTestFile('../test_data/dummy_data.csv')
