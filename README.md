@@ -9,6 +9,7 @@ You may use it for example
 * to make simple 'edge' devices consume your AzureML cloud services (if they support python :) ).
 
 
+
 ## Main features
 
 * Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too
@@ -137,6 +138,9 @@ Advanced users may directly create `Batch_Client` or `RR_Client` classes to bett
 
 An optional parameter allow to work with the 'new web services' mode (`use_new_ws = True` - still evolving on MS side, so will need to be updated).
 
+## Links
+
+*Do you like this library ? You might also like [these](https://github.com/smarie?utf8=%E2%9C%93&tab=repositories&q=&type=&language=python)* 
 
 ## Developers
 
