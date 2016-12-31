@@ -138,7 +138,7 @@ Advanced users may directly create `Batch_Client` or `RR_Client` classes to bett
 
 An optional parameter allow to work with the 'new web services' mode (`use_new_ws = True` - still evolving on MS side, so will need to be updated).
 
-## Links
+## See Also
 
 *Do you like this library ? You might also like [these](https://github.com/smarie?utf8=%E2%9C%93&tab=repositories&q=&type=&language=python)* 
 
