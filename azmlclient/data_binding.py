@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from io import BytesIO
 from io import StringIO
-from typing import Dict, Union, List, Any
+from typing import Dict, Union, List, Any, Tuple
 
 import numpy as np
 import pandas
@@ -367,7 +367,7 @@ class ByReference_Converters(object):
     @staticmethod
     def create_blobcsvref(blob_service: BlockBlobService, blob_container: str,
                           blob_name: str, blob_path_prefix: str = None, blob_name_prefix: str = None) \
-            -> Dict[str, str]:
+            -> Tuple[Dict[str, str], str]:
         """
         Utility method to create a reference to a blob, whether it exists or not
 
@@ -376,7 +376,7 @@ class ByReference_Converters(object):
         :param blob_name:
         :param blob_path_prefix:
         :param blob_name_prefix:
-        :return:
+        :return: a tuple. First element is the blob reference (a dict). Second element is the full blob name
         """
         _check_not_none_and_typed(blob_container, str, 'blob_container')
         _check_not_none_and_typed(blob_name, str, 'blob_name')
@@ -392,9 +392,12 @@ class ByReference_Converters(object):
         blob_path_prefix = ByReference_Converters._get_valid_blob_path_prefix(blob_path_prefix)
         blob_name_prefix = ByReference_Converters._get_valid_blob_name_prefix(blob_name_prefix)
 
-        # output reference
+        blob_full_name = blob_path_prefix + blob_name_prefix + blob_name + '.csv'
+
+        # output reference and full name
         return {'ConnectionString': connectionString,
-                'RelativeLocation': blob_container + '/' + blob_path_prefix + blob_name_prefix + blob_name + '.csv'}
+                'RelativeLocation': blob_container + '/' + blob_path_prefix + blob_name_prefix + blob_name + '.csv'}, \
+               blob_full_name
 
 
     @staticmethod
@@ -413,16 +416,11 @@ class ByReference_Converters(object):
         _check_not_none_and_typed(blob_name, str, 'blob_name')
 
         # 1- first create the references in order to check all params are ok
-        blob_reference = ByReference_Converters.create_blobcsvref(blob_service=blob_service,
-                                                                  blob_container=blob_container,
-                                                                  blob_path_prefix=blob_path_prefix,
-                                                                  blob_name_prefix=blob_name_prefix,
-                                                                  blob_name=blob_name)
-
-        # -- remove trailing '.csv': this is what is done in create_blobcsvref, we have to redo it here
-        if blob_name.lower().endswith('.csv'):
-            blob_name = blob_name[:-4]
-        blob_full_name = blob_path_prefix + blob_name_prefix + blob_name + '.csv'
+        blob_reference, blob_full_name = ByReference_Converters.create_blobcsvref(blob_service=blob_service,
+                                                                                  blob_container=blob_container,
+                                                                                  blob_path_prefix=blob_path_prefix,
+                                                                                  blob_name_prefix=blob_name_prefix,
+                                                                                  blob_name=blob_name)
 
         # -- push blob
         # noinspection PyTypeChecker
@@ -569,7 +567,7 @@ class Collection_Converters(object):
         # output dict of references
         return {blobName: ByReference_Converters.create_blobcsvref(blob_service, blob_container, blobName,
                                                                    blob_path_prefix=blob_path_prefix,
-                                                                   blob_name_prefix=blob_name_prefix)
+                                                                   blob_name_prefix=blob_name_prefix)[0]
                 for blobName in blob_names}
 
     @staticmethod

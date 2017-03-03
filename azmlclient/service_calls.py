@@ -14,6 +14,7 @@ from azmlclient.data_binding import AzmlException, Converters, Collection_Conver
 class IllegalJobStateException(Exception):
     """ This is raised whenever a job has illegal state"""
 
+
 class JobExecutionException(Exception):
     """ This is raised whenever a job ended in failed mode"""
 
@@ -360,7 +361,8 @@ class RR_Client(_BaseHttpClient):
         elif isinstance(params_df_or_dict, pandas.DataFrame):
             params = Converters.paramdf_to_paramdict(params_df_or_dict)
         else:
-            raise TypeError('paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + type(params_df_or_dict))
+            raise TypeError('paramsDfOrDict should be a dataframe or a dictionary, or None, found: '
+                            + str(type(params_df_or_dict)))
 
         # final body : combine them into a single dictionary ...
         bodyDict = {'Inputs': inputs, 'GlobalParameters': params}
@@ -533,7 +535,7 @@ class Batch_Client(_BaseHttpClient):
             params = Converters.paramdf_to_paramdict(params_Df_or_Dict)
         else:
             raise TypeError(
-                'paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + type(params_Df_or_Dict))
+                'paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + str(type(params_Df_or_Dict)))
 
         # final body : combine them into a single dictionary ...
         bodyDict = {'Inputs': input_refs, 'GlobalParameters': params, 'Outputs': output_refs}
