@@ -545,8 +545,6 @@ class Batch_Client(_BaseHttpClient):
         return jsonBodyStr
 
 
-
-
     def execute_batch_createJob(self, base_url: str, api_key: str, request_json_body: str, use_new_ws: bool = False) -> str:
         """
         Performs a web service call to AzureML using Batch mode (asynchronous, by reference).
