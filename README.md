@@ -89,7 +89,7 @@ Then create
 * and optionally provide a list of expected output names
         
     ```python
-    outputNames = ["my_out1","my_out2"]
+    output_names = ["my_out1","my_out2"]
     ```
 
 Finally call in Request-Response mode:
