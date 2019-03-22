@@ -22,12 +22,12 @@ def _check_not_none_and_typed(var, var_type=None, var_name=None):
     :return:
     """
 
-    if (var is None):
+    if var is None:
         if var_name is None:
             raise TypeError('Error, object should be non-None')
         else:
             raise TypeError('Error, object with name "' + var_name + '" should be non-None')
-    elif not (var_type is None):
+    elif var_type is not None:
         if not isinstance(var, var_type):
             if var_name is None:
                 raise TypeError('Error, object should be a ' + var_type + ', found: ' + str(
