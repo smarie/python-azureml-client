@@ -119,7 +119,8 @@ class Converters(object):
                          index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
 
     @staticmethod
-    def csv_to_df(csv_buffer_or_str_or_filepath: str, csv_name: str = None) -> pandas.DataFrame:
+    def csv_to_df(csv_buffer_or_str_or_filepath: str, csv_name: str = None,
+                  first_col_is_datetime: bool = True) -> pandas.DataFrame:
         """
         Helper method to ensure consistent reading in particular for timezones and datetime parsing
 
@@ -132,11 +133,9 @@ class Converters(object):
         if isinstance(csv_buffer_or_str_or_filepath, str):
             csv_buffer_or_str_or_filepath = StringIO(csv_buffer_or_str_or_filepath)
 
-
-        # read with parse dates (unfortunately right now this only parses the first one
-        res = pandas.read_csv(csv_buffer_or_str_or_filepath, sep=',', decimal='.',
-                              infer_datetime_format=True,
-                              parse_dates=[0])
+        # read with parse dates (unfortunately right now this only parses the first one)
+        date_kwargs = dict(infer_datetime_format=True, parse_dates=[0]) if first_col_is_datetime else dict()
+        res = pandas.read_csv(csv_buffer_or_str_or_filepath, sep=',', decimal='.', **date_kwargs)
 
         # -- additionally we automatically configure the timezone as UTC
         datetimeColumns = [colName for colName, colType in res.dtypes.items() if
@@ -168,7 +167,8 @@ class Converters(object):
 
 
     @staticmethod
-    def azmltable_to_df(azmltable_dict: Dict[str, Union[str, Dict[str, List]]], is_azml_output: bool = False, table_name: str = None) \
+    def azmltable_to_df(azmltable_dict: Dict[str, Union[str, Dict[str, List]]],
+                        is_azml_output: bool = False, table_name: str = None, first_col_is_datetime: bool = True) \
             -> pandas.DataFrame:
         """
         Converts an AzureML table (JSON-like dictionary) into a dataframe. Since two formats exist (one for inputs and
@@ -176,6 +176,7 @@ class Converters(object):
 
         :param is_azml_output:
         :param table_name:
+        :param first_col_is_datetime:
         :return:
         """
         _check_not_none_and_typed(azmltable_dict, var_type=dict, var_name=table_name)
@@ -217,7 +218,8 @@ class Converters(object):
                     writer.writerows([azmltable_dict['ColumnNames']])
                     writer.writerows(values)
                     # -- and then we parse with pandas
-                    res = Converters.csv_to_df(io.StringIO(buffer.getvalue()))
+                    res = Converters.csv_to_df(io.StringIO(buffer.getvalue()),
+                                               first_col_is_datetime=first_col_is_datetime)
                     buffer.close()
 
                 else:

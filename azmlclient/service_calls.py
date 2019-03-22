@@ -422,7 +422,8 @@ class RR_Client(_BaseHttpClient):
             if len(set(output_names) - set(resultAsDfDict.keys())) > 0:
                 missings = list(set(output_names) - set(resultAsDfDict.keys()))
                 raise Exception(
-                    'Error : the following outputs are missing in the results : ' + str(missings))
+                    'Error : the following outputs are missing in the results: %s. Found outputs: %s'
+                    '' % (missings, output_names))
             else:
                 slicedDictionary = {k: v for k, v in resultAsDfDict.items() if k in output_names}
             return slicedDictionary
