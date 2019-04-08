@@ -1,15 +1,47 @@
+from __future__ import print_function
 import csv
-import io
 import json
+import sys
 from datetime import datetime
-from io import BytesIO
-from io import StringIO
-from typing import Dict, Union, List, Any, Tuple
+from io import BytesIO   # for handling byte strings
+from io import StringIO  # for handling unicode strings
+
+try:  # python 3.5+
+    from typing import Dict, Union, List, Any, Tuple
+except ImportError:
+    pass
 
 import numpy as np
 import pandas
 import requests
 from azure.storage.blob import BlockBlobService, ContentSettings
+
+
+try:
+    from csv import unix_dialect
+except ImportError:
+    class unix_dialect(csv.Dialect):
+        """Describe the usual properties of Unix-generated CSV files."""
+        delimiter = ','
+        quotechar = '"'
+        doublequote = True
+        skipinitialspace = False
+        lineterminator = '\n'
+        quoting = csv.QUOTE_ALL
+    csv.register_dialect("unix", unix_dialect)
+
+if sys.version_info >= (3, 0):
+    def create_dest_buffer_for_csv():
+        return StringIO(newline='')
+
+    def create_reading_buffer(value):
+        return StringIO(value)
+else:
+    def create_dest_buffer_for_csv():
+        return BytesIO()  # StringIO(newline='')
+
+    def create_reading_buffer(value):
+        return BytesIO(value)
 
 
 def _check_not_none_and_typed(var, var_type=None, var_name=None):
@@ -43,7 +75,9 @@ class AzmlException(Exception):
     Represents an AzureMl exception, built from an HTTP error body received from AzureML.
     """
 
-    def __init__(self, httpError: requests.exceptions.HTTPError):#urllib.error.HTTPError):
+    def __init__(self,
+                 httpError  # type: requests.exceptions.HTTPError
+                 ):
 
         # Try to decode the error body and print it
         # ----- old with urllib
@@ -104,7 +138,11 @@ class Converters(object):
 
 
     @staticmethod
-    def df_to_csv(df: pandas.DataFrame, df_name:str = None, charset:str = None) -> str:
+    def df_to_csv(df,            # type: pandas.DataFrame
+                  df_name=None,  # type: str
+                  charset=None   # type: str
+                  ):
+        # type: (...) -> str
         """
         Converts the provided dataframe to a csv, to store it on blob storage for AzureML calls.
         WARNING: datetime columns are converted in ISO format but the milliseconds are ignored and set to zero.
@@ -120,7 +158,10 @@ class Converters(object):
                          index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
 
     @staticmethod
-    def csv_to_df(csv_buffer_or_str_or_filepath: str, csv_name: str = None) -> pandas.DataFrame:
+    def csv_to_df(csv_buffer_or_str_or_filepath,  # type: str
+                  csv_name=None                   # type: str
+                  ):
+        # type: (...) -> pandas.DataFrame
         """
         Helper method to ensure consistent reading in particular for timezones and datetime parsing
 
@@ -131,7 +172,7 @@ class Converters(object):
 
         # pandas does not accept string. create a buffer
         if isinstance(csv_buffer_or_str_or_filepath, str):
-            csv_buffer_or_str_or_filepath = StringIO(csv_buffer_or_str_or_filepath)
+            csv_buffer_or_str_or_filepath = create_reading_buffer(csv_buffer_or_str_or_filepath)
 
         # read without parsing dates
         res = pandas.read_csv(csv_buffer_or_str_or_filepath, sep=',', decimal='.')  # infer_datetime_format=True, parse_dates=[0]
@@ -140,17 +181,22 @@ class Converters(object):
         convert_all_datetime_columns(res)
 
         # -- additionally we automatically configure the timezone as UTC
-        datetimeColumns = [colName for colName, colType in res.dtypes.items() if
-                           np.issubdtype(colType, np.datetime64)]
+        datetimeColumns = [colName for colName, colType in res.dtypes.items() if is_datetime_dtype(colType)]
         for datetimeCol in datetimeColumns:
-            # time is in ISO format in our test files, so the time column after import is UTC. We just have to declare it
-            res[datetimeCol] = res[datetimeCol].dt.tz_localize(tz="UTC")
+            # time is in ISO format, so the time column after import is UTC. We just have to declare it
+            try:
+                res[datetimeCol] = res[datetimeCol].dt.tz_localize(tz="UTC")
+            except TypeError:
+                res[datetimeCol] = res[datetimeCol].dt.tz_convert(tz="UTC")
 
         return res
 
-
     @staticmethod
-    def df_to_azmltable(df: pandas.DataFrame, is_azml_output: bool = False, df_name: str = None) -> Dict[str, Union[str, Dict[str, List]]]:
+    def df_to_azmltable(df,                    # type: pandas.DataFrame
+                        is_azml_output=False,  # type: bool
+                        df_name=None           # type: str
+                        ):
+        # type: (...) -> Dict[str, Union[str, Dict[str, List]]]
         """
         Converts the provided Dataframe to a dictionary in the same format than the JSON expected by AzureML in the
         Request-Response services. Note that contents are kept as is (values are not converted to string yet)
@@ -170,9 +216,11 @@ class Converters(object):
                     "Values": df.values.tolist()}
 
     @staticmethod
-    def azmltable_to_df(azmltable_dict: Dict[str, Union[str, Dict[str, List]]],
-                        is_azml_output: bool = False, table_name: str = None) \
-            -> pandas.DataFrame:
+    def azmltable_to_df(azmltable_dict,        # type: Dict[str, Union[str, Dict[str, List]]]
+                        is_azml_output=False,  # type: bool
+                        table_name=None        # type: str
+                        ):
+        # type: (...) -> pandas.DataFrame
         """
         Converts an AzureML table (JSON-like dictionary) into a dataframe. Since two formats exist (one for inputs and
         one for outputs), there is a parameter you can use to specify which one to use.
@@ -216,12 +264,12 @@ class Converters(object):
 
                     # use pandas parser to infer most of the types
                     # -- for that we first dump in a buffer in a CSV format
-                    buffer = io.StringIO(initial_value='', newline='\n')
+                    buffer = create_dest_buffer_for_csv()
                     writer = csv.writer(buffer, dialect='unix')
                     writer.writerows([azmltable_dict['ColumnNames']])
                     writer.writerows(values)
                     # -- and then we parse with pandas
-                    res = Converters.csv_to_df(io.StringIO(buffer.getvalue()))
+                    res = Converters.csv_to_df(create_reading_buffer(buffer.getvalue()))  # StringIO
                     buffer.close()
 
                 else:
@@ -234,15 +282,21 @@ class Converters(object):
             return res
 
     @staticmethod
-    def jsonstr_to_azmltable(json_str: str) -> Dict[str, Union[str, Dict[str, List]]]:
+    def jsonstr_to_azmltable(json_str  # type: str
+                             ):
+        # type: (...) -> Dict[str, Union[str, Dict[str, List]]]
         return Converters.jsonstr_to_dict(json_str)
 
     @staticmethod
-    def azmltable_to_jsonstr(azmltable_dict: Dict[str, Union[str, Dict[str, List]]]) -> str:
+    def azmltable_to_jsonstr(azmltable_dict  # type: Dict[str, Union[str, Dict[str, List]]]
+                             ):
+        # type: (...) -> str
         return Converters.dict_to_jsonstr(azmltable_dict)
 
     @staticmethod
-    def paramdf_to_paramdict(params_df: pandas.DataFrame) -> Dict[str, str]:
+    def paramdf_to_paramdict(params_df  # type: pandas.DataFrame
+                             ):
+        # type: (...) -> Dict[str, str]
         """
         Converts a parameter dataframe into a dictionary following the structure required for JSON conversion
 
@@ -259,7 +313,9 @@ class Converters(object):
 
 
     @staticmethod
-    def paramdict_to_paramdf(paramsDict: Dict[str, Any]) -> pandas.DataFrame:
+    def paramdict_to_paramdf(paramsDict  # type: Dict[str, Any]
+                             ):
+        # type: (...) -> pandas.DataFrame
         """
         Converts a parameter dictionary into a parameter dataframe
 
@@ -272,7 +328,8 @@ class Converters(object):
 
 
     @staticmethod
-    def dict_to_jsonstr(dictObject):
+    def dict_to_jsonstr(dictObject
+                        ):
         """
         Transforms a dictionary to a JSON string. Datetimes are converted using ISO format.
 
@@ -283,7 +340,9 @@ class Converters(object):
         return jsonBodyStr
 
     @staticmethod
-    def jsonstr_to_dict(jsonStr) -> Dict[str, Any]:
+    def jsonstr_to_dict(jsonStr  # type: str
+                        ):
+        # type: (...) -> Dict[str, Any]
         """
         Creates a dictionary from a json string.
 
@@ -319,7 +378,9 @@ class Converters(object):
 class ByReference_Converters(object):
 
     @staticmethod
-    def _get_valid_blob_path_prefix(blob_path_prefix: str) -> str:
+    def _get_valid_blob_path_prefix(blob_path_prefix  # type: str
+                                    ):
+        #type: (...) -> str
         """
         Utility method to get a valid blob path prefix from a provided one. A trailing slash is added if non-empty
 
@@ -337,7 +398,9 @@ class ByReference_Converters(object):
         return blob_path_prefix
 
     @staticmethod
-    def _get_valid_blob_name_prefix(blob_name_prefix: str) -> str:
+    def _get_valid_blob_name_prefix(blob_name_prefix  # type: str
+                                    ):
+        # type: (...) -> str
         """
         Utility method to get a valid blob path prefix from a provided one. A trailing slash is added if non-empty
 
@@ -355,7 +418,9 @@ class ByReference_Converters(object):
         return blob_name_prefix
 
     @staticmethod
-    def _get_blob_service_connection_string(blob_service: BlockBlobService) -> str:
+    def _get_blob_service_connection_string(blob_service  # type: BlockBlobService
+                                            ):
+        # type: (...) -> str
         """
         Utilty method to get the connection string for a blob storage service (currently the BlockBlobService does
         not provide any method to do that)
@@ -367,11 +432,14 @@ class ByReference_Converters(object):
 
         return 'DefaultEndpointsProtocol=https;AccountName=' + blob_service.account_name + ';AccountKey=' + blob_service.account_key
 
-
     @staticmethod
-    def create_blobcsvref(blob_service: BlockBlobService, blob_container: str,
-                          blob_name: str, blob_path_prefix: str = None, blob_name_prefix: str = None) \
-            -> Tuple[Dict[str, str], str]:
+    def create_blobcsvref(blob_service,           # type: BlockBlobService
+                          blob_container,         # type: str
+                          blob_name,              # type: str
+                          blob_path_prefix=None,  # type: str
+                          blob_name_prefix=None   # type: str
+                          ):
+        # type: (...) -> Tuple[Dict[str, str], str]
         """
         Utility method to create a reference to a blob, whether it exists or not
 
@@ -403,11 +471,16 @@ class ByReference_Converters(object):
                 'RelativeLocation': blob_container + '/' + blob_path_prefix + blob_name_prefix + blob_name + '.csv'}, \
                blob_full_name
 
-
     @staticmethod
-    def csv_to_blobcsvref(csv_str: str, blob_service: BlockBlobService, blob_container: str,
-                          blob_name: str, blob_path_prefix: str = None, blob_name_prefix: str = None,
-                          charset: str = None) -> Dict[str, str]:
+    def csv_to_blobcsvref(csv_str,                # type: str
+                          blob_service,           # type: BlockBlobService
+                          blob_container,         # type: str
+                          blob_name,              # type: str
+                          blob_path_prefix=None,  # type: str
+                          blob_name_prefix=None,  # type: str
+                          charset=None            # type: str
+                          ):
+        # type: (...) -> Dict[str, str]
 
         # setup the charset used for file encoding
         if charset is None:
@@ -462,8 +535,11 @@ class ByReference_Converters(object):
         return blob_reference
 
     @staticmethod
-    def blobcsvref_to_csv(blob_reference: dict, blob_name:str=None, encoding:str = None,
-                          requests_session : requests.Session = None):
+    def blobcsvref_to_csv(blob_reference,        # type: Dict
+                          blob_name=None,        # type: str
+                          encoding=None,         # type: str
+                          requests_session=None  # type: requests.Session
+                          ):
         """
         Reads a CSV referenced according to the format defined by AzureML, and transforms it into a Dataframe
 
@@ -495,9 +571,15 @@ class ByReference_Converters(object):
             raise ValueError('Blob reference is invalid: it should contain ConnectionString and RelativeLocation fields')
 
     @staticmethod
-    def df_to_blobcsvref(df: pandas.DataFrame, blob_service: BlockBlobService, blob_container: str,
-                         blob_name: str, blob_path_prefix: str = None, blob_name_prefix: str = None,
-                         charset: str = None) -> Dict[str, str]:
+    def df_to_blobcsvref(df,                # type: pandas.DataFrame
+                         blob_service,      # type: BlockBlobService
+                         blob_container,    # type: str
+                         blob_name,         # type: str
+                         blob_path_prefix=None,  # type: str
+                         blob_name_prefix=None,  # type: str
+                         charset=None            # type: str
+                         ):
+        # type: (...) -> Dict[str, str]
         """
         right now in two steps : first create the csv, then upload it.
 
@@ -522,8 +604,11 @@ class ByReference_Converters(object):
                                                         blob_name=blob_name, charset=charset)
 
     @staticmethod
-    def blobcsvref_to_df(blob_reference: dict, blob_name: str = None, encoding: str = None,
-                         requests_session : requests.Session = None):
+    def blobcsvref_to_df(blob_reference,        # type: Dict
+                         blob_name=None,        # type: str
+                         encoding=None,         # type: str
+                         requests_session=None  # type: requests.Session
+                         ):
         """
         Reads a CSV blob referenced according to the format defined by AzureML, and transforms it into a Dataframe
 
@@ -553,9 +638,13 @@ class ByReference_Converters(object):
 class Collection_Converters(object):
 
     @staticmethod
-    def create_blob_csv_ref_dict(blob_service: BlockBlobService, blob_container: str,
-                                 blob_names: List[str], blob_path_prefix: str = None,
-                                 blob_name_prefix:str = None) -> Dict[str, Dict[str, str]]:
+    def create_blob_csv_ref_dict(blob_service,           # type: BlockBlobService
+                                 blob_container,         # type: str
+                                 blob_names,             # type : List[str]
+                                 blob_path_prefix=None,  # type: str
+                                 blob_name_prefix=None   # type: str
+                                 ):
+        # type: (...) -> Dict[str, Dict[str, str]]
         """
         Utility method to create one or several blob references on the same container on the same blob storage service.
 
@@ -575,8 +664,10 @@ class Collection_Converters(object):
                 for blobName in blob_names}
 
     @staticmethod
-    def dfdict_to_csvdict(dataframesDict: Dict[str, pandas.DataFrame], charset: str = None) -> Dict[
-        str, str]:
+    def dfdict_to_csvdict(dataframesDict,   # type: Dict[str, pandas.DataFrame]
+                          charset=None      # type: str
+                          ):
+        # type: (...) -> Dict[str, str]
         """
         Helper method to create CSVs compliant with AzureML web service BATCH inputs, from a dictionary of input dataframes
 
@@ -589,7 +680,9 @@ class Collection_Converters(object):
 
 
     @staticmethod
-    def csvdict_to_dfdict(csvsDict: Dict[str, str]) -> Dict[str, pandas.DataFrame]:
+    def csvdict_to_dfdict(csvsDict  # type: Dict[str, str]
+                          ):
+        # type: (...) -> Dict[str, pandas.DataFrame]
         """
         Helper method to read CSVs compliant with AzureML web service BATCH inputs/outputs, into a dictionary of Dataframes
 
@@ -602,8 +695,9 @@ class Collection_Converters(object):
 
 
     @staticmethod
-    def dfdict_to_azmltablesdict(dataframesDict: Dict[str, pandas.DataFrame]) -> Dict[
-        str, Dict[str, Union[str, Dict[str, List]]]]:
+    def dfdict_to_azmltablesdict(dataframesDict  # type: Dict[str, pandas.DataFrame]
+                                 ):
+        # type: (...) -> Dict[str, Dict[str, Union[str, Dict[str, List]]]]
         """
         Converts a dictionary of dataframes into a dictionary of dictionaries following the structure
         required for AzureML JSON conversion
@@ -621,8 +715,10 @@ class Collection_Converters(object):
         return {dfName: Converters.df_to_azmltable(df, df_name=dfName) for dfName, df in dataframesDict.items()}
 
     @staticmethod
-    def azmltablesdict_to_dfdict(azmlTablesDict: Dict[str, Dict[str, Union[str, Dict[str, List]]]],
-                                 isAzureMlOutput: bool = False) -> Dict[str, pandas.DataFrame]:
+    def azmltablesdict_to_dfdict(azmlTablesDict,        # type: Dict[str, Dict[str, Union[str, Dict[str, List]]]]
+                                 isAzureMlOutput=False  # type: bool
+                                 ):
+        # type: (...) -> Dict[str, pandas.DataFrame]
 
         _check_not_none_and_typed(azmlTablesDict, var_type=dict, var_name='azmlTablesDict')
 
@@ -631,8 +727,11 @@ class Collection_Converters(object):
                 for input_name, dict_table in azmlTablesDict.items()}
 
     @staticmethod
-    def blobcsvrefdict_to_csvdict(blobcsvReferences: Dict[str, Dict[str, str]], charset: str = None,
-                                  requests_session : requests.Session = None) -> Dict[str, str]:
+    def blobcsvrefdict_to_csvdict(blobcsvReferences,     # type: Dict[str, Dict[str, str]]
+                                  charset=None,          # type: str
+                                  requests_session=None  # type: requests.Session
+                                  ):
+        # type: (...) -> Dict[str, str]
         """
 
         :param blobcsvReferences:
@@ -649,10 +748,14 @@ class Collection_Converters(object):
 
 
     @staticmethod
-    def csvdict_to_blobcsvrefdict(csvsDict: Dict[str, str], blob_service: BlockBlobService,
-                                  blob_container: str, blob_path_prefix: str = None,
-                                  blob_name_prefix: str = None, charset: str = None) \
-            -> Dict[str, Dict[str, str]]:
+    def csvdict_to_blobcsvrefdict(csvsDict,               # type: Dict[str, str]
+                                  blob_service,           # type: BlockBlobService
+                                  blob_container,         # type: str
+                                  blob_path_prefix=None,  # type: str
+                                  blob_name_prefix=None,  # type: str
+                                  charset=None            # type: str
+                                  ):
+        # type: (...) -> Dict[str, Dict[str, str]]
         """
         Utility method to push all inputs described in the provided dictionary into the selected blob storage on the cloud.
         Each input is an entry of the dictionary and containg the description of the input reference as dictionary.
@@ -680,9 +783,11 @@ class Collection_Converters(object):
 
 
     @staticmethod
-    def blobcsvrefdict_to_dfdict(blobReferences: Dict[str, Dict[str, str]], charset: str = None,
-                                 requests_session: requests.Session = None) \
-            -> Dict[str, pandas.DataFrame]:
+    def blobcsvrefdict_to_dfdict(blobReferences,        # type: Dict[str, Dict[str, str]]
+                                 charset=None,          # type: str
+                                 requests_session=None  # type: requests.Session
+                                 ):
+        # type: (...) -> Dict[str, pandas.DataFrame]
         """
         Reads Blob references, for example responses from an AzureMl Batch web service call, into a dictionary of
         pandas dataframe
@@ -699,9 +804,14 @@ class Collection_Converters(object):
                 for blobName, csvBlobRef in blobReferences.items()}
 
     @staticmethod
-    def dfdict_to_blobcsvrefdict(dataframesDict: Dict[str, pandas.DataFrame], blob_service: BlockBlobService,
-                                 blob_container: str, blob_path_prefix: str = None, blob_name_prefix: str = None,
-                                 charset: str = None) -> Dict[str, Dict[str, str]]:
+    def dfdict_to_blobcsvrefdict(dataframesDict,         # type: Dict[str, pandas.DataFrame]
+                                 blob_service,           # type: BlockBlobService
+                                 blob_container,         # type: str
+                                 blob_path_prefix=None,  # type: str
+                                 blob_name_prefix=None,  # type: str
+                                 charset=None            # type: str
+                                 ):
+        # type: (...) -> Dict[str, Dict[str, str]]
 
         _check_not_none_and_typed(dataframesDict, dict, 'dataframesDict')
 
@@ -728,3 +838,7 @@ def convert_all_datetime_columns(df):
         except Exception:
             # silently escape, do not convert
             pass
+
+
+def is_datetime_dtype(dtyp):
+    return np.issubdtype(dtyp.base, np.dtype(np.datetime64))

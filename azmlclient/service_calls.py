@@ -1,13 +1,17 @@
 import json
 import time
-import typing
 import urllib
 from datetime import datetime
 
 import pandas
 import requests
-from azure.storage.blob import BlockBlobService
 
+try:  # python 3.5+
+    from typing import List, Dict, Tuple
+except ImportError:
+    pass
+
+from azure.storage.blob import BlockBlobService
 from azmlclient.data_binding import AzmlException, Converters, Collection_Converters, _check_not_none_and_typed
 
 
@@ -19,10 +23,14 @@ class JobExecutionException(Exception):
     """ This is raised whenever a job ended in failed mode"""
 
 
-def create_session_for_proxy(http_proxyhost: str, http_proxyport: int,
-                             https_proxyhost: str = None, https_proxyport: str = None,
-                             use_http_for_https_proxy: bool = False,
-                             ssl_verify = None) -> requests.Session:
+def create_session_for_proxy(http_proxyhost,                  # type: str
+                             http_proxyport,                  # type: int
+                             https_proxyhost=None,            # type: str
+                             https_proxyport=None,            # type: str
+                             use_http_for_https_proxy=False,  # type: bool
+                             ssl_verify=None
+                             ):
+    # type: (...) -> requests.Session
     """
     Helper method to configure the request package to use the proxy fo your choice and adapt the SSL certificate
     validation accordingly
@@ -81,9 +89,15 @@ def create_session_for_proxy(http_proxyhost: str, http_proxyport: int,
     return s
 
 
-def execute_rr(api_key: str, base_url: str, inputs: typing.Dict[str, pandas.DataFrame] = None,
-               params = None, output_names: typing.List[str] = None,
-               use_new_ws: bool = False, requests_session: requests.Session = None) -> typing.Dict[str, pandas.DataFrame]:
+def execute_rr(api_key,               # type: str
+               base_url,              # type: str
+               inputs=None,           # type: typing.Dict[str, pandas.DataFrame]
+               params=None,
+               output_names=None,     # type: List[str]
+               use_new_ws=False,      # type: bool
+               requests_session=None  # type: requests.Session
+               ):
+    # type: (...) -> Dict[str, pandas.DataFrame]
     """
     Utility method to execute an AzureMl web service in request response mode
 
@@ -112,12 +126,20 @@ def execute_rr(api_key: str, base_url: str, inputs: typing.Dict[str, pandas.Data
     return result_dfDict
 
 
-def execute_bes(api_key: str, base_url: str, blob_storage_account: str, blob_storage_apikey: str, blob_container: str,
-                blob_path_prefix:str = None, blob_charset:str = None,
-                inputs: typing.Dict[str, pandas.DataFrame] = None,
-                params = None, output_names: typing.List[str] = None,
-                nb_seconds_between_status_queries: int = 5,
-                use_new_ws: bool = False, requests_session: requests.Session = None):
+def execute_bes(api_key,                              # type: str
+                base_url,                             # type: str
+                blob_storage_account,                 # type: str
+                blob_storage_apikey,                  # type: str
+                blob_container,                       # type: str
+                blob_path_prefix=None,                # type: str
+                blob_charset=None,                    # type: str
+                inputs=None,                          # type: Dict[str, pandas.DataFrame]
+                params=None,
+                output_names=None,                    # type: List[str]
+                nb_seconds_between_status_queries=5,  # type: int
+                use_new_ws=False,                     # type: bool
+                requests_session=None                 # type: requests.Session
+                ):
     """
     Utility method to execute an azureML web service in batch mode. Job status is queried every 5 seconds by default, you may wish to change that number.
 
@@ -215,13 +237,24 @@ class _BaseHttpClient(object):
         # )
 
     @staticmethod
-    def _azureml_simple_httpCall(api_key, requestJsonBodyStr, url, method, use_new_ws: bool = False):
+    def _azureml_simple_httpCall(api_key,
+                                 requestJsonBodyStr,
+                                 url,
+                                 method,
+                                 use_new_ws=False  # type: bool
+                                 ):
         # create a default client
         c = _BaseHttpClient()
         return c._azureml_httpCall(api_key, requestJsonBodyStr, url, method, use_new_ws)
 
 
-    def _azureml_httpCall(self, api_key, requestJsonBodyStr, url, method, use_new_ws: bool = False):
+    def _azureml_httpCall(self,
+                          api_key,
+                          requestJsonBodyStr,
+                          url,
+                          method,
+                          use_new_ws=False  # type: bool
+                          ):
         """
         Utility method to perform an HTTP request to AzureML service.
 
@@ -252,8 +285,12 @@ class _BaseHttpClient(object):
 
         return jsonResult
 
-
-    def _http_call(self, body, headers, method: str, url):
+    def _http_call(self,
+                   body,
+                   headers,
+                   method,  # type: str
+                   url
+                   ):
         """
         Sub-routine for HTTP web service call. If Body is None, a GET is performed
 
@@ -322,11 +359,16 @@ class RR_Client(_BaseHttpClient):
     A class providing static methods to perform Request-response calls to AzureML web services
     """
 
-    def __init__(self, requests_session: requests.Session = None):
+    def __init__(self,
+                 requests_session=None  # type: requests.Session
+                 ):
         super(RR_Client, self).__init__(requests_session=requests_session)
 
-    def create_request_body(self, input_df_dict: typing.Dict[str, pandas.DataFrame] = None,
-                            params_df_or_dict: pandas.DataFrame = None) -> str:
+    def create_request_body(self,
+                            input_df_dict=None,     # type: Dict[str, pandas.DataFrame]
+                            params_df_or_dict=None  # type: pandas.DataFrame
+                            ):
+        # type -> str
         """
         An alias to the static method
         :param input_df_dict:
@@ -336,8 +378,10 @@ class RR_Client(_BaseHttpClient):
         return RR_Client.create_request_body_static(input_df_dict, params_df_or_dict)
 
     @staticmethod
-    def create_request_body_static(input_df_dict: typing.Dict[str, pandas.DataFrame]=None,
-                                   params_df_or_dict: pandas.DataFrame=None) -> str:
+    def create_request_body_static(input_df_dict=None,     # type: Dict[str, pandas.DataFrame]
+                                   params_df_or_dict=None  # type: pandas.DataFrame
+                                   ):
+        # type: (...) -> str
         """
         Helper method to create a JSON AzureML web service input from inputs and parameters dataframes
 
@@ -371,8 +415,13 @@ class RR_Client(_BaseHttpClient):
         jsonBodyStr = Converters.dict_to_jsonstr(bodyDict)
         return jsonBodyStr
 
-
-    def execute_rr(self, base_url: str, api_key: str, request_body_json: str, use_new_ws: bool = False) -> str:
+    def execute_rr(self,
+                   base_url,           # type: str
+                   api_key,            # type: str
+                   request_body_json,  # type: str
+                   use_new_ws=False    # type: bool
+                   ):
+        # type: (...) -> str
         """
         Performs a web service call to AzureML using Request-response mode (synchronous, by value).
         Supports Fiddler capture for debug.
@@ -389,8 +438,11 @@ class RR_Client(_BaseHttpClient):
         jsonResult = self._azureml_httpCall(api_key, request_body_json, requestResponseUrl, 'POST', use_new_ws)
         return jsonResult
 
-    def read_response_json_body(self, body_json: str, output_names: typing.List[str] = None) -> typing.Dict[
-        str, pandas.DataFrame]:
+    def read_response_json_body(self,
+                                body_json,         # type: str
+                                output_names=None  # type: List[str]
+                                ):
+        # type: (...) -> Dict[str, pandas.DataFrame]
         """
         An alias to the static method
         :param body_json:
@@ -400,7 +452,10 @@ class RR_Client(_BaseHttpClient):
         return RR_Client.read_response_json_body_static(body_json, output_names)
 
     @staticmethod
-    def read_response_json_body_static(body_json: str, output_names: typing.List[str]=None) -> typing.Dict[str, pandas.DataFrame]:
+    def read_response_json_body_static(body_json,         # type: str
+                                       output_names=None  # type: List[str]
+                                       ):
+        # type: (...) -> Dict[str, pandas.DataFrame]
         """
         Reads a response body from a request-response web service call, into a dictionary of pandas dataframe
 
@@ -430,7 +485,9 @@ class RR_Client(_BaseHttpClient):
 
 
     @staticmethod
-    def decode_request_json_body(body_json: str) -> typing.Tuple[typing.Dict[str, pandas.DataFrame], typing.Dict]:
+    def decode_request_json_body(body_json  # type: str
+                                 ):
+        # type: (...) -> Tuple[Dict[str, pandas.DataFrame], Dict]
         """
         Reads a request body from a request-response web service call, into a dictionary of pandas dataframe + a
         dictionary of parameters. This is typically useful if you want to debug a request provided by someone else.
@@ -448,16 +505,20 @@ class RR_Client(_BaseHttpClient):
 class Batch_Client(_BaseHttpClient):
     """ This class provides static methods to call AzureML services in batch mode"""
 
-    def __init__(self, requests_session: requests.Session = None):
+    def __init__(self,
+                 requests_session=None  # type: requests.Session
+                 ):
         super(Batch_Client, self).__init__(requests_session=requests_session)
 
-
-    def push_inputs_to_blob__and__create_output_references(self, inputs_df_dict: typing.Dict[str, pandas.DataFrame],
-                                                           blob_service: BlockBlobService, blob_container: str,
-                                                           blob_path_prefix: str = None, charset: str = None,
-                                                           output_names: typing.List[str] = None
-                                                           ) -> \
-        typing.Tuple[typing.Dict[str, typing.Dict[str, str]], typing.Dict[str, typing.Dict[str, str]]]:
+    def push_inputs_to_blob__and__create_output_references(self,
+                                                           inputs_df_dict,         # type: Dict[str, pandas.DataFrame]
+                                                           blob_service,           # type: BlockBlobService
+                                                           blob_container,         # type: str
+                                                           blob_path_prefix=None,  # type: str
+                                                           charset=None,           # type: str
+                                                           output_names=None       # type: List[str]
+                                                           ):
+        # type: (...) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]
         """
         Utility method to push all inputs from the provided dictionary into the selected blob storage on the cloud.
         Each input is an entry of the dictionary and should be a Dataframe.
@@ -500,9 +561,12 @@ class Batch_Client(_BaseHttpClient):
         return inputReferences, outputReferences
 
 
-    def create_request_body(self, input_refs: typing.Dict[str, typing.Dict[str, str]] = None,
+    def create_request_body(self,
+                            input_refs=None,          # type: Dict[str, Dict[str, str]]
                             params_Df_or_Dict=None,
-                            output_refs: typing.Dict[str, typing.Dict[str, str]] = None) -> str:
+                            output_refs=None          # type: Dict[str, Dict[str, str]]
+                            ):
+        # type: (...) -> str
         """
         Alias to the static method
         :param input_refs:
@@ -514,9 +578,11 @@ class Batch_Client(_BaseHttpClient):
 
 
     @staticmethod
-    def create_request_body_static(input_refs: typing.Dict[str, typing.Dict[str, str]]=None,
+    def create_request_body_static(input_refs=None,         # type: Dict[str, Dict[str, str]]
                                    params_Df_or_Dict=None,
-                                   output_refs: typing.Dict[str, typing.Dict[str, str]]=None) -> str:
+                                   output_refs=None         # type: Dict[str, Dict[str, str]]
+                                   ):
+        # type: (...) -> str
         """
         Helper method to create a JSON AzureML web service input in Batch mode, from 'by reference' inputs, and parameters as dataframe
 
@@ -545,8 +611,13 @@ class Batch_Client(_BaseHttpClient):
         jsonBodyStr = Converters.dict_to_jsonstr(bodyDict)
         return jsonBodyStr
 
-
-    def execute_batch_createJob(self, base_url: str, api_key: str, request_json_body: str, use_new_ws: bool = False) -> str:
+    def execute_batch_createJob(self,
+                                base_url,           # type: str
+                                api_key,            # type: str
+                                request_json_body,  # type: str
+                                use_new_ws=False    # type: bool
+                                ):
+        # type: (...) -> str
         """
         Performs a web service call to AzureML using Batch mode (asynchronous, by reference).
         Supports Fiddler capture for debug.
@@ -568,9 +639,12 @@ class Batch_Client(_BaseHttpClient):
         else:
             return jsonJobId
 
-
-
-    def execute_batch_startJob(self, base_url: str, api_key: str, job_id: str, use_new_ws: bool = False):
+    def execute_batch_startJob(self,
+                               base_url,         # type: str
+                               api_key,          # type: str
+                               job_id,           # type: str
+                               use_new_ws=False  # type: bool
+                               ):
         """
         Starts an AzureML Batch job (asynchronous, by reference).
         Supports Fiddler capture for debug.
@@ -587,9 +661,13 @@ class Batch_Client(_BaseHttpClient):
         self._azureml_httpCall(api_key, None, batchUrl, method='POST', use_new_ws=use_new_ws)
         return
 
-
-
-    def execute_batch_getJobStatusOrResult(self, base_url: str, api_key: str, job_id: str, use_new_ws: bool = False) -> str:
+    def execute_batch_getJobStatusOrResult(self,
+                                           base_url,          # type: str
+                                           api_key,           # type: str
+                                           job_id,            # type: str
+                                           use_new_ws=False,  # type: bool
+                                           ):
+        # type: (...) -> str
         """
         Gets the status or the result of an AzureML Batch job (asynchronous, by reference).
         Supports Fiddler capture for debug.
@@ -606,7 +684,10 @@ class Batch_Client(_BaseHttpClient):
                                                               use_new_ws=use_new_ws)
         return jsonJobStatusOrResult
 
-    def read_status_or_result(self, jobstatus_or_result_json: str) -> typing.Dict[str, typing.Dict[str, str]]:
+    def read_status_or_result(self,
+                              jobstatus_or_result_json  # type: str
+                              ):
+        # type: (...) -> Dict[str, Dict[str, str]]
         """
         An alias to the static method
 
@@ -615,9 +696,10 @@ class Batch_Client(_BaseHttpClient):
         """
         return Batch_Client.read_status_or_result_static(jobstatus_or_result_json)
 
-
     @staticmethod
-    def read_status_or_result_static(jobstatus_or_result_json: str) -> typing.Dict[str, typing.Dict[str, str]]:
+    def read_status_or_result_static(jobstatus_or_result_json  # type: str
+                                     ):
+        # type: (...) -> Dict[str, Dict[str, str]]
         """
         Reads the status or the result of an AzureML Batch job (asynchronous, by reference).
         Throws an error if the status is an error, or an empty result if the status is a
@@ -644,9 +726,12 @@ class Batch_Client(_BaseHttpClient):
 
         return jobstatus_or_result_json
 
-
-
-    def execute_batch_deleteJob(self, base_url: str, api_key: str, job_id: str, use_new_ws: bool = False):
+    def execute_batch_deleteJob(self,
+                                base_url,  # type: str
+                                api_key,  # type: str
+                                job_id,  # type: str
+                                use_new_ws=False,  # type: bool
+                                ):
         """
         Deletes an AzureML Batch job (asynchronous, by reference).
         Supports Fiddler capture for debug.
