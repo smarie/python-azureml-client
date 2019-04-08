@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
@@ -28,7 +27,6 @@ def test_df_to_azmltable(df):
 
 def test_df_to_json(df):
     """ Tests that a dataframe can be converted to azureml json representation and back. """
-    df = read_csv_test_file('./test_data/dummy_data.csv')
 
     azt = Converters.df_to_azmltable(df)
     js = Converters.azmltable_to_jsonstr(azt)
@@ -40,7 +38,6 @@ def test_df_to_json(df):
 
 def test_df_to_csv(df):
     """ Tests that a dataframe can be converted to csv (for blob storage) and back. """
-    df = read_csv_test_file('./test_data/dummy_data.csv')
 
     csvstr = Converters.df_to_csv(df)
     df2 = Converters.csv_to_df(csvstr)
