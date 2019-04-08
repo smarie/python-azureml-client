@@ -37,6 +37,7 @@ def _check_not_none_and_typed(var, var_type=None, var_name=None):
                     type(var)))
     return
 
+
 class AzmlException(Exception):
     """
     Represents an AzureMl exception, built from an HTTP error body received from AzureML.
@@ -119,8 +120,7 @@ class Converters(object):
                          index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
 
     @staticmethod
-    def csv_to_df(csv_buffer_or_str_or_filepath: str, csv_name: str = None,
-                  first_col_is_datetime: bool = True) -> pandas.DataFrame:
+    def csv_to_df(csv_buffer_or_str_or_filepath: str, csv_name: str = None) -> pandas.DataFrame:
         """
         Helper method to ensure consistent reading in particular for timezones and datetime parsing
 
@@ -133,9 +133,11 @@ class Converters(object):
         if isinstance(csv_buffer_or_str_or_filepath, str):
             csv_buffer_or_str_or_filepath = StringIO(csv_buffer_or_str_or_filepath)
 
-        # read with parse dates (unfortunately right now this only parses the first one)
-        date_kwargs = dict(infer_datetime_format=True, parse_dates=[0]) if first_col_is_datetime else dict()
-        res = pandas.read_csv(csv_buffer_or_str_or_filepath, sep=',', decimal='.', **date_kwargs)
+        # read without parsing dates
+        res = pandas.read_csv(csv_buffer_or_str_or_filepath, sep=',', decimal='.')  # infer_datetime_format=True, parse_dates=[0]
+
+        # -- try to infer datetime columns
+        convert_all_datetime_columns(res)
 
         # -- additionally we automatically configure the timezone as UTC
         datetimeColumns = [colName for colName, colType in res.dtypes.items() if
@@ -163,12 +165,13 @@ class Converters(object):
             # use this method recursively, in 'not output' mode
             return {'type': 'table', 'value': Converters.df_to_azmltable(df, df_name=df_name)}
         else:
-            return {'ColumnNames': df.columns.values.tolist(), "Values": df.values.tolist()}
-
+            return {'ColumnNames': df.columns.values.tolist(),
+                    # "ColumnTypes": [dtype_to_azmltyp(dt) for dt in df.dtypes], dont do it, no reliable mapping anyway
+                    "Values": df.values.tolist()}
 
     @staticmethod
     def azmltable_to_df(azmltable_dict: Dict[str, Union[str, Dict[str, List]]],
-                        is_azml_output: bool = False, table_name: str = None, first_col_is_datetime: bool = True) \
+                        is_azml_output: bool = False, table_name: str = None) \
             -> pandas.DataFrame:
         """
         Converts an AzureML table (JSON-like dictionary) into a dataframe. Since two formats exist (one for inputs and
@@ -218,8 +221,7 @@ class Converters(object):
                     writer.writerows([azmltable_dict['ColumnNames']])
                     writer.writerows(values)
                     # -- and then we parse with pandas
-                    res = Converters.csv_to_df(io.StringIO(buffer.getvalue()),
-                                               first_col_is_datetime=first_col_is_datetime)
+                    res = Converters.csv_to_df(io.StringIO(buffer.getvalue()))
                     buffer.close()
 
                 else:
@@ -618,16 +620,15 @@ class Collection_Converters(object):
 
         return {dfName: Converters.df_to_azmltable(df, df_name=dfName) for dfName, df in dataframesDict.items()}
 
-
     @staticmethod
     def azmltablesdict_to_dfdict(azmlTablesDict: Dict[str, Dict[str, Union[str, Dict[str, List]]]],
                                  isAzureMlOutput: bool = False) -> Dict[str, pandas.DataFrame]:
 
         _check_not_none_and_typed(azmlTablesDict, var_type=dict, var_name='azmlTablesDict')
 
-        return { dfName: Converters.azmltable_to_df(dictio, is_azml_output=isAzureMlOutput, table_name=dfName)
-                 for dfName, dictio in azmlTablesDict.items()}
-
+        return {input_name: Converters.azmltable_to_df(dict_table,
+                                                       is_azml_output=isAzureMlOutput, table_name=input_name)
+                for input_name, dict_table in azmlTablesDict.items()}
 
     @staticmethod
     def blobcsvrefdict_to_csvdict(blobcsvReferences: Dict[str, Dict[str, str]], charset: str = None,
@@ -710,3 +711,20 @@ class Collection_Converters(object):
                                                                   blob_name_prefix=blob_name_prefix,
                                                                   blob_name=blobName, charset=charset)
                 for blobName, csvStr in dataframesDict.items()}
+
+
+def convert_all_datetime_columns(df):
+    """
+    Utility method to try to convert all datetime columns in the provided dataframe, inplace.
+    Note that only columns with dtype 'object' are considered as possible candidates.
+
+    :param df:
+    :return:
+    """
+    objColumns = [colName for colName, colType in df.dtypes.items() if colType == np.dtype('O')]
+    for obj_col_name in objColumns:
+        try:
+            df[obj_col_name] = pandas.to_datetime(df[obj_col_name])
+        except Exception:
+            # silently escape, do not convert
+            pass
