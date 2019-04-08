@@ -30,19 +30,19 @@ You may use it for example
 First create variables holding the endpoint information provided by AzureML
 
 ```python
-base_url = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
+base_url = 'https://<geo>.services.azureml.net/workspaces/<wId>/services/<sId>'
 api_key = '<apiKey>'
-use_new_ws = False
+use_new_ws = True  # 'new' style web service endpoint
 ```
 
 Then create 
 
- * the inputs - a dictionary containing all you inputs as dataframe objects
+ * the inputs - a dictionary containing all you inputs as `pandas.Dataframe` objects
  * the parameters - a dictionary
- * and optionally provide a list of expected output names
+ * and optionally define a list of expected output names
         
 ```python
-inputs = {"trainDataset": trainingDataDf, "input2": input2Df}
+inputs = {"trainDataset": training_df, "input2": input2_df}
 params = {"param1": "val1", "param2": "val2"}
 output_names = ["my_out1","my_out2"]
 ```
@@ -51,7 +51,8 @@ Finally call in Request-Response mode:
 
 ```python
 from azmlclient import execute_rr
-outputs = execute_rr(api_key, base_url, inputs=inputs, params=params, output_names=output_names)
+outputs = execute_rr(api_key, base_url, 
+                     inputs=inputs, params=params, output_names=output_names)
 ```
 
 Or in Batch mode. In this case you also need to configure the Blob storage to be used:
@@ -60,26 +61,28 @@ Or in Batch mode. In this case you also need to configure the Blob storage to be
 from azmlclient import execute_bes
 
 # Define the blob storage to use for storing inputs and outputs
-blob_account = '<account_id>'
-blob_apikey = '<api_key>'
-blob_container = '<container>'
-blob_path_prefix = '<path_prefix>'
+blob_account = '<account_id>'       # 'myblobs'
+blob_apikey = '<api_key>'           # 'mi3Qxcd5rwuM9r5k7h2ipXNww2T0Bw=='
+blob_container = '<container>'      # 'rootcontainer'
+blob_path_prefix = '<path_prefix>'  # 'folder/path'
 
-# Perform the call (polling is done every 5s until job end)
+# Perform the call (polling is done by default every 5s until job end)
 outputs = execute_bes(api_key, base_url,
-                          blob_storage_account, blob_storage_apikey, blob_container_for_ios, 
-						  blob_path_prefix=blob_path_prefix,
-                          inputs=inputs, params=params, output_names=output_names)
+                      blob_account, blob_apikey, blob_container, 
+                      blob_path_prefix=blob_path_prefix,
+                      inputs=inputs, params=params, output_names=output_names)
 ```
 
 ### Debug and proxies
 
-Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use `Fiddler` as a proxy to debug the web service calls: 
+Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use [`Fiddler`](https://www.telerik.com/fiddler) as a proxy to debug the web service calls: 
 
 ```python
 from azmlclient import create_session_for_proxy
-session = create_session_for_proxy(http_proxyhost='localhost', http_proxyport=8888, 
-									  use_http_for_https_proxy=True, ssl_verify=False)
+session = create_session_for_proxy(http_proxyhost='localhost', 
+                                   http_proxyport=8888, 
+                                   use_http_for_https_proxy=True,
+                                   ssl_verify=False)
 ```
 
 Then you may use that object in the `requests_session` parameter of the methods: 
@@ -93,10 +96,23 @@ Note that the session object will be passed to the underlying azure blob storage
 
 ### Advanced usage
 
-Advanced users may directly create `Batch_Client` or `RR_Client` classes to better control what's happening.
+Advanced users may with to create `Batch_Client` or `RR_Client` classes to better control what's happening.
 
-An optional parameter allow to work with the 'new web services' mode (`use_new_ws = True` - still evolving on MS side, so will need to be updated).
+```python
+from azmlclient import RR_Client
 
+# 0- Create the client
+rr_client = RR_Client(requests_session=requests_session)
+
+# 1- Create the query body
+request_body = rr_client.create_request_body(inputs, params)
+
+# 2- Execute the query and receive the response body
+response_body = rr_client.execute_rr(base_url, api_key, request_body,
+                                     use_new_ws=use_new_ws)
+# 3- parse the response body into a dictionary of dataframes
+result_dfs = rr_client.read_response_json_body(response_body, output_names)
+```
 
 ## Main features
 
