@@ -347,42 +347,6 @@
 
 
   <li class="md-nav__item">
-    <a href="motivation.md" title="Motivation" class="md-nav__link">
-      Motivation
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="disambiguation.md" title="Disambiguation principes" class="md-nav__link">
-      Disambiguation principes
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="pep_proposal.md" title="PEP proposal" class="md-nav__link">
-      PEP proposal
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
     <a href="changelog/" title="Changelog" class="md-nav__link">
       Changelog
     </a>
@@ -526,19 +490,19 @@
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <h3 id="first-examples">First examples<a class="headerlink" href="#first-examples" title="Permanent link">&para;</a></h3>
 <p>First create variables holding the endpoint information provided by AzureML</p>
-<div class="codehilite"><pre><span></span><span class="n">base_url</span> <span class="o">=</span> <span class="s1">&#39;https://europewest.services.azureml.net/workspaces/&lt;workspaceId&gt;/services/&lt;serviceId&gt;&#39;</span>
+<div class="codehilite"><pre><span></span><span class="n">base_url</span> <span class="o">=</span> <span class="s1">&#39;https://&lt;geo&gt;.services.azureml.net/workspaces/&lt;wId&gt;/services/&lt;sId&gt;&#39;</span>
 <span class="n">api_key</span> <span class="o">=</span> <span class="s1">&#39;&lt;apiKey&gt;&#39;</span>
-<span class="n">use_new_ws</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">use_new_ws</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c1"># &#39;new&#39; style web service endpoint</span>
 </pre></div>
 
 
 <p>Then create </p>
 <ul>
-<li>the inputs - a dictionary containing all you inputs as dataframe objects</li>
+<li>the inputs - a dictionary containing all you inputs as <code>pandas.Dataframe</code> objects</li>
 <li>the parameters - a dictionary</li>
-<li>and optionally provide a list of expected output names</li>
+<li>and optionally define a list of expected output names</li>
 </ul>
-<div class="codehilite"><pre><span></span><span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;trainDataset&quot;</span><span class="p">:</span> <span class="n">trainingDataDf</span><span class="p">,</span> <span class="s2">&quot;input2&quot;</span><span class="p">:</span> <span class="n">input2Df</span><span class="p">}</span>
+<div class="codehilite"><pre><span></span><span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;trainDataset&quot;</span><span class="p">:</span> <span class="n">training_df</span><span class="p">,</span> <span class="s2">&quot;input2&quot;</span><span class="p">:</span> <span class="n">input2_df</span><span class="p">}</span>
 <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;param1&quot;</span><span class="p">:</span> <span class="s2">&quot;val1&quot;</span><span class="p">,</span> <span class="s2">&quot;param2&quot;</span><span class="p">:</span> <span class="s2">&quot;val2&quot;</span><span class="p">}</span>
 <span class="n">output_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;my_out1&quot;</span><span class="p">,</span><span class="s2">&quot;my_out2&quot;</span><span class="p">]</span>
 </pre></div>
@@ -546,7 +510,8 @@
 
 <p>Finally call in Request-Response mode:</p>
 <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">execute_rr</span>
-<span class="n">outputs</span> <span class="o">=</span> <span class="n">execute_rr</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">base_url</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="n">output_names</span><span class="p">)</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="n">execute_rr</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">base_url</span><span class="p">,</span> 
+                     <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="n">output_names</span><span class="p">)</span>
 </pre></div>
 
 
@@ -554,24 +519,26 @@
 <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">execute_bes</span>
 
 <span class="c1"># Define the blob storage to use for storing inputs and outputs</span>
-<span class="n">blob_account</span> <span class="o">=</span> <span class="s1">&#39;&lt;account_id&gt;&#39;</span>
-<span class="n">blob_apikey</span> <span class="o">=</span> <span class="s1">&#39;&lt;api_key&gt;&#39;</span>
-<span class="n">blob_container</span> <span class="o">=</span> <span class="s1">&#39;&lt;container&gt;&#39;</span>
-<span class="n">blob_path_prefix</span> <span class="o">=</span> <span class="s1">&#39;&lt;path_prefix&gt;&#39;</span>
+<span class="n">blob_account</span> <span class="o">=</span> <span class="s1">&#39;&lt;account_id&gt;&#39;</span>       <span class="c1"># &#39;myblobs&#39;</span>
+<span class="n">blob_apikey</span> <span class="o">=</span> <span class="s1">&#39;&lt;api_key&gt;&#39;</span>           <span class="c1"># &#39;mi3Qxcd5rwuM9r5k7h2ipXNww2T0Bw==&#39;</span>
+<span class="n">blob_container</span> <span class="o">=</span> <span class="s1">&#39;&lt;container&gt;&#39;</span>      <span class="c1"># &#39;rootcontainer&#39;</span>
+<span class="n">blob_path_prefix</span> <span class="o">=</span> <span class="s1">&#39;&lt;path_prefix&gt;&#39;</span>  <span class="c1"># &#39;folder/path&#39;</span>
 
-<span class="c1"># Perform the call (polling is done every 5s until job end)</span>
+<span class="c1"># Perform the call (polling is done by default every 5s until job end)</span>
 <span class="n">outputs</span> <span class="o">=</span> <span class="n">execute_bes</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">base_url</span><span class="p">,</span>
-                          <span class="n">blob_storage_account</span><span class="p">,</span> <span class="n">blob_storage_apikey</span><span class="p">,</span> <span class="n">blob_container_for_ios</span><span class="p">,</span> 
-                          <span class="n">blob_path_prefix</span><span class="o">=</span><span class="n">blob_path_prefix</span><span class="p">,</span>
-                          <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="n">output_names</span><span class="p">)</span>
+                      <span class="n">blob_account</span><span class="p">,</span> <span class="n">blob_apikey</span><span class="p">,</span> <span class="n">blob_container</span><span class="p">,</span> 
+                      <span class="n">blob_path_prefix</span><span class="o">=</span><span class="n">blob_path_prefix</span><span class="p">,</span>
+                      <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="n">output_names</span><span class="p">)</span>
 </pre></div>
 
 
 <h3 id="debug-and-proxies">Debug and proxies<a class="headerlink" href="#debug-and-proxies" title="Permanent link">&para;</a></h3>
-<p>Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use <code>Fiddler</code> as a proxy to debug the web service calls: </p>
+<p>Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use <a href="https://www.telerik.com/fiddler"><code>Fiddler</code></a> as a proxy to debug the web service calls: </p>
 <div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">create_session_for_proxy</span>
-<span class="n">session</span> <span class="o">=</span> <span class="n">create_session_for_proxy</span><span class="p">(</span><span class="n">http_proxyhost</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">http_proxyport</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> 
-                                      <span class="n">use_http_for_https_proxy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ssl_verify</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">create_session_for_proxy</span><span class="p">(</span><span class="n">http_proxyhost</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> 
+                                   <span class="n">http_proxyport</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> 
+                                   <span class="n">use_http_for_https_proxy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                   <span class="n">ssl_verify</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
 
 
@@ -583,8 +550,23 @@
 
 <p>Note that the session object will be passed to the underlying azure blob storage client to ensure consistency.</p>
 <h3 id="advanced-usage">Advanced usage<a class="headerlink" href="#advanced-usage" title="Permanent link">&para;</a></h3>
-<p>Advanced users may directly create <code>Batch_Client</code> or <code>RR_Client</code> classes to better control what's happening.</p>
-<p>An optional parameter allow to work with the 'new web services' mode (<code>use_new_ws = True</code> - still evolving on MS side, so will need to be updated).</p>
+<p>Advanced users may with to create <code>Batch_Client</code> or <code>RR_Client</code> classes to better control what's happening.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">RR_Client</span>
+
+<span class="c1"># 0- Create the client</span>
+<span class="n">rr_client</span> <span class="o">=</span> <span class="n">RR_Client</span><span class="p">(</span><span class="n">requests_session</span><span class="o">=</span><span class="n">requests_session</span><span class="p">)</span>
+
+<span class="c1"># 1- Create the query body</span>
+<span class="n">request_body</span> <span class="o">=</span> <span class="n">rr_client</span><span class="o">.</span><span class="n">create_request_body</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+
+<span class="c1"># 2- Execute the query and receive the response body</span>
+<span class="n">response_body</span> <span class="o">=</span> <span class="n">rr_client</span><span class="o">.</span><span class="n">execute_rr</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">request_body</span><span class="p">,</span>
+                                     <span class="n">use_new_ws</span><span class="o">=</span><span class="n">use_new_ws</span><span class="p">)</span>
+<span class="c1"># 3- parse the response body into a dictionary of dataframes</span>
+<span class="n">result_dfs</span> <span class="o">=</span> <span class="n">rr_client</span><span class="o">.</span><span class="n">read_response_json_body</span><span class="p">(</span><span class="n">response_body</span><span class="p">,</span> <span class="n">output_names</span><span class="p">)</span>
+</pre></div>
+
+
 <h2 id="main-features">Main features<a class="headerlink" href="#main-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too</li>

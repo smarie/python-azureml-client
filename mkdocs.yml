@@ -5,10 +5,6 @@ docs_dir: .
 site_dir: ../site
 nav:
     - Home: index.md
-    - Motivation: motivation.md
-    - Disambiguation principes: disambiguation.md
-#    - Usage details: usage_details.md
-    - PEP proposal: pep_proposal.md
     - Changelog: changelog.md
 
 theme: material  # readthedocs  mkdocs
