@@ -1,150 +1,36 @@
-# python-azureml-client
+# python-azmlclient
 
-An ***unofficial*** generic client stack for azureML web services, working with python 3.
- 
-As opposed to [AzureML client library](https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage), this library is much simpler and is only focused on consuming web services using python 3. It is compliant with all services deployed from AzureML experiments (using the AzureML drag'n drop UI), and should also work with python and R "dataframe" web services (not checked though). It does not require your AzureML workspace id and API key, only the deployed services' URL and API key.
+*An ***unofficial*** generic client stack for azureML web services, working with both python 2 and 3.*
 
-You may use it for example 
-* to show to your customers how to consume your AzureML cloud services.
-* to make simple 'edge' devices consume your AzureML cloud services (if they support python :) ).
+[![Python versions](https://img.shields.io/pypi/pyversions/azmlclient.svg)](https://pypi.python.org/pypi/azmlclient/) [![Build Status](https://travis-ci.org/smarie/python-azmlclient.svg?branch=master)](https://travis-ci.org/smarie/python-azmlclient) [![Tests Status](https://smarie.github.io/python-azmlclient/junit/junit-badge.svg?dummy=8484744)](https://smarie.github.io/python-azmlclient/junit/report.html) [![codecov](https://codecov.io/gh/smarie/python-azmlclient/branch/master/graph/badge.svg)](https://codecov.io/gh/smarie/python-azmlclient)
 
+[![Documentation](https://img.shields.io/badge/doc-latest-blue.svg)](https://smarie.github.io/python-azmlclient/) [![PyPI](https://img.shields.io/pypi/v/azmlclient.svg)](https://pypi.python.org/pypi/azmlclient/) [![Downloads](https://pepy.tech/badge/azmlclient)](https://pepy.tech/project/azmlclient) [![Downloads per week](https://pepy.tech/badge/azmlclient/week)](https://pepy.tech/project/azmlclient) [![GitHub stars](https://img.shields.io/github/stars/smarie/python-azmlclient.svg)](https://github.com/smarie/python-azmlclient/stargazers)
 
+**This is the readme for developers.** The documentation for users is available here: [https://smarie.github.io/python-azmlclient/](https://smarie.github.io/python-azmlclient/)
 
-## Main features
+## Want to contribute ?
 
-* Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too
-* Maps the errors to more friendly python exceptions
-* Supports both Request/Response and Batch mode
-* In Batch mode, performs all the Blob storage and retrieval for you.
-* Properly handles file encoding in both modes (`utf-8` is used by default as the pivot encoding)
-* Supports global `requests.Session` configuration to configure the HTTP clients behaviour (including the underlying blob storage client).
+Contributions are welcome ! Simply fork this project on github, commit your contributions, and create pull requests.
 
+Here is a non-exhaustive list of interesting open topics: [https://github.com/smarie/python-azmlclient/issues](https://github.com/smarie/python-azmlclient/issues)
 
-## Installation
+## Installing all requirements
 
-### Recommended : create a clean virtual environment
-
-We strongly recommend that you use conda *environment* or pip *virtualenv*/*venv* in order to better manage packages. Once you are in your virtual environment, open a terminal and check that the python interpreter is correct:
+In order to install all requirements, including those for tests and packaging, use the following command:
 
 ```bash
-(Windows)>  where python
-(Linux)  >  which python
+pip install -r ci_tools/requirements-pip.txt
 ```
 
-The first executable that should show up should be the one from the virtual environment.
+## Running the tests
 
-
-### Installation steps
-
-This package is available on `PyPI`. You may therefore use `pip` to install from a release
+This project uses `pytest`.
 
 ```bash
-> pip install azmlclient
+pytest -v azmlclient/tests/
 ```
 
-***Note for conda users***: The only drawback of the method above using `pip`, is that all dependencies (numpy, pandas, azure-storage) are automatically installed using `pip` too, and therefore are not downloaded from validated `conda` repositories. If you prefer to install them from `conda`, the workaround is to run the following command *before installing*:
-
-```bash
-> conda install numpy, pandas, azure-storage==0.33.0
-```
-
-### Uninstalling
-
-As usual : 
-
-```bash
-> pip uninstall azmlclient
-```
-
-
-## Examples
-
-First import the package
-
-```python
-import azmlclient as ac  
-```
-
-Then create variables holding the access information provided by AzureML
-
-```python
-base_url = 'https://europewest.services.azureml.net/workspaces/<workspaceId>/services/<serviceId>'
-api_key = '<apiKey>'
-use_new_ws = False
-```
-
-Then create 
-* the inputs - a dictionary containing all you inputs as dataframe objects
-        
-    ```python
-    inputs = {"trainDataset": trainingDataDf, "input2": input2Df}
-    ```
-        
-* the parameters - a dictionary
-        
-    ```python
-    params = {"param1": "val1", "param2": "val2"}
-    ```
-
-* and optionally provide a list of expected output names
-        
-    ```python
-    output_names = ["my_out1","my_out2"]
-    ```
-
-Finally call in Request-Response mode:
-
-```python
-outputs = ac.execute_rr(api_key, base_url, inputs=inputs, params=params, output_names=output_names)
-```
-
-Or in Batch mode. In this case you also need to configure the Blob storage to be used:
-
-```python
-# Define the blob storage to use for storing inputs and outputs
-blob_account = '<account_id>'
-blob_apikey = '<api_key>'
-blob_container = '<container>'
-blob_path_prefix = '<path_prefix>'
-
-# Perform the call (polling is done every 5s until job end)
-outputs = ac.execute_bes(api_key, base_url,
-                          blob_storage_account, blob_storage_apikey, blob_container_for_ios, 
-						  blob_path_prefix=blob_path_prefix,
-                          inputs=inputs, params=params, output_names=output_names)
-```
-
-## Debug and proxies
-
-Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use `Fiddler` as a proxy to debug the web service calls: 
-
-```python
-session = ac.create_session_for_proxy(http_proxyhost='localhost', http_proxyport=8888, 
-									  use_http_for_https_proxy=True, ssl_verify=False)
-```
-
-Then you may use that object in the `requests_session` parameter of the methods: 
-
-```python
-outputsRR = ac.execute_rr(..., requests_session=session)
-outputsB = ac.execute_bes(..., requests_session=session)
-```
-
-Note that the session object will be passed to the underlying azure blob storage client to ensure consistency.
-
-## Advanced usage
-
-Advanced users may directly create `Batch_Client` or `RR_Client` classes to better control what's happening.
-
-An optional parameter allow to work with the 'new web services' mode (`use_new_ws = True` - still evolving on MS side, so will need to be updated).
-
-## See Also
-
-*Do you like this library ? You might also like [these](https://github.com/smarie?utf8=%E2%9C%93&tab=repositories&q=&type=&language=python)* 
-
-## Developers
-
-### Packaging
+## Packaging
 
 This project uses `setuptools_scm` to synchronise the version number. Therefore the following command should be used for development snapshots as well as official releases: 
 
@@ -152,9 +38,46 @@ This project uses `setuptools_scm` to synchronise the version number. Therefore 
 python setup.py egg_info bdist_wheel rotate -m.whl -k3
 ```
 
-### Releasing memo
+## Generating the documentation page
+
+This project uses `mkdocs` to generate its documentation page. Therefore building a local copy of the doc page may be done using:
+
+```bash
+mkdocs build -f docs/mkdocs.yml
+```
+
+## Generating the test reports
+
+The following commands generate the html test report and the associated badge. 
+
+```bash
+pytest --junitxml=junit.xml -v azmlclient/tests/
+ant -f ci_tools/generate-junit-html.xml
+python ci_tools/generate-junit-badge.py
+```
+
+### PyPI Releasing memo
+
+This project is now automatically deployed to PyPI when a tag is created. Anyway, for manual deployment we can use:
 
 ```bash
 twine upload dist/* -r pypitest
 twine upload dist/*
 ```
+
+### Merging pull requests with edits - memo
+
+Ax explained in github ('get commandline instructions'):
+
+```bash
+git checkout -b <git_name>-<feature_branch> master
+git pull https://github.com/<git_name>/python-azmlclient.git <feature_branch> --no-commit --ff-only
+```
+
+if the second step does not work, do a normal auto-merge (do not use **rebase**!):
+
+```bash
+git pull https://github.com/<git_name>/python-azmlclient.git <feature_branch> --no-commit
+```
+
+Finally review the changes, possibly perform some modifications, and commit.
