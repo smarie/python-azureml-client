@@ -14,7 +14,7 @@ matrix:
 
 env:
   global:
-  - GH_REF: git@github.com:smarie/python-azmlclient.git
+  - GH_REF: git@github.com:smarie/python-azureml-client.git
 
 before_install:
   # (a) linux dependencies
@@ -87,7 +87,7 @@ deploy:
 
   # Create a github release on tags
   - provider: script
-    script: python ci_tools/github_release.py -s $GITHUB_TOKEN --repo-slug smarie/python-azmlclient -cf ./docs/changelog.md -d https://smarie.github.io/python-azmlclient/changelog/ $TRAVIS_TAG
+    script: python ci_tools/github_release.py -s $GITHUB_TOKEN --repo-slug smarie/python-azureml-client -cf ./docs/changelog.md -d https://smarie.github.io/python-azureml-client/changelog/ $TRAVIS_TAG
     skip_cleanup: true
     on:
       tags: true

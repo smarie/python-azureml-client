@@ -114,11 +114,11 @@ def create_or_update_release(user, pwd, secret, repo_slug, changelog_file, doc_u
         # #
         # release.id           # 13928525
         # release.etag         # 'W/"dfab7a13086d1b44fe290d5d04125124"'
-        # release.url          # 'https://api.github.com/repos/smarie/python-azmlclient/releases/13928525'
-        # release.html_url     # 'https://github.com/smarie/python-azmlclient/releases/tag/0.5.0'
-        # release.tarball_url  # 'https://api.github.com/repos/smarie/python-azmlclient/tarball/0.5.0'
-        # release.zipball_url  # 'https://api.github.com/repos/smarie/python-azmlclient/zipball/0.5.0'
-        # release.upload_url   # 'https://uploads.github.com/repos/smarie/python-azmlclient/releases/13928525/assets{?name,label}'
+        # release.url          # 'https://api.github.com/repos/smarie/python-azureml-client/releases/13928525'
+        # release.html_url     # 'https://github.com/smarie/python-azureml-client/releases/tag/0.5.0'
+        # release.tarball_url  # 'https://api.github.com/repos/smarie/python-azureml-client/tarball/0.5.0'
+        # release.zipball_url  # 'https://api.github.com/repos/smarie/python-azureml-client/zipball/0.5.0'
+        # release.upload_url   # 'https://uploads.github.com/repos/smarie/python-azureml-client/releases/13928525/assets{?name,label}'
 
 
 if __name__ == '__main__':
