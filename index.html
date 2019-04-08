@@ -1,0 +1,666 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.1.1">
+    
+    
+      
+        <title>azmlclient</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/application.3020aac5.css">
+      
+      
+    
+    
+      <script src="assets/javascripts/modernizr.01ccdecf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#azmlclient" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="." title="azmlclient" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              azmlclient
+            </span>
+            <span class="md-header-nav__topic">
+              Home
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/smarie/python-azureml-client/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="." title="azmlclient" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    azmlclient
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/smarie/python-azureml-client/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Home
+      </label>
+    
+    <a href="." title="Home" class="md-nav__link md-nav__link--active">
+      Home
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing" title="Installing" class="md-nav__link">
+    Installing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" title="Usage" class="md-nav__link">
+    Usage
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-examples" title="First examples" class="md-nav__link">
+    First examples
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-and-proxies" title="Debug and proxies" class="md-nav__link">
+    Debug and proxies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-usage" title="Advanced usage" class="md-nav__link">
+    Advanced usage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-features" title="Main features" class="md-nav__link">
+    Main features
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#others" title="Others" class="md-nav__link">
+    Others
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#want-to-contribute" title="Want to contribute ?" class="md-nav__link">
+    Want to contribute ?
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="motivation.md" title="Motivation" class="md-nav__link">
+      Motivation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="disambiguation.md" title="Disambiguation principes" class="md-nav__link">
+      Disambiguation principes
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="pep_proposal.md" title="PEP proposal" class="md-nav__link">
+      PEP proposal
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="changelog/" title="Changelog" class="md-nav__link">
+      Changelog
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing" title="Installing" class="md-nav__link">
+    Installing
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" title="Usage" class="md-nav__link">
+    Usage
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-examples" title="First examples" class="md-nav__link">
+    First examples
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-and-proxies" title="Debug and proxies" class="md-nav__link">
+    Debug and proxies
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-usage" title="Advanced usage" class="md-nav__link">
+    Advanced usage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-features" title="Main features" class="md-nav__link">
+    Main features
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" title="See Also" class="md-nav__link">
+    See Also
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#others" title="Others" class="md-nav__link">
+    Others
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#want-to-contribute" title="Want to contribute ?" class="md-nav__link">
+    Want to contribute ?
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/smarie/python-azureml-client/edit/master/docs/index.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="azmlclient">azmlclient<a class="headerlink" href="#azmlclient" title="Permanent link">&para;</a></h1>
+<p><em>An <strong><em>unofficial</em></strong> generic client stack for azureML web services, working with both python 2 and 3.</em></p>
+<p><a href="https://pypi.python.org/pypi/azmlclient/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/azmlclient.svg" /></a> <a href="https://travis-ci.org/smarie/python-azureml-client"><img alt="Build Status" src="https://travis-ci.org/smarie/python-azureml-client.svg?branch=master" /></a> <a href="https://smarie.github.io/python-azureml-client/junit/report.html"><img alt="Tests Status" src="https://smarie.github.io/python-azureml-client/junit/junit-badge.svg?dummy=8484744" /></a> <a href="https://codecov.io/gh/smarie/python-azureml-client"><img alt="codecov" src="https://codecov.io/gh/smarie/python-azureml-client/branch/master/graph/badge.svg" /></a></p>
+<p><a href="https://smarie.github.io/python-azureml-client/"><img alt="Documentation" src="https://img.shields.io/badge/doc-latest-blue.svg" /></a> <a href="https://pypi.python.org/pypi/azmlclient/"><img alt="PyPI" src="https://img.shields.io/pypi/v/azmlclient.svg" /></a> <a href="https://pepy.tech/project/azmlclient"><img alt="Downloads" src="https://pepy.tech/badge/azmlclient" /></a> <a href="https://pepy.tech/project/azmlclient"><img alt="Downloads per week" src="https://pepy.tech/badge/azmlclient/week" /></a> <a href="https://github.com/smarie/python-azureml-client/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/smarie/python-azureml-client.svg" /></a></p>
+<p>As opposed to <a href="https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage">AzureML client library</a>, </p>
+<ul>
+<li>this library is much simpler and is only focused on consuming web services. </li>
+<li>It is compliant with all services deployed from AzureML experiments (using the AzureML drag'n drop UI), and should also work with python and R "dataframe" web services (not checked though). </li>
+<li>It does not require your AzureML workspace id and API key, only the deployed services' URL and API key.</li>
+</ul>
+<p>You may use it for example </p>
+<ul>
+<li>to show to your customers how to consume your AzureML cloud services.</li>
+<li>to make simple 'edge' devices consume your AzureML cloud services (if they support python :) ).</li>
+</ul>
+<h2 id="installing">Installing<a class="headerlink" href="#installing" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span>&gt; pip install azmlclient
+</pre></div>
+
+
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<h3 id="first-examples">First examples<a class="headerlink" href="#first-examples" title="Permanent link">&para;</a></h3>
+<p>First create variables holding the endpoint information provided by AzureML</p>
+<div class="codehilite"><pre><span></span><span class="n">base_url</span> <span class="o">=</span> <span class="s1">&#39;https://europewest.services.azureml.net/workspaces/&lt;workspaceId&gt;/services/&lt;serviceId&gt;&#39;</span>
+<span class="n">api_key</span> <span class="o">=</span> <span class="s1">&#39;&lt;apiKey&gt;&#39;</span>
+<span class="n">use_new_ws</span> <span class="o">=</span> <span class="bp">False</span>
+</pre></div>
+
+
+<p>Then create </p>
+<ul>
+<li>the inputs - a dictionary containing all you inputs as dataframe objects</li>
+<li>the parameters - a dictionary</li>
+<li>and optionally provide a list of expected output names</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;trainDataset&quot;</span><span class="p">:</span> <span class="n">trainingDataDf</span><span class="p">,</span> <span class="s2">&quot;input2&quot;</span><span class="p">:</span> <span class="n">input2Df</span><span class="p">}</span>
+<span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;param1&quot;</span><span class="p">:</span> <span class="s2">&quot;val1&quot;</span><span class="p">,</span> <span class="s2">&quot;param2&quot;</span><span class="p">:</span> <span class="s2">&quot;val2&quot;</span><span class="p">}</span>
+<span class="n">output_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;my_out1&quot;</span><span class="p">,</span><span class="s2">&quot;my_out2&quot;</span><span class="p">]</span>
+</pre></div>
+
+
+<p>Finally call in Request-Response mode:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">execute_rr</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="n">execute_rr</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">base_url</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="n">output_names</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Or in Batch mode. In this case you also need to configure the Blob storage to be used:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">execute_bes</span>
+
+<span class="c1"># Define the blob storage to use for storing inputs and outputs</span>
+<span class="n">blob_account</span> <span class="o">=</span> <span class="s1">&#39;&lt;account_id&gt;&#39;</span>
+<span class="n">blob_apikey</span> <span class="o">=</span> <span class="s1">&#39;&lt;api_key&gt;&#39;</span>
+<span class="n">blob_container</span> <span class="o">=</span> <span class="s1">&#39;&lt;container&gt;&#39;</span>
+<span class="n">blob_path_prefix</span> <span class="o">=</span> <span class="s1">&#39;&lt;path_prefix&gt;&#39;</span>
+
+<span class="c1"># Perform the call (polling is done every 5s until job end)</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="n">execute_bes</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">base_url</span><span class="p">,</span>
+                          <span class="n">blob_storage_account</span><span class="p">,</span> <span class="n">blob_storage_apikey</span><span class="p">,</span> <span class="n">blob_container_for_ios</span><span class="p">,</span> 
+                          <span class="n">blob_path_prefix</span><span class="o">=</span><span class="n">blob_path_prefix</span><span class="p">,</span>
+                          <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="n">output_names</span><span class="p">)</span>
+</pre></div>
+
+
+<h3 id="debug-and-proxies">Debug and proxies<a class="headerlink" href="#debug-and-proxies" title="Permanent link">&para;</a></h3>
+<p>Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use <code>Fiddler</code> as a proxy to debug the web service calls: </p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">create_session_for_proxy</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">create_session_for_proxy</span><span class="p">(</span><span class="n">http_proxyhost</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">http_proxyport</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> 
+                                      <span class="n">use_http_for_https_proxy</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ssl_verify</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Then you may use that object in the <code>requests_session</code> parameter of the methods: </p>
+<div class="codehilite"><pre><span></span><span class="n">outputsRR</span> <span class="o">=</span> <span class="n">execute_rr</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">requests_session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+<span class="n">outputsB</span> <span class="o">=</span> <span class="n">execute_bes</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">requests_session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Note that the session object will be passed to the underlying azure blob storage client to ensure consistency.</p>
+<h3 id="advanced-usage">Advanced usage<a class="headerlink" href="#advanced-usage" title="Permanent link">&para;</a></h3>
+<p>Advanced users may directly create <code>Batch_Client</code> or <code>RR_Client</code> classes to better control what's happening.</p>
+<p>An optional parameter allow to work with the 'new web services' mode (<code>use_new_ws = True</code> - still evolving on MS side, so will need to be updated).</p>
+<h2 id="main-features">Main features<a class="headerlink" href="#main-features" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too</li>
+<li>Maps the errors to more friendly python exceptions</li>
+<li>Supports both Request/Response and Batch mode</li>
+<li>In Batch mode, performs all the Blob storage and retrieval for you.</li>
+<li>Properly handles file encoding in both modes (<code>utf-8</code> is used by default as the pivot encoding)</li>
+<li>Supports global <code>requests.Session</code> configuration to configure the HTTP clients behaviour (including the underlying blob storage client).</li>
+</ul>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The official <a href="https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage">AzureML client library</a></li>
+</ul>
+<h3 id="others">Others<a class="headerlink" href="#others" title="Permanent link">&para;</a></h3>
+<p><em>Do you like this library ? You might also like <a href="https://github.com/smarie/OVERVIEW#python">my other python libraries</a></em> </p>
+<h2 id="want-to-contribute">Want to contribute ?<a class="headerlink" href="#want-to-contribute" title="Permanent link">&para;</a></h2>
+<p>Details on the github page: <a href="https://github.com/smarie/python-azureml-client">https://github.com/smarie/python-azureml-client</a></p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+        
+          <a href="changelog/" title="Changelog" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Changelog
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="assets/javascripts/application.dc02f8ce.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"."}})</script>
+      
+    
+  </body>
+</html>
