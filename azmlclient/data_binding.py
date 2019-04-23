@@ -158,13 +158,7 @@ class Converters(object):
         convert_all_datetime_columns(res)
 
         # -- additionally we automatically configure the timezone as UTC
-        datetimeColumns = [colName for colName, colType in res.dtypes.items() if is_datetime_dtype(colType)]
-        for datetimeCol in datetimeColumns:
-            # time is in ISO format, so the time column after import is UTC. We just have to declare it
-            try:
-                res[datetimeCol] = res[datetimeCol].dt.tz_localize(tz="UTC")
-            except TypeError:
-                res[datetimeCol] = res[datetimeCol].dt.tz_convert(tz="UTC")
+        localize_all_datetime_columns(res)
 
         return res
 
@@ -818,5 +812,26 @@ def convert_all_datetime_columns(df):
             pass
 
 
+def localize_all_datetime_columns(df):
+    """
+    Localizes all datetime columns in df, inplace.
+    :param df:
+    :return:
+    """
+    datetime_cols = [colName for colName, colType in df.dtypes.items() if is_datetime_dtype(colType)]
+    for datetime_col in datetime_cols:
+        # time is in ISO format, so the time column after import is UTC. We just have to declare it
+        try:
+            df[datetime_col] = df[datetime_col].dt.tz_localize(tz="UTC")
+        except TypeError:
+            df[datetime_col] = df[datetime_col].dt.tz_convert(tz="UTC")
+
+
 def is_datetime_dtype(dtyp):
-    return np.issubdtype(dtyp.base, np.dtype(np.datetime64))
+    """
+    Returns True if the given dtype is a datetime dtype
+    :param dtyp:
+    :return:
+    """
+    # return np.issubdtype(dtyp.base, np.dtype(np.datetime64))  -> does not work for int64
+    return dtyp.kind == 'M'
