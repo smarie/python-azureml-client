@@ -165,26 +165,34 @@ class Converters(object):
     @staticmethod
     def df_to_azmltable(df,                    # type: pandas.DataFrame
                         is_azml_output=False,  # type: bool
-                        df_name=None           # type: str
+                        df_name=None,          # type: str
+                        swagger=False          # type: bool
                         ):
-        # type: (...) -> Dict[str, Union[str, Dict[str, List]]]
+        # type: (...) -> Union[List[Dict[str, Any]], Dict[str, List[Any]]]
         """
         Converts the provided Dataframe to a dictionary in the same format than the JSON expected by AzureML in the
         Request-Response services. Note that contents are kept as is (values are not converted to string yet)
 
         :param df:
         :param df_name:
+        :param swagger: a boolean indicating if the swagger format should be used (more verbose). Default: False
         :return:
         """
         validate(df_name, df, instance_of=pandas.DataFrame)
 
         if is_azml_output:
             # use this method recursively, in 'not output' mode
-            return {'type': 'table', 'value': Converters.df_to_azmltable(df, df_name=df_name)}
+            return {'type': 'table', 'value': Converters.df_to_azmltable(df, df_name=df_name, swagger=swagger)}
         else:
-            return {'ColumnNames': df.columns.values.tolist(),
-                    # "ColumnTypes": [dtype_to_azmltyp(dt) for dt in df.dtypes], dont do it, no reliable mapping anyway
-                    "Values": df.values.tolist()}
+            col_names = df.columns.values.tolist()
+            if swagger:
+                return [OrderedDict([(col_name, df[col_name].iloc[i]) for col_name in col_names])
+                        for i in range(df.shape[0])]
+            else:
+                # "ColumnTypes": [dtype_to_azmltyp(dt) for dt in df.dtypes],
+                # --> dont do it, azureml type mapping does not seem to be reliable.
+                return {'ColumnNames': col_names,
+                        "Values": df.values.tolist()}
 
     @staticmethod
     def azmltable_to_df(azmltable_dict,        # type: Dict[str, Union[str, Dict[str, List]]]
@@ -216,40 +224,62 @@ class Converters(object):
                     'object should be a dictionary with two fields "type" and "value", found: ' + str(
                         azmltable_dict.keys()) + ' for table object: ' + table_name)
         else:
-            if 'ColumnNames' in azmltable_dict.keys() and 'Values' in azmltable_dict.keys():
-                values = azmltable_dict['Values']
-                if len(values) > 0:
-                    # # create dataframe
-                    # c = pandas.DataFrame(np.array(values), columns=dictio['ColumnNames'])
-                    #
-                    # # auto-parse dates and floats
-                    # for column in dictio['ColumnNames']:
-                    #     # try to parse as datetime
-                    #     try:
-                    #         c[column] = c[column].apply(dateutil.parser.parse)
-                    #     except ValueError:
-                    #         pass
-                    #
-                    #     #try to parse as float
-                    #     # ...
-
-                    # use pandas parser to infer most of the types
-                    # -- for that we first dump in a buffer in a CSV format
-                    buffer = create_dest_buffer_for_csv()
-                    writer = csv.writer(buffer, dialect='unix')
-                    writer.writerows([azmltable_dict['ColumnNames']])
-                    writer.writerows(values)
-                    # -- and then we parse with pandas
-                    res = Converters.csv_to_df(create_reading_buffer(buffer.getvalue()))  # StringIO
-                    buffer.close()
-
+            if isinstance(azmltable_dict, list):
+                # swagger format
+                values = []
+                if len(azmltable_dict) > 0:
+                    colnames = list(azmltable_dict[0].keys())
+                    for i, row in enumerate(azmltable_dict):
+                        try:
+                            rowvals = [row[k] for k in colnames]
+                            values.append(rowvals)
+                            if len(row) > len(colnames):
+                                new_cols = set(row.keys()) - set(colnames)
+                                raise ValueError("A column name is present in row #%s but not in the first row: "
+                                                 "" % (i + 1, new_cols))
+                        except KeyError as e:
+                            raise ValueError("A column is missing in row #%s - %e" % (i, e))
                 else:
-                    # empty dataframe
-                    res = pandas.DataFrame(columns=azmltable_dict['ColumnNames'])
+                    colnames = []
+
+            elif 'ColumnNames' in azmltable_dict.keys() and 'Values' in azmltable_dict.keys():
+                # non-swagger format
+                values = azmltable_dict['Values']
+                colnames = azmltable_dict['ColumnNames']
             else:
                 raise ValueError(
-                    'object should be a dictionary with two fields ColumnNames and Values, found: ' + str(
+                    'object should be a list or a dictionary with two fields ColumnNames and Values, found: ' + str(
                         azmltable_dict.keys()) + ' for table object: ' + table_name)
+
+            if len(values) > 0:
+                # # create dataframe
+                # c = pandas.DataFrame(np.array(values), columns=dictio['ColumnNames'])
+                #
+                # # auto-parse dates and floats
+                # for column in dictio['ColumnNames']:
+                #     # try to parse as datetime
+                #     try:
+                #         c[column] = c[column].apply(dateutil.parser.parse)
+                #     except ValueError:
+                #         pass
+                #
+                #     #try to parse as float
+                #     # ...
+
+                # use pandas parser to infer most of the types
+                # -- for that we first dump in a buffer in a CSV format
+                buffer = create_dest_buffer_for_csv()
+                writer = csv.writer(buffer, dialect='unix')
+                writer.writerows([colnames])
+                writer.writerows(values)
+                # -- and then we parse with pandas
+                res = Converters.csv_to_df(create_reading_buffer(buffer.getvalue()))  # StringIO
+                buffer.close()
+
+            else:
+                # empty dataframe
+                res = pandas.DataFrame(columns=colnames)
+
             return res
 
     @staticmethod
@@ -259,7 +289,7 @@ class Converters(object):
         return Converters.jsonstr_to_dict(json_str)
 
     @staticmethod
-    def azmltable_to_jsonstr(azmltable_dict  # type: Dict[str, Union[str, Dict[str, List]]]
+    def azmltable_to_jsonstr(azmltable_dict,  # type: Dict[str, Union[str, Dict[str, List]]]
                              ):
         # type: (...) -> str
         return Converters.dict_to_jsonstr(azmltable_dict)
@@ -296,7 +326,6 @@ class Converters(object):
         validate('paramsDict', paramsDict, instance_of=dict)
 
         return pandas.DataFrame(paramsDict, index=[0])
-
 
     @staticmethod
     def dict_to_jsonstr(dictObject
