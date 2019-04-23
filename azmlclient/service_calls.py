@@ -5,6 +5,7 @@ from datetime import datetime
 
 import pandas
 import requests
+from valid8 import validate
 
 try:  # python 3.5+
     from typing import List, Dict, Tuple
@@ -12,7 +13,7 @@ except ImportError:
     pass
 
 from azure.storage.blob import BlockBlobService
-from azmlclient.data_binding import AzmlException, Converters, Collection_Converters, _check_not_none_and_typed
+from azmlclient.data_binding import AzmlException, Converters, Collection_Converters
 
 
 class IllegalJobStateException(Exception):
@@ -62,16 +63,16 @@ def create_session_for_proxy(http_proxyhost,                  # type: str
     # opener = request.build_opener(proxy, https)
     # request.install_opener(opener)
 
-    _check_not_none_and_typed(http_proxyhost, str, 'http_proxyhost')
-    _check_not_none_and_typed(http_proxyport, int, 'http_proxyport')
+    validate('http_proxyhost', http_proxyhost, instance_of=str)
+    validate('http_proxyport', http_proxyport, instance_of=int)
 
     https_proxyhost = https_proxyhost or http_proxyhost
     https_proxyport = https_proxyport or http_proxyport
 
-    _check_not_none_and_typed(https_proxyhost, str, 'https_proxyhost')
-    _check_not_none_and_typed(https_proxyport, int, 'https_proxyport')
+    validate('https_proxyhost', https_proxyhost, instance_of=str)
+    validate('https_proxyport', https_proxyport, instance_of=int)
 
-    _check_not_none_and_typed(use_http_for_https_proxy, bool, 'use_http_for_https_proxy')
+    validate('use_http_for_https_proxy', use_http_for_https_proxy, instance_of=bool)
 
     https_proxy_protocol = 'http' if use_http_for_https_proxy else 'https'
 

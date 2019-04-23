@@ -6,6 +6,8 @@ from datetime import datetime
 from io import BytesIO   # for handling byte strings
 from io import StringIO  # for handling unicode strings
 
+from valid8 import validate
+
 try:  # python 3.5+
     from typing import Dict, Union, List, Any, Tuple
 except ImportError:
@@ -42,32 +44,6 @@ else:
 
     def create_reading_buffer(value):
         return BytesIO(value)
-
-
-def _check_not_none_and_typed(var, var_type=None, var_name=None):
-    """
-    Helper method to check that an object is not none and possibly f a certain type
-
-    :param var: the object
-    :param var_type: the type
-    :param var_name: the name of the varioable to be used in error messages
-    :return:
-    """
-
-    if var is None:
-        if var_name is None:
-            raise TypeError('Error, object should be non-None')
-        else:
-            raise TypeError('Error, object with name "' + var_name + '" should be non-None')
-    elif var_type is not None:
-        if not isinstance(var, var_type):
-            if var_name is None:
-                raise TypeError('Error, object should be a ' + var_type + ', found: ' + str(
-                    type(var)))
-            else:
-                raise TypeError('Error, object with name "' + var_name + '" should be a ' + var_type + ', found: ' + str(
-                    type(var)))
-    return
 
 
 class AzmlException(Exception):
@@ -151,7 +127,7 @@ class Converters(object):
         :param df_name:
         :return:
         """
-        _check_not_none_and_typed(df, var_type=pandas.DataFrame, var_name=df_name)
+        validate(df_name, df, instance_of=pandas.DataFrame)
 
         # TODO what about timezone detail if not present, will the %z be ok ?
         return df.to_csv(path_or_buf=None, sep=',', decimal='.', na_rep='', encoding=charset,
@@ -168,7 +144,7 @@ class Converters(object):
         :param csv_buffer_or_str_or_filepath:
         :return:
         """
-        _check_not_none_and_typed(csv_buffer_or_str_or_filepath, var_name=csv_name)
+        validate(csv_name, csv_buffer_or_str_or_filepath)
 
         # pandas does not accept string. create a buffer
         if isinstance(csv_buffer_or_str_or_filepath, str):
@@ -205,7 +181,7 @@ class Converters(object):
         :param df_name:
         :return:
         """
-        _check_not_none_and_typed(df, var_type=pandas.DataFrame, var_name=df_name)
+        validate(df_name, df, instance_of=pandas.DataFrame)
 
         if is_azml_output:
             # use this method recursively, in 'not output' mode
@@ -230,7 +206,7 @@ class Converters(object):
         :param first_col_is_datetime:
         :return:
         """
-        _check_not_none_and_typed(azmltable_dict, var_type=dict, var_name=table_name)
+        validate(table_name, azmltable_dict, instance_of=(list, dict))
 
         if is_azml_output:
             if 'type' in azmltable_dict.keys() and 'value' in azmltable_dict.keys():
@@ -303,7 +279,7 @@ class Converters(object):
         :param params_df: a dictionary of parameter names and values
         :return: a dictionary of parameter names and values
         """
-        _check_not_none_and_typed(params_df, var_type=pandas.DataFrame, var_name='paramsDataframe')
+        validate('paramsDataframe', params_df, instance_of=pandas.DataFrame)
 
         # params = {}
         # for paramName in paramsDataframe.columns.values:
@@ -322,7 +298,7 @@ class Converters(object):
         :param paramsDict:
         :return:
         """
-        _check_not_none_and_typed(paramsDict, var_type=dict, var_name='paramsDict')
+        validate('paramsDict', paramsDict, instance_of=dict)
 
         return pandas.DataFrame(paramsDict, index=[0])
 
@@ -428,7 +404,7 @@ class ByReference_Converters(object):
         :param blob_service:
         :return:
         """
-        _check_not_none_and_typed(blob_service, BlockBlobService, 'blob_service')
+        validate('blob_service', blob_service, instance_of=BlockBlobService)
 
         return 'DefaultEndpointsProtocol=https;AccountName=' + blob_service.account_name + ';AccountKey=' + blob_service.account_key
 
@@ -450,8 +426,8 @@ class ByReference_Converters(object):
         :param blob_name_prefix:
         :return: a tuple. First element is the blob reference (a dict). Second element is the full blob name
         """
-        _check_not_none_and_typed(blob_container, str, 'blob_container')
-        _check_not_none_and_typed(blob_name, str, 'blob_name')
+        validate('blob_container', blob_container, instance_of=str)
+        validate('blob_name', blob_name, instance_of=str)
 
         # fix the blob name
         if blob_name.lower().endswith('.csv'):
@@ -489,8 +465,8 @@ class ByReference_Converters(object):
             print('Warning: blobs can be written in any charset but currently only utf-8 blobs may be read back into '
                   'dataframes. We recommend setting charset to None or utf-8 ')
 
-        _check_not_none_and_typed(csv_str, str, 'csv_str')
-        _check_not_none_and_typed(blob_name, str, 'blob_name')
+        validate('csv_str', csv_str, instance_of=str)
+        validate('blob_name', blob_name, instance_of=str)
 
         # 1- first create the references in order to check all params are ok
         blob_reference, blob_full_name = ByReference_Converters.create_blobcsvref(blob_service=blob_service,
@@ -548,7 +524,7 @@ class ByReference_Converters(object):
         :param requests_session: an optional Session object that should be used for the HTTP communication
         :return:
         """
-        _check_not_none_and_typed(blob_reference, var_type=dict, var_name=blob_name)
+        validate('blob_name', blob_reference, instance_of=dict)
 
         if not(encoding is None or encoding=='utf-8'):
             raise ValueError('Unsupported encoding to retrieve blobs : ' + encoding)
@@ -655,7 +631,7 @@ class Collection_Converters(object):
         :param blob_name_prefix:
         :return:
         """
-        _check_not_none_and_typed(blob_names, list, 'blob_names')
+        validate('blob_names', blob_names, instance_of=list)
 
         # output dict of references
         return {blobName: ByReference_Converters.create_blobcsvref(blob_service, blob_container, blobName,
@@ -689,7 +665,7 @@ class Collection_Converters(object):
         :param csvsDict:
         :return:
         """
-        _check_not_none_and_typed(csvsDict, var_type=dict, var_name='csvsDict')
+        validate('csvsDict', csvsDict, instance_of=dict)
 
         return {inputName: Converters.csv_to_df(inputCsv, csv_name=inputName) for inputName, inputCsv in csvsDict.items()}
 
@@ -705,7 +681,7 @@ class Collection_Converters(object):
         :param dataframesDict: a dictionary containing input names and input content (each input content is a dataframe)
         :return: a dictionary of tables represented as dictionaries
         """
-        _check_not_none_and_typed(dataframesDict, var_type=dict, var_name='dataframesDict')
+        validate('dataframesDict', dataframesDict, instance_of=dict)
 
         # resultsDict = {}
         # for dfName, df in dataframesDict.items():
@@ -720,7 +696,7 @@ class Collection_Converters(object):
                                  ):
         # type: (...) -> Dict[str, pandas.DataFrame]
 
-        _check_not_none_and_typed(azmlTablesDict, var_type=dict, var_name='azmlTablesDict')
+        validate('azmlTablesDict', azmlTablesDict, instance_of=dict)
 
         return {input_name: Converters.azmltable_to_df(dict_table,
                                                        is_azml_output=isAzureMlOutput, table_name=input_name)
@@ -740,7 +716,7 @@ class Collection_Converters(object):
         :return:
         """
 
-        _check_not_none_and_typed(blobcsvReferences, dict, 'blobcsvReferences')
+        validate('blobcsvReferences', blobcsvReferences, instance_of=dict)
 
         return {blobName: ByReference_Converters.blobcsvref_to_csv(csvBlobRef, encoding=charset, blob_name=blobName,
                                                                    requests_session=requests_session)
@@ -771,7 +747,7 @@ class Collection_Converters(object):
         :return: a dictionary of "by reference" input descriptions as dictionaries
         """
 
-        _check_not_none_and_typed(csvsDict, dict, 'csvsDict')
+        validate('csvsDict', csvsDict, instance_of=dict)
 
         return {blobName: ByReference_Converters.csv_to_blobcsvref(csvStr, blob_service=blob_service,
                                                                    blob_container=blob_container,
@@ -797,7 +773,7 @@ class Collection_Converters(object):
         :param requests_session: an optional Session object that should be used for the HTTP communication
         :return: the dictionary of corresponding dataframes mapped to the output names
         """
-        _check_not_none_and_typed(blobReferences, dict, 'blobReferences')
+        validate('blobReferences', blobReferences, instance_of=dict)
 
         return {blobName: ByReference_Converters.blobcsvref_to_df(csvBlobRef, encoding=charset, blob_name=blobName,
                                                                   requests_session=requests_session)
@@ -813,7 +789,7 @@ class Collection_Converters(object):
                                  ):
         # type: (...) -> Dict[str, Dict[str, str]]
 
-        _check_not_none_and_typed(dataframesDict, dict, 'dataframesDict')
+        validate('dataframesDict', dataframesDict, instance_of=dict)
 
         return {blobName: ByReference_Converters.df_to_blobcsvref(csvStr, blob_service=blob_service,
                                                                   blob_container=blob_container,
