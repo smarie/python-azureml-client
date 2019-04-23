@@ -11,7 +11,8 @@ from setuptools import setup, find_packages
 here = path.abspath(path.dirname(__file__))
 
 # *************** Dependencies *********
-INSTALL_REQUIRES = ['valid8>=2.1', 'requests', 'azure-storage==0.33.0', 'numpy', 'pandas']
+INSTALL_REQUIRES = ['functools32;python_version<"3.3"', 'valid8>=2.1', 'requests', 'azure-storage==0.33.0',
+                    'numpy', 'pandas']
 DEPENDENCY_LINKS = []
 SETUP_REQUIRES = ['pytest-runner', 'setuptools_scm', 'pypandoc', 'pandoc']
 TESTS_REQUIRE = ['pytest', 'pytest-logging', 'pytest-cov', 'pytest-cases']
