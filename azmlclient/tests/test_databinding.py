@@ -1,66 +1,59 @@
-import os
+import json
 
-import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
+from pytest_cases import cases_data, pytest_fixture_plus
 
 from azmlclient import Converters
-from azmlclient.data_binding import convert_all_datetime_columns, is_datetime_dtype
-
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_DATA_DIR = os.path.join(THIS_DIR, 'test_data')
+from azmlclient.tests import test_databinding_cases
+from azmlclient.tests.test_databinding_cases import DataBindingTestCase
 
 
-@pytest.fixture
-def df():
-    return read_csv_test_file(os.path.join(TEST_DATA_DIR, 'dummy_data.csv'))
+@pytest_fixture_plus
+@cases_data(module=test_databinding_cases)
+def case(case_data):
+    return case_data.get()
 
 
-def test_df_to_azmltable(df):
+def test_df_to_azmltable(case  # type: DataBindingTestCase
+                         ):
     """ Tests that a dataframe can be converted to azureml representation (as a dict) and back. """
 
-    azt = Converters.df_to_azmltable(df)
+    azt = Converters.df_to_azmltable(case.df)
     df2 = Converters.azmltable_to_df(azt)
 
-    assert_frame_equal(df, df2)
+    assert_frame_equal(case.df, df2)
 
 
-def test_df_to_json(df):
+@pytest.mark.parametrize('swagger_mode_on', [False, True], ids="swagger={}".format)
+def test_df_to_json(swagger_mode_on,
+                    case  # type: DataBindingTestCase
+                    ):
     """ Tests that a dataframe can be converted to azureml json representation and back. """
 
-    azt = Converters.df_to_azmltable(df)
-    js = Converters.azmltable_to_jsonstr(azt)
-    azt2 = Converters.jsonstr_to_azmltable(js)
+    azt = Converters.df_to_azmltable(case.df, swagger=swagger_mode_on)
+    az_json_df = Converters.azmltable_to_jsonstr(azt)
+
+    print("Converted df -> json:")
+    print(az_json_df)
+    assert json.loads(az_json_df) == json.loads(case.get_df_json(swagger_mode_on=swagger_mode_on))
+
+    azt2 = Converters.jsonstr_to_azmltable(az_json_df)
     df2 = Converters.azmltable_to_df(azt2)
 
-    assert_frame_equal(df, df2)
+    assert_frame_equal(case.df, df2)
 
 
-def test_df_to_csv(df):
+def test_df_to_csv(case  # type: DataBindingTestCase
+                   ):
     """ Tests that a dataframe can be converted to csv (for blob storage) and back. """
 
-    csvstr = Converters.df_to_csv(df)
+    csvstr = Converters.df_to_csv(case.df)
+
+    print("Converted df -> csv:")
+    print(csvstr)
+    assert csvstr.replace('\r', '') == case.df_csv.replace('\r', '')
+
     df2 = Converters.csv_to_df(csvstr)
 
-    assert_frame_equal(df, df2)
-
-
-def read_csv_test_file(path_input, col_sep=',', decimal_char='.'):
-    """ Utility method to read the test data csv into a dataframe"""
-
-    # read the file
-    inputdataframe = pd.read_csv(path_input, sep=col_sep, decimal=decimal_char)
-
-    # convert all possible columns to datetime
-    convert_all_datetime_columns(inputdataframe)
-
-    # localize all the datetime columns (note: this is not really the correct test but it works here)
-    datetimeColumns = [colName for colName, colType in inputdataframe.dtypes.items() if is_datetime_dtype(colType)]
-    for datetimeCol in datetimeColumns:
-        # time is in ISO format in our test files, so the time column after import is UTC. We just have to declare it
-        try:
-            inputdataframe[datetimeCol] = inputdataframe[datetimeCol].dt.tz_localize(tz="UTC")
-        except TypeError:
-            inputdataframe[datetimeCol] = inputdataframe[datetimeCol].dt.tz_convert(tz="UTC")
-
-    return inputdataframe
+    assert_frame_equal(case.df, df2)

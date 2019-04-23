@@ -1,0 +1,7 @@
+{
+  "ColumnNames": ["Datetime", "att1_text_quotes", "att2_float", "att3_missing_text", "att4_missing_float", " att5_space_first_missing_datetime"],
+  "Values": [
+    ["2015-10-09T07:30:00+00:00", "fo,o", 2.0, NaN, NaN, "NaT"],
+    ["2015-10-09T08:30:00+00:00", "'bar'", -0.1, "'bar'", -0.1, "2015-10-09T08:30:00+00:00"]
+  ]
+}

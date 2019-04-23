@@ -1,0 +1,18 @@
+[
+  {
+    "Datetime": "2015-10-09T07:30:00+00:00",
+    "att1_text_quotes": "fo,o",
+    "att2_float": 2.0,
+    "att3_missing_text": NaN,
+    "att4_missing_float": NaN,
+    " att5_space_first_missing_datetime": "NaT"
+  },
+  {
+    "Datetime": "2015-10-09T08:30:00+00:00",
+    "att1_text_quotes": "'bar'",
+    "att2_float": -0.1,
+    "att3_missing_text": "'bar'",
+    "att4_missing_float": -0.1,
+    " att5_space_first_missing_datetime": "2015-10-09T08:30:00+00:00"
+  }
+]
