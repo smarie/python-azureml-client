@@ -2,6 +2,7 @@ from __future__ import print_function
 import csv
 import json
 import sys
+from collections import OrderedDict
 from datetime import datetime
 from io import BytesIO   # for handling byte strings
 from io import StringIO  # for handling unicode strings
@@ -325,7 +326,8 @@ class Converters(object):
         :param jsonStr:
         :return:
         """
-        return json.loads(jsonStr)
+        # load but keep order: use an ordered dict
+        return json.loads(jsonStr, object_pairs_hook=OrderedDict)
 
     @staticmethod
     def __json_serial(obj):
