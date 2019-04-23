@@ -3,8 +3,10 @@ setuptools_scm
 pytest-runner
 pandoc
 pypandoc
+pytest-cases
 
 # --- to install
+valid8
 requests
 numpy
 pandas

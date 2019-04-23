@@ -11,10 +11,10 @@ from setuptools import setup, find_packages
 here = path.abspath(path.dirname(__file__))
 
 # *************** Dependencies *********
-INSTALL_REQUIRES = ['requests', 'azure-storage==0.33.0', 'numpy', 'pandas']
+INSTALL_REQUIRES = ['valid8>=2.1', 'requests', 'azure-storage==0.33.0', 'numpy', 'pandas']
 DEPENDENCY_LINKS = []
 SETUP_REQUIRES = ['pytest-runner', 'setuptools_scm', 'pypandoc', 'pandoc']
-TESTS_REQUIRE = ['pytest', 'pytest-logging', 'pytest-cov']
+TESTS_REQUIRE = ['pytest', 'pytest-logging', 'pytest-cov', 'pytest-cases']
 EXTRAS_REQUIRE = {}
 
 # simple check
@@ -97,7 +97,7 @@ setup(
         # 'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.7'
     ],
 
     # What does your project relate to?
