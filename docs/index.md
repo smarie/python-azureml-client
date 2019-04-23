@@ -37,7 +37,7 @@ use_new_ws = True  # 'new' style web service endpoint
 
 Then create 
 
- * the inputs - a dictionary containing all you inputs as `pandas.Dataframe` objects
+ * the inputs - a dictionary containing all you inputs as `pandas.DataFrame` objects
  * the parameters - a dictionary
  * and optionally define a list of expected output names
         
