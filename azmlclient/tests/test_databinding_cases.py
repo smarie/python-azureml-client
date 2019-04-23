@@ -1,9 +1,11 @@
 import os
-from functools import lru_cache
-
-from pytest_cases import cases_generator
-
 import pandas as pd
+
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
+from pytest_cases import cases_generator
 
 from azmlclient.data_binding import convert_all_datetime_columns, localize_all_datetime_columns
 
