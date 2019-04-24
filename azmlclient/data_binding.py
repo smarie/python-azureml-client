@@ -7,16 +7,23 @@ from datetime import datetime
 from io import BytesIO   # for handling byte strings
 from io import StringIO  # for handling unicode strings
 
-from valid8 import validate
-
 try:  # python 3.5+
     from typing import Dict, Union, List, Any, Tuple
+
+    SwaggerModeAzmlTable = List[Dict[str, Any]]
+    NonSwaggerModeAzmlTable = Dict[str, Union[List[str], List[List[Any]]]]
+    AzmlTable = Union[SwaggerModeAzmlTable, NonSwaggerModeAzmlTable]
+    AzmlOutputTable = Dict[str, Union[str, AzmlTable]]
+
+    AzmlBlobTable = Dict[str, str]
 except ImportError:
     pass
 
 import numpy as np
 import pandas
 import requests
+from valid8 import validate
+
 from azure.storage.blob import BlockBlobService, ContentSettings
 
 
@@ -50,69 +57,57 @@ else:
 class AzmlException(Exception):
     """
     Represents an AzureMl exception, built from an HTTP error body received from AzureML.
+    Once constructed from an HTTPError, the error details appear in the exception fields.
     """
 
     def __init__(self,
-                 httpError  # type: requests.exceptions.HTTPError
+                 http_error  # type: requests.exceptions.HTTPError
                  ):
+        """
+        Constructor from an http error received from `requests`.
 
-        # Try to decode the error body and print it
-        # ----- old with urllib
-        #jsonError = str(object=httpError.read(), encoding=httpError.headers.get_content_charset())
-        # ----- new with requests
-        jsonError = httpError.response.text
-        errorAsDict = Converters.jsonstr_to_dict(jsonError)
+        :param http_error:
+        """
+        # extract error contents from http json body
+        json_error = http_error.response.text
+        error_as_dict = Converters.json_to_azmltable(json_error)
 
-        if 'error' in errorAsDict.keys():
-            errorAsDict = errorAsDict['error']
+        # main error elements
+        try:
+            self.error_dict = error_as_dict['error']
+            self.error_code = self.error_dict['code']
+            self.error_message = self.error_dict['message']
+            self.details = error_as_dict['details']
+        except KeyError:
+            raise ValueError("Unrecognized format for AzureML http error. JSON content is :\n %s" % error_as_dict)
 
-            if 'code' in errorAsDict.keys() and 'message' in errorAsDict.keys() and 'details' in errorAsDict.keys():
-                maincode = errorAsDict['code']
-                mainmessage = errorAsDict['message']
-                if isinstance(errorAsDict['details'], list) and len(errorAsDict['details']) == 1:
-                    detailselement = errorAsDict['details'][0]
-                    if 'code' in detailselement.keys() and 'message' in detailselement.keys():
-                        super(AzmlException, self).__init__('Error [' + maincode + '][' + detailselement['code'] + ']: ' + mainmessage + '. ' + detailselement['message'])
-                    else:
-                        # fallback to main code and message
-                        super(AzmlException, self).__init__('Error [' + maincode + ']: ' + mainmessage)
-                else:
-                    super(AzmlException, self).__init__('Error [' + maincode + ']: ' + mainmessage)
-
-                self.maincode = maincode
-                self.mainmessage = mainmessage
-
-                # store dict for reference
-                self.__errorAsDict = errorAsDict
-            else:
-                # noinspection PyTypeChecker
-                raise ValueError(
-                    'Unrecognized format for AzureML http error. JSON content is : ' + print(
-                        errorAsDict))
-
+        # create the message based on contents
+        try:
+            details_dict = error_as_dict['details'][0]
+            details_code = details_dict['code']
+            details_msg = details_dict['message']
+        except (IndexError, KeyError):
+            msg = 'Error [%s]: %s' % (self.error_code, self.error_message)
         else:
-            # noinspection PyTypeChecker
-            raise ValueError('Unrecognized format for AzureML http error, no field named "error". JSON content is : ' + print(errorAsDict))
+            msg = 'Error [%s][%s]: %s. %s' % (self.error_code, details_code, self.error_message, details_msg)
 
-
+        # finally call super
+        super(AzmlException, self).__init__(msg)
 
     def __str__(self):
-
         # if 'error' in self.__errorAsDict:
         #     # this is an azureML standard error
         #     if self.__errorAsDict['error']['code'] == 'LibraryExecutionError':
         #         if self.__errorAsDict['error']['details'][0]['code'] == 'TableSchemaColumnCountMismatch':
-        #             return 'Dynamic schema validation is not supported in Request-Response mode, you should maybe use the BATCH response mode by setting useBatchMode to true in python'
-
-        return json.dumps(self.__errorAsDict, indent=4)
+        #             return 'Dynamic schema validation is not supported in Request-Response mode, you should maybe
+        #             use the BATCH response mode by setting useBatchMode to true in python'
+        return json.dumps(self.error_dict, indent=4)
 
 
 class Converters(object):
-
-    # @staticmethod
-    # def httperror_to_azmlexception(http_error: urllib.error.HTTPError) -> AzmlException:
-    #     return AzmlException(http_error)
-
+    """
+    Static class containing all converters for single objects
+    """
 
     @staticmethod
     def df_to_csv(df,            # type: pandas.DataFrame
@@ -121,11 +116,12 @@ class Converters(object):
                   ):
         # type: (...) -> str
         """
-        Converts the provided dataframe to a csv, to store it on blob storage for AzureML calls.
+        Converts the provided DataFrame to a csv, typically to store it on blob storage for Batch AzureML calls.
         WARNING: datetime columns are converted in ISO format but the milliseconds are ignored and set to zero.
 
         :param df:
-        :param df_name:
+        :param df_name: the name of the dataframe, for error messages
+        :param charset: the charset to use for encoding
         :return:
         """
         validate(df_name, df, instance_of=pandas.DataFrame)
@@ -135,14 +131,16 @@ class Converters(object):
                          index=False, date_format='%Y-%m-%dT%H:%M:%S.000%z')
 
     @staticmethod
-    def csv_to_df(csv_buffer_or_str_or_filepath,  # type: str
+    def csv_to_df(csv_buffer_or_str_or_filepath,  # type: Union[str, StringIO, BytesIO]
                   csv_name=None                   # type: str
                   ):
         # type: (...) -> pandas.DataFrame
         """
+        Converts the provided csv to a DatFrame, typically to read it from blob storage for Batch AzureML calls.
         Helper method to ensure consistent reading in particular for timezones and datetime parsing
 
         :param csv_buffer_or_str_or_filepath:
+        :param csv_name: the name of the dataframe, for error messages
         :return:
         """
         validate(csv_name, csv_buffer_or_str_or_filepath)
@@ -163,96 +161,101 @@ class Converters(object):
         return res
 
     @staticmethod
-    def df_to_azmltable(df,                    # type: pandas.DataFrame
-                        is_azml_output=False,  # type: bool
-                        df_name=None,          # type: str
-                        swagger=False          # type: bool
+    def df_to_azmltable(df,                         # type: pandas.DataFrame
+                        table_name=None,            # type: str
+                        swagger=False,              # type: bool
+                        mimic_azml_output = False,  # type: bool
                         ):
-        # type: (...) -> Union[List[Dict[str, Any]], Dict[str, List[Any]]]
+        # type: (...) -> Union[AzmlTable, AzmlOutputTable]
         """
-        Converts the provided Dataframe to a dictionary in the same format than the JSON expected by AzureML in the
-        Request-Response services. Note that contents are kept as is (values are not converted to string yet)
+        Converts the provided DataFrame to a dictionary or list in the same format than the JSON expected by AzureML in
+        the Request-Response services. Note that contents are kept as is (values are not converted to string yet)
 
-        :param df:
-        :param df_name:
+        :param df: the dataframe to convert
+        :param table_name: the table name for error messages
         :param swagger: a boolean indicating if the swagger format should be used (more verbose). Default: False
+        :param mimic_azml_output: set this to True if the result should be wrapped in a dictionary like azureml outputs.
+            This is typically needed if you wish to mimic an AzureML web service's behaviour, for a mock web server.
         :return:
         """
-        validate(df_name, df, instance_of=pandas.DataFrame)
+        validate(table_name, df, instance_of=pandas.DataFrame)
 
-        if is_azml_output:
+        if mimic_azml_output:
             # use this method recursively, in 'not output' mode
-            return {'type': 'table', 'value': Converters.df_to_azmltable(df, df_name=df_name, swagger=swagger)}
+            return {'type': 'table', 'value': Converters.df_to_azmltable(df, table_name=table_name, swagger=swagger)}
         else:
             col_names = df.columns.values.tolist()
             if swagger:
+                # swagger mode: the table is a list of object rows
                 return [OrderedDict([(col_name, df[col_name].iloc[i]) for col_name in col_names])
                         for i in range(df.shape[0])]
             else:
+                # non-swagger mode: the columns and values are separate attributes.
+                #
                 # "ColumnTypes": [dtype_to_azmltyp(dt) for dt in df.dtypes],
-                # --> dont do it, azureml type mapping does not seem to be reliable.
+                # --> dont do type conversion, azureml type mapping does not seem to be reliable enough.
                 return {'ColumnNames': col_names,
                         "Values": df.values.tolist()}
 
     @staticmethod
-    def azmltable_to_df(azmltable_dict,        # type: Dict[str, Union[str, Dict[str, List]]]
+    def azmltable_to_df(azmltable,             # type: Union[AzmlTable, AzmlOutputTable]
                         is_azml_output=False,  # type: bool
                         table_name=None        # type: str
                         ):
         # type: (...) -> pandas.DataFrame
         """
-        Converts an AzureML table (JSON-like dictionary) into a dataframe. Since two formats exist (one for inputs and
-        one for outputs), there is a parameter you can use to specify which one to use.
+        Converts a parsed AzureML table (JSON-like dictionary or list obtained from parsing the json body) into a
+        dataframe. Since two formats exist (one for inputs and one for outputs), there is a parameter you can use to
+        specify which one to use.
 
-        :param is_azml_output:
-        :param table_name:
-        :param first_col_is_datetime:
+        :param azmltable: the AzureML table to convert
+        :param is_azml_output: set this to True if the `azmltable` was received from an actual AzureML web service.
+            Indeed in this case the table is usually wrapped in a dictionary that needs to be unwrapped.
+        :param table_name: the table name for error messages
         :return:
         """
-        validate(table_name, azmltable_dict, instance_of=(list, dict))
+        validate(table_name, azmltable, instance_of=(list, dict))
 
         if is_azml_output:
-            if 'type' in azmltable_dict.keys() and 'value' in azmltable_dict.keys():
-                if azmltable_dict['type'] == 'table':
+            if 'type' in azmltable.keys() and 'value' in azmltable.keys():
+                if azmltable['type'] == 'table':
                     # use this method recursively, in 'not output' mode
                     # noinspection PyTypeChecker
-                    return Converters.azmltable_to_df(azmltable_dict['value'], table_name=table_name)
+                    return Converters.azmltable_to_df(azmltable['value'], table_name=table_name)
                 else:
-                    raise ValueError('This method is able to read table objects, found type=' + str(azmltable_dict['type']))
+                    raise ValueError("This method is able to read table objects, found type=%s" % azmltable['type'])
             else:
-                raise ValueError(
-                    'object should be a dictionary with two fields "type" and "value", found: ' + str(
-                        azmltable_dict.keys()) + ' for table object: ' + table_name)
+                raise ValueError("object should be a dictionary with two fields 'type' and 'value', found: %s for "
+                                 "table object: %s" % (azmltable.keys(), table_name))
         else:
-            if isinstance(azmltable_dict, list):
+            if isinstance(azmltable, list):
                 # swagger format
                 values = []
-                if len(azmltable_dict) > 0:
-                    colnames = list(azmltable_dict[0].keys())
-                    for i, row in enumerate(azmltable_dict):
+                if len(azmltable) > 0:
+                    colnames = list(azmltable[0].keys())
+                    for i, row in enumerate(azmltable):
                         try:
                             rowvals = [row[k] for k in colnames]
                             values.append(rowvals)
                             if len(row) > len(colnames):
                                 new_cols = set(row.keys()) - set(colnames)
-                                raise ValueError("A column name is present in row #%s but not in the first row: "
-                                                 "" % (i + 1, new_cols))
+                                raise ValueError("Columns are present in row #%s but not in the first row: "
+                                                 "%s" % (i + 1, new_cols))
                         except KeyError as e:
-                            raise ValueError("A column is missing in row #%s - %e" % (i, e))
+                            raise ValueError("A column is missing in row #%s: %s" % (i + 1, e))
                 else:
                     colnames = []
 
-            elif 'ColumnNames' in azmltable_dict.keys() and 'Values' in azmltable_dict.keys():
+            elif 'ColumnNames' in azmltable.keys() and 'Values' in azmltable.keys():
                 # non-swagger format
-                values = azmltable_dict['Values']
-                colnames = azmltable_dict['ColumnNames']
+                values = azmltable['Values']
+                colnames = azmltable['ColumnNames']
             else:
-                raise ValueError(
-                    'object should be a list or a dictionary with two fields ColumnNames and Values, found: ' + str(
-                        azmltable_dict.keys()) + ' for table object: ' + table_name)
+                raise ValueError("object should be a list or a dictionary with two fields ColumnNames and Values, "
+                                 "found: %s for table object: %s" % (azmltable.keys(), table_name))
 
             if len(values) > 0:
-                # # create dataframe
+                # # create dataframe manually
                 # c = pandas.DataFrame(np.array(values), columns=dictio['ColumnNames'])
                 #
                 # # auto-parse dates and floats
@@ -266,7 +269,7 @@ class Converters(object):
                 #     #try to parse as float
                 #     # ...
 
-                # use pandas parser to infer most of the types
+                # Easier: use pandas csv parser to infer most of the types
                 # -- for that we first dump in a buffer in a CSV format
                 buffer = create_dest_buffer_for_csv()
                 writer = csv.writer(buffer, dialect='unix')
@@ -283,77 +286,62 @@ class Converters(object):
             return res
 
     @staticmethod
-    def jsonstr_to_azmltable(json_str  # type: str
-                             ):
-        # type: (...) -> Dict[str, Union[str, Dict[str, List]]]
-        return Converters.jsonstr_to_dict(json_str)
-
-    @staticmethod
-    def azmltable_to_jsonstr(azmltable_dict,  # type: Dict[str, Union[str, Dict[str, List]]]
-                             ):
-        # type: (...) -> str
-        return Converters.dict_to_jsonstr(azmltable_dict)
-
-    @staticmethod
-    def paramdf_to_paramdict(params_df  # type: pandas.DataFrame
-                             ):
+    def params_df_to_params_dict(params_df  # type: pandas.DataFrame
+                                 ):
         # type: (...) -> Dict[str, str]
         """
-        Converts a parameter dataframe into a dictionary following the structure required for JSON conversion
+        Converts a parameters DataFrame into a dictionary following the structure required for JSON conversion
 
         :param params_df: a dictionary of parameter names and values
         :return: a dictionary of parameter names and values
         """
-        validate('paramsDataframe', params_df, instance_of=pandas.DataFrame)
-
-        # params = {}
-        # for paramName in paramsDataframe.columns.values:
-        #     params[paramName] = paramsDataframe.at[0, paramName]
-        # return params
-        return {paramName: params_df.at[0, paramName] for paramName in params_df.columns.values}
-
+        validate('params_df', params_df, instance_of=pandas.DataFrame)
+        return {param_name: params_df.at[0, param_name] for param_name in params_df.columns.values}
 
     @staticmethod
-    def paramdict_to_paramdf(paramsDict  # type: Dict[str, Any]
-                             ):
+    def params_dict_to_params_df(params_dict  # type: Dict[str, Any]
+                                 ):
         # type: (...) -> pandas.DataFrame
         """
         Converts a parameter dictionary into a parameter dataframe
 
-        :param paramsDict:
+        :param params_dict:
         :return:
         """
-        validate('paramsDict', paramsDict, instance_of=dict)
+        validate('params_dict', params_dict, instance_of=dict)
 
-        return pandas.DataFrame(paramsDict, index=[0])
+        # create a single-row DataFrame
+        return pandas.DataFrame(params_dict, index=[0])
 
     @staticmethod
-    def dict_to_jsonstr(dictObject
-                        ):
+    def azmltable_to_json(azmltable  # type: Union[AzmlTable, AzmlOutputTable]
+                          ):
+        # type: (...) -> str
         """
-        Transforms a dictionary to a JSON string. Datetimes are converted using ISO format.
+        Transforms an AzureML table to a JSON string.
+        Datetimes are converted using ISO format.
 
-        :param dictObject:
+        :param azmltable:
         :return:
         """
-        jsonBodyStr = json.dumps(dictObject, default=Converters.__json_serial)
-        return jsonBodyStr
+        # dump using our custom serializer so that types are supported by AzureML
+        return json.dumps(azmltable, default=Converters.azml_json_serializer)
 
     @staticmethod
-    def jsonstr_to_dict(jsonStr  # type: str
-                        ):
-        # type: (...) -> Dict[str, Any]
+    def json_to_azmltable(json_str  # type: str
+                          ):
+        # type: (...) -> Union[AzmlTable, AzmlOutputTable]
         """
-        Creates a dictionary from a json string.
+        Creates an AzureML table from a json string.
 
-        :param jsonStr:
+        :param json_str:
         :return:
         """
         # load but keep order: use an ordered dict
-        return json.loads(jsonStr, object_pairs_hook=OrderedDict)
+        return json.loads(json_str, object_pairs_hook=OrderedDict)
 
     @staticmethod
-    def __json_serial(obj):
+    def azml_json_serializer(obj):
         """
         JSON custom serializer for objects not serializable by default json code
 
@@ -361,7 +349,7 @@ class Converters(object):
         :return:
         """
         if isinstance(obj, np.integer):
-            # since ints are bool, do ints first
+            # since numpy ints are also bools, do ints first
             return int(obj)
         elif isinstance(obj, bool):
             return bool(obj)
@@ -376,183 +364,82 @@ class Converters(object):
             raise TypeError("Type not serializable : " + str(obj))
 
 
-class ByReference_Converters(object):
+class BlobConverters(object):
+    """
+    Static class containing all Azure blob storage-related "converters".
+    Note that some converters (df_to_blob_ref, csv_to_blob_ref) actually *upload* data to an actual blob storage.
+    """
 
     @staticmethod
-    def _get_valid_blob_path_prefix(blob_path_prefix  # type: str
-                                    ):
-        #type: (...) -> str
+    def csv_to_blob_ref(csv_str,                # type: str
+                        blob_service,           # type: BlockBlobService
+                        blob_container,         # type: str
+                        blob_name,              # type: str
+                        blob_path_prefix=None,  # type: str
+                        charset=None            # type: str
+                        ):
+        # type: (...) -> AzmlBlobTable
         """
-        Utility method to get a valid blob path prefix from a provided one. A trailing slash is added if non-empty
+        Uploads the provided CSV to the selected Blob Storage service, and returns a reference to the created blob in
+        case of success.
 
-        :param blob_path_prefix:
+        :param csv_str:
+        :param blob_service: the BlockBlobService to use, defining the connection string
+        :param blob_container: the name of the blob storage container to use. This is the "root folder" in azure blob
+            storage wording.
+        :param blob_name: the "file name" of the blob, ending with .csv or not (in which case the .csv suffix will be
+            appended)
+        :param blob_path_prefix: an optional folder prefix that will be used to store your blob inside the container.
+            For example "path/to/my/"
+        :param charset:
         :return:
         """
-        if blob_path_prefix is None:
-            blob_path_prefix = ''
-        elif isinstance(blob_path_prefix, str):
-            if len(blob_path_prefix) > 0 and not blob_path_prefix.endswith('/'):
-                blob_path_prefix = blob_path_prefix + '/'
-        else:
-            raise TypeError('Blob path prefix should be a valid string or not be provided (default is empty string)')
-
-        return blob_path_prefix
-
-    @staticmethod
-    def _get_valid_blob_name_prefix(blob_name_prefix  # type: str
-                                    ):
-        # type: (...) -> str
-        """
-        Utility method to get a valid blob path prefix from a provided one. A trailing slash is added if non-empty
-
-        :param blob_name_prefix:
-        :return:
-        """
-        if blob_name_prefix is None:
-            blob_name_prefix = ''
-        elif isinstance(blob_name_prefix, str):
-            if blob_name_prefix.__contains__('/') or blob_name_prefix.__contains__('\\'):
-                raise ValueError('Blob name prefix should not contain / nor \\')
-        else:
-            raise TypeError('Blob path prefix should be a valid string or not be provided (default is empty string)')
-
-        return blob_name_prefix
-
-    @staticmethod
-    def _get_blob_service_connection_string(blob_service  # type: BlockBlobService
-                                            ):
-        # type: (...) -> str
-        """
-        Utilty method to get the connection string for a blob storage service (currently the BlockBlobService does
-        not provide any method to do that)
-
-        :param blob_service:
-        :return:
-        """
-        validate('blob_service', blob_service, instance_of=BlockBlobService)
-
-        return 'DefaultEndpointsProtocol=https;AccountName=' + blob_service.account_name + ';AccountKey=' + blob_service.account_key
-
-    @staticmethod
-    def create_blobcsvref(blob_service,           # type: BlockBlobService
-                          blob_container,         # type: str
-                          blob_name,              # type: str
-                          blob_path_prefix=None,  # type: str
-                          blob_name_prefix=None   # type: str
-                          ):
-        # type: (...) -> Tuple[Dict[str, str], str]
-        """
-        Utility method to create a reference to a blob, whether it exists or not
-
-        :param blob_service:
-        :param blob_container:
-        :param blob_name:
-        :param blob_path_prefix:
-        :param blob_name_prefix:
-        :return: a tuple. First element is the blob reference (a dict). Second element is the full blob name
-        """
-        validate('blob_container', blob_container, instance_of=str)
-        validate('blob_name', blob_name, instance_of=str)
-
-        # fix the blob name
-        if blob_name.lower().endswith('.csv'):
-            blob_name = blob_name[:-4]
-
-        # validate blob service and get conection string
-        connectionString = ByReference_Converters._get_blob_service_connection_string(blob_service)
-
-        # check the blob path prefix, append a trailing slash if necessary
-        blob_path_prefix = ByReference_Converters._get_valid_blob_path_prefix(blob_path_prefix)
-        blob_name_prefix = ByReference_Converters._get_valid_blob_name_prefix(blob_name_prefix)
-
-        blob_full_name = blob_path_prefix + blob_name_prefix + blob_name + '.csv'
-
-        # output reference and full name
-        return {'ConnectionString': connectionString,
-                'RelativeLocation': blob_container + '/' + blob_path_prefix + blob_name_prefix + blob_name + '.csv'}, \
-               blob_full_name
-
-    @staticmethod
-    def csv_to_blobcsvref(csv_str,                # type: str
-                          blob_service,           # type: BlockBlobService
-                          blob_container,         # type: str
-                          blob_name,              # type: str
-                          blob_path_prefix=None,  # type: str
-                          blob_name_prefix=None,  # type: str
-                          charset=None            # type: str
-                          ):
-        # type: (...) -> Dict[str, str]
-
         # setup the charset used for file encoding
         if charset is None:
             charset = 'utf-8'
-        if charset != 'utf-8':
-            print('Warning: blobs can be written in any charset but currently only utf-8 blobs may be read back into '
-                  'dataframes. We recommend setting charset to None or utf-8 ')
+        elif charset != 'utf-8':
+            print("Warning: blobs can be written in any charset but currently only utf-8 blobs may be read back into "
+                  "dataframes. We recommend setting charset to None or utf-8 ")
 
+        # validate inputs (the only one that is not validated below)
         validate('csv_str', csv_str, instance_of=str)
-        validate('blob_name', blob_name, instance_of=str)
 
         # 1- first create the references in order to check all params are ok
-        blob_reference, blob_full_name = ByReference_Converters.create_blobcsvref(blob_service=blob_service,
-                                                                                  blob_container=blob_container,
-                                                                                  blob_path_prefix=blob_path_prefix,
-                                                                                  blob_name_prefix=blob_name_prefix,
-                                                                                  blob_name=blob_name)
+        blob_reference, blob_full_name = BlobConverters.create_blob_ref(blob_service=blob_service,
+                                                                        blob_container=blob_container,
+                                                                        blob_path_prefix=blob_path_prefix,
+                                                                        blob_name=blob_name)
 
         # -- push blob
+        blob_stream = BytesIO(csv_str.encode(encoding=charset))
         # noinspection PyTypeChecker
-        blob_service.create_blob_from_stream(blob_container, blob_full_name, BytesIO(csv_str.encode(encoding=charset)),
+        blob_service.create_blob_from_stream(blob_container, blob_full_name, blob_stream,
                                              content_settings=ContentSettings(content_type='text.csv',
                                                                               content_encoding=charset))
-
-        # ********** OLD method : with temporary files ***********
-        # # 2- open a temporary file on this computer to write the csv
-        # (fileDescriptor, filePath) = tempfile.mkstemp()
-        # try:
-        #     # 3- write the input to this file
-        #     file = os.fdopen(fileDescriptor, mode='w', encoding=charset)
-        #     file.write(csv_str)
-        #     file.flush()
-        #
-        #     # 4- push the file into an uniquely named blob on the cloud
-        #     blob_service.create_blob_from_path(blob_container, blob_full_name, filePath,
-        #                                        content_settings=ContentSettings(content_type='text.csv', content_encoding=charset))
-        #
-        #     # 5- return reference
-        #     return blob_reference
-        #
-        # except Exception as error:
-        #     print('Error while writing input ' + blob_name + ' to blob storage')
-        #     raise error
-        #
-        # finally:
-        #     # Whatever the situation, close the input file and delete it
-        #     try:
-        #         os.close(fileDescriptor)
-        #     finally:
-        #         os.remove(filePath)
+        # (For old method with temporary files: see git history)
 
         return blob_reference
 
     @staticmethod
-    def blobcsvref_to_csv(blob_reference,        # type: Dict
-                          blob_name=None,        # type: str
-                          encoding=None,         # type: str
-                          requests_session=None  # type: requests.Session
-                          ):
+    def blob_ref_to_csv(blob_reference,        # type: AzmlBlobTable
+                        blob_name=None,        # type: str
+                        encoding=None,         # type: str
+                        requests_session=None  # type: requests.Session
+                        ):
         """
-        Reads a CSV referenced according to the format defined by AzureML, and transforms it into a Dataframe
+        Reads a CSV stored in a Blob Storage and referenced according to the format defined by AzureML, and transforms
+        it into a DataFrame.
 
-        :param blob_reference:
-        :param encoding:
+        :param blob_reference: a (azureml json-like) dictionary representing a table stored as a csv in a blob storage.
+        :param blob_name: blob name for error messages
+        :param encoding: an optional encoding to use to read the blob
         :param requests_session: an optional Session object that should be used for the HTTP communication
         :return:
         """
-        validate('blob_name', blob_reference, instance_of=dict)
+        validate(blob_name, blob_reference, instance_of=dict)
 
-        if not(encoding is None or encoding=='utf-8'):
-            raise ValueError('Unsupported encoding to retrieve blobs : ' + encoding)
+        if encoding is not None and encoding != 'utf-8':
+            raise ValueError("Unsupported encoding to retrieve blobs : %s" % encoding)
 
         if ('ConnectionString' in blob_reference.keys()) and ('RelativeLocation' in blob_reference.keys()):
 
@@ -572,25 +459,27 @@ class ByReference_Converters(object):
             raise ValueError('Blob reference is invalid: it should contain ConnectionString and RelativeLocation fields')
 
     @staticmethod
-    def df_to_blobcsvref(df,                # type: pandas.DataFrame
-                         blob_service,      # type: BlockBlobService
-                         blob_container,    # type: str
-                         blob_name,         # type: str
-                         blob_path_prefix=None,  # type: str
-                         blob_name_prefix=None,  # type: str
-                         charset=None            # type: str
-                         ):
+    def df_to_blob_ref(df,                     # type: pandas.DataFrame
+                       blob_service,           # type: BlockBlobService
+                       blob_container,         # type: str
+                       blob_name,              # type: str
+                       blob_path_prefix=None,  # type: str
+                       charset=None            # type: str
+                       ):
         # type: (...) -> Dict[str, str]
         """
-        right now in two steps : first create the csv, then upload it.
+        Uploads the provided DataFrame to the selected Blob Storage service as a CSV file blob, and returns a reference
+        to the created blob in case of success.
 
         :param df:
-        :param blob_service:
-        :param blob_container:
-        :param blob_name:
-        :param blob_path_prefix:
-        :param blob_name_prefix:
-        :param charset:
+        :param blob_service: the BlockBlobService to use, defining the connection string
+        :param blob_container: the name of the blob storage container to use. This is the "root folder" in azure blob
+            storage wording.
+        :param blob_name: the "file name" of the blob, ending with .csv or not (in which case the .csv suffix will be
+            appended)
+        :param blob_path_prefix: an optional folder prefix that will be used to store your blob inside the container.
+            For example "path/to/my/"
+        :param charset: the charset to use to encode the blob (default and recommended: 'utf-8')
         :return:
         """
 
@@ -598,54 +487,142 @@ class ByReference_Converters(object):
         csv_str = Converters.df_to_csv(df, df_name=blob_name, charset=charset)
 
         # upload it
-        return ByReference_Converters.csv_to_blobcsvref(csv_str, blob_service=blob_service,
-                                                        blob_container=blob_container,
-                                                        blob_path_prefix=blob_path_prefix,
-                                                        blob_name_prefix=blob_name_prefix,
-                                                        blob_name=blob_name, charset=charset)
+        return BlobConverters.csv_to_blob_ref(csv_str, blob_service=blob_service,
+                                              blob_container=blob_container,
+                                              blob_path_prefix=blob_path_prefix,
+                                              blob_name=blob_name, charset=charset)
 
     @staticmethod
-    def blobcsvref_to_df(blob_reference,        # type: Dict
-                         blob_name=None,        # type: str
-                         encoding=None,         # type: str
-                         requests_session=None  # type: requests.Session
-                         ):
+    def blob_ref_to_df(blob_reference,        # type: AzmlBlobTable
+                       blob_name=None,        # type: str
+                       encoding=None,         # type: str
+                       requests_session=None  # type: requests.Session
+                       ):
         """
-        Reads a CSV blob referenced according to the format defined by AzureML, and transforms it into a Dataframe
+        Reads a CSV blob referenced according to the format defined by AzureML, and transforms it into a DataFrame
 
-        :param blob_reference:
-        :param encoding:
+        :param blob_reference: a (azureml json-like) dictionary representing a table stored as a csv in a blob storage.
+        :param blob_name: blob name for error messages
+        :param encoding: an optional encoding to use to read the blob
         :param requests_session: an optional Session object that should be used for the HTTP communication
         :return:
         """
-
-        # TODO copy the BlobCsvRef_to_Csv method here and handle the blob in streaming mode to be big blobs chunking-compliant.
-        # However how to manage the buffer correctly, create the StringIO with correct encoding, and know the number of chunks
-        # that should be read in pandas.read_csv ? A lot to dig here to get it right...
+        # TODO copy the blob_ref_to_csv method here and handle the blob in streaming mode to be big blobs
+        #  chunking-compliant. However how to manage the buffer correctly, create the StringIO with correct encoding,
+        #  and know the number of chunks that should be read in pandas.read_csv ? A lot to dig here to get it right...
         #
         # from io import TextIOWrapper
         # contents = TextIOWrapper(buffer, encoding=charset, ...)
-        # blob = blob_service.get_blob_to_stream(blob_name=name, container_name=container, encoding=charset, stream=contents)
+        # blob = blob_service.get_blob_to_stream(blob_name=name, container_name=container, encoding=charset,
+        #                                        stream=contents)
 
-        blob_content = ByReference_Converters.blobcsvref_to_csv(blob_reference, blob_name=blob_name, encoding=encoding,
-                                                                requests_session=requests_session)
+        blob_content = BlobConverters.blob_ref_to_csv(blob_reference, blob_name=blob_name, encoding=encoding,
+                                                      requests_session=requests_session)
 
         if len(blob_content) > 0:
+            # convert to dataframe
             return Converters.csv_to_df(StringIO(blob_content), blob_name)
         else:
+            # empty blob > empty dataframe
             return pandas.DataFrame()
 
+    @staticmethod
+    def create_blob_ref(blob_service,  # type: BlockBlobService
+                        blob_container,  # type: str
+                        blob_name,  # type: str
+                        blob_path_prefix=None,  # type: str
+                        ):
+        # type: (...) -> Tuple[Dict[str, str], str]
+        """
+        Creates a reference in the AzureML format, to a csv blob stored on Azure Blob Storage, whether it exists or not.
+        The blob name can end with '.csv' or not, the code handles both.
 
-class Collection_Converters(object):
+        :param blob_service: the BlockBlobService to use, defining the connection string
+        :param blob_container: the name of the blob storage container to use. This is the "root folder" in azure blob
+            storage wording.
+        :param blob_name: the "file name" of the blob, ending with .csv or not (in which case the .csv suffix will be
+            appended)
+        :param blob_path_prefix: an optional folder prefix that will be used to store your blob inside the container.
+            For example "path/to/my/"
+        :return: a tuple. First element is the AzureML blob reference (a dict). Second element is the full blob name
+        """
+        # validate input (blob_service and blob_path_prefix are done below)
+        validate('blob_container', blob_container, instance_of=str)
+        validate('blob_name', blob_name, instance_of=str)
+
+        # fix the blob name
+        if blob_name.lower().endswith('.csv'):
+            blob_name = blob_name[:-4]
+
+        # validate blob service and get connection string
+        connection_str = BlobConverters._get_blob_service_connection_string(blob_service)
+
+        # check the blob path prefix, append a trailing slash if necessary
+        blob_path_prefix = BlobConverters._get_valid_blob_path_prefix(blob_path_prefix)
+
+        # output reference and full name
+        blob_full_name = '%s%s.csv' % (blob_path_prefix, blob_name)
+        relative_location = "%s/%s" % (blob_container, blob_full_name)
+        output_ref = {'ConnectionString': connection_str,
+                      'RelativeLocation': relative_location}
+
+        return output_ref, blob_full_name
 
     @staticmethod
-    def create_blob_csv_ref_dict(blob_service,           # type: BlockBlobService
-                                 blob_container,         # type: str
-                                 blob_names,             # type : List[str]
-                                 blob_path_prefix=None,  # type: str
-                                 blob_name_prefix=None   # type: str
-                                 ):
-        # type: (...) -> Dict[str, Dict[str, str]]
+    def _get_valid_blob_path_prefix(blob_path_prefix  # type: str
+                                    ):
+        # type: (...) -> str
+        """
+        Utility method to get a valid blob path prefix from a provided one. A trailing slash is added if non-empty
+
+        :param blob_path_prefix:
+        :return:
+        """
+        validate('blob_path_prefix', blob_path_prefix, instance_of=str, enforce_not_none=False)
+
+        if blob_path_prefix is None:
+            blob_path_prefix = ''
+        elif isinstance(blob_path_prefix, str):
+            if len(blob_path_prefix) > 0 and not blob_path_prefix.endswith('/'):
+                blob_path_prefix = blob_path_prefix + '/'
+        else:
+            raise TypeError("Blob path prefix should be a valid string or not be provided (default is empty string)")
+
+        return blob_path_prefix
+
+    @staticmethod
+    def _get_blob_service_connection_string(blob_service  # type: BlockBlobService
+                                            ):
+        # type: (...) -> str
+        """
+        Utilty method to get the connection string for a blob storage service (currently the BlockBlobService does
+        not provide any method to do that)
+
+        :param blob_service:
+        :return:
+        """
+        validate('blob_service', blob_service, instance_of=BlockBlobService)
+
+        return "DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s" \
+               "" % (blob_service.account_name, blob_service.account_key)
+
+
+class CollectionConverters(object):
+    """
+    Helper methods to convert collection of objects. Note that as for `BlobConverters`, all blob-related methods
+    actually *upload* blobs to storage services, so this is more than just conversion.
+
+    The reason why this class is provided is to add some handy validation and prefixing capabilities for collections.
+    """
+
+    @staticmethod
+    def create_blob_refs(blob_service,           # type: BlockBlobService
+                         blob_container,         # type: str
+                         blob_names,             # type: List[str]
+                         blob_path_prefix=None,  # type: str
+                         blob_name_prefix=None   # type: str
+                         ):
+        # type: (...) -> Dict[str, AzmlBlobTable]
         """
         Utility method to create one or several blob references on the same container on the same blob storage service.
 
@@ -657,43 +634,51 @@ class Collection_Converters(object):
         :return:
         """
         validate('blob_names', blob_names, instance_of=list)
+        if blob_name_prefix is None:
+            blob_name_prefix = ""
+        else:
+            validate('blob_name_prefix', blob_name_prefix, instance_of=str)
 
-        # output dict of references
-        return {blobName: ByReference_Converters.create_blobcsvref(blob_service, blob_container, blobName,
-                                                                   blob_path_prefix=blob_path_prefix,
-                                                                   blob_name_prefix=blob_name_prefix)[0]
-                for blobName in blob_names}
+        # convert all and return in a dict
+        return {blob_name: BlobConverters.create_blob_ref(blob_service, blob_container, blob_name_prefix + blob_name,
+                                                          blob_path_prefix=blob_path_prefix)[0]
+                for blob_name in blob_names}
 
     @staticmethod
-    def dfdict_to_csvdict(dataframesDict,   # type: Dict[str, pandas.DataFrame]
-                          charset=None      # type: str
+    def dfdict_to_csvdict(dfs,           # type: Dict[str, pandas.DataFrame]
+                          charset=None   # type: str
                           ):
         # type: (...) -> Dict[str, str]
         """
-        Helper method to create CSVs compliant with AzureML web service BATCH inputs, from a dictionary of input dataframes
+        Converts each of the DataFrames in the provided dictionary to a csv, typically to store it on blob storage for
+        Batch AzureML calls. All CSV are returned in a dictoinary with the same keys.
 
-        :param dataframesDict: a dictionary containing input names and input content (each input content is a dataframe)
+        WARNING: datetime columns are converted in ISO format but the milliseconds are ignored and set to zero.
+        See `Converters.df_to_csv` for details
+
+        :param dfs: a dictionary containing input names and input content (each input content is a dataframe)
+        :param charset: the charset to use for csv encoding
         :return: a dictionary containing the string representations of the Csv inputs to store on the blob storage
         """
-        _check_not_none_and_typed(dataframesDict, var_type=dict, var_name='dataframesDict')
+        validate('dfs', dfs, instance_of=dict)
 
-        return {inputName: Converters.df_to_csv(inputDf, df_name=inputName, charset=charset) for inputName, inputDf in dataframesDict.items()}
-
+        return {input_name: Converters.df_to_csv(inputDf, df_name=input_name, charset=charset)
+                for input_name, inputDf in dfs.items()}
 
     @staticmethod
-    def csvdict_to_dfdict(csvsDict  # type: Dict[str, str]
+    def csvdict_to_dfdict(csv_dict  # type: Dict[str, str]
                           ):
         # type: (...) -> Dict[str, pandas.DataFrame]
         """
         Helper method to read CSVs compliant with AzureML web service BATCH inputs/outputs, into a dictionary of Dataframes
 
-        :param csvsDict:
+        :param csv_dict:
         :return:
         """
-        validate('csvsDict', csvsDict, instance_of=dict)
+        validate('csv_dict', csv_dict, instance_of=dict)
 
-        return {inputName: Converters.csv_to_df(inputCsv, csv_name=inputName) for inputName, inputCsv in csvsDict.items()}
-
+        return {input_name: Converters.csv_to_df(inputCsv, csv_name=input_name)
+                for input_name, inputCsv in csv_dict.items()}
 
     @staticmethod
     def dfdict_to_azmltablesdict(dataframesDict  # type: Dict[str, pandas.DataFrame]
@@ -713,7 +698,7 @@ class Collection_Converters(object):
         #     resultsDict[dfName] = Converters.Df_to_AzmlTable(df, dfName)
         # return resultsDict
 
-        return {dfName: Converters.df_to_azmltable(df, df_name=dfName) for dfName, df in dataframesDict.items()}
+        return {dfName: Converters.df_to_azmltable(df, table_name=dfName) for dfName, df in dataframesDict.items()}
 
     @staticmethod
     def azmltablesdict_to_dfdict(azmlTablesDict,        # type: Dict[str, Dict[str, Union[str, Dict[str, List]]]]
@@ -743,10 +728,9 @@ class Collection_Converters(object):
 
         validate('blobcsvReferences', blobcsvReferences, instance_of=dict)
 
-        return {blobName: ByReference_Converters.blobcsvref_to_csv(csvBlobRef, encoding=charset, blob_name=blobName,
-                                                                   requests_session=requests_session)
+        return {blobName: BlobConverters.blob_ref_to_csv(csvBlobRef, encoding=charset, blob_name=blobName,
+                                                         requests_session=requests_session)
                 for blobName, csvBlobRef in blobcsvReferences.items()}
-
 
     @staticmethod
     def csvdict_to_blobcsvrefdict(csvsDict,               # type: Dict[str, str]
@@ -774,11 +758,11 @@ class Collection_Converters(object):
 
         validate('csvsDict', csvsDict, instance_of=dict)
 
-        return {blobName: ByReference_Converters.csv_to_blobcsvref(csvStr, blob_service=blob_service,
-                                                                   blob_container=blob_container,
-                                                                   blob_path_prefix=blob_path_prefix,
-                                                                   blob_name_prefix=blob_name_prefix,
-                                                                   blob_name=blobName, charset=charset)
+        return {blobName: BlobConverters.csv_to_blob_ref(csvStr, blob_service=blob_service,
+                                                         blob_container=blob_container,
+                                                         blob_path_prefix=blob_path_prefix,
+                                                         blob_name_prefix=blob_name_prefix,
+                                                         blob_name=blobName, charset=charset)
                 for blobName, csvStr in csvsDict.items()}
 
 
@@ -800,8 +784,8 @@ class Collection_Converters(object):
         """
         validate('blobReferences', blobReferences, instance_of=dict)
 
-        return {blobName: ByReference_Converters.blobcsvref_to_df(csvBlobRef, encoding=charset, blob_name=blobName,
-                                                                  requests_session=requests_session)
+        return {blobName: BlobConverters.blob_ref_to_df(csvBlobRef, encoding=charset, blob_name=blobName,
+                                                        requests_session=requests_session)
                 for blobName, csvBlobRef in blobReferences.items()}
 
     @staticmethod
@@ -816,11 +800,10 @@ class Collection_Converters(object):
 
         validate('dataframesDict', dataframesDict, instance_of=dict)
 
-        return {blobName: ByReference_Converters.df_to_blobcsvref(csvStr, blob_service=blob_service,
-                                                                  blob_container=blob_container,
-                                                                  blob_path_prefix=blob_path_prefix,
-                                                                  blob_name_prefix=blob_name_prefix,
-                                                                  blob_name=blobName, charset=charset)
+        return {blobName: BlobConverters.df_to_blob_ref(csvStr, blob_service=blob_service,
+                                                        blob_container=blob_container,
+                                                        blob_path_prefix=blob_path_prefix,
+                                                        blob_name=blob_name_prefix + blobName, charset=charset)
                 for blobName, csvStr in dataframesDict.items()}
 
 
