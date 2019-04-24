@@ -757,15 +757,16 @@ class CollectionConverters(object):
         """
 
         validate('csvsDict', csvsDict, instance_of=dict)
+        if blob_name_prefix is None:
+            blob_name_prefix = ""
+        else:
+            validate('blob_name_prefix', blob_name_prefix, instance_of=str)
 
         return {blobName: BlobConverters.csv_to_blob_ref(csvStr, blob_service=blob_service,
                                                          blob_container=blob_container,
                                                          blob_path_prefix=blob_path_prefix,
-                                                         blob_name_prefix=blob_name_prefix,
-                                                         blob_name=blobName, charset=charset)
+                                                         blob_name=blob_name_prefix + blobName, charset=charset)
                 for blobName, csvStr in csvsDict.items()}
-
-
 
     @staticmethod
     def blobcsvrefdict_to_dfdict(blobReferences,        # type: Dict[str, Dict[str, str]]
