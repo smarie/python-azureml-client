@@ -645,9 +645,9 @@ class CollectionConverters(object):
                 for blob_name in blob_names}
 
     @staticmethod
-    def dfdict_to_csvdict(dfs,           # type: Dict[str, pandas.DataFrame]
-                          charset=None   # type: str
-                          ):
+    def dfs_to_csvs(dfs,          # type: Dict[str, pandas.DataFrame]
+                    charset=None  # type: str
+                    ):
         # type: (...) -> Dict[str, str]
         """
         Converts each of the DataFrames in the provided dictionary to a csv, typically to store it on blob storage for
@@ -666,8 +666,8 @@ class CollectionConverters(object):
                 for input_name, inputDf in dfs.items()}
 
     @staticmethod
-    def csvdict_to_dfdict(csv_dict  # type: Dict[str, str]
-                          ):
+    def csvs_to_dfs(csv_dict  # type: Dict[str, str]
+                    ):
         # type: (...) -> Dict[str, pandas.DataFrame]
         """
         Helper method to read CSVs compliant with AzureML web service BATCH inputs/outputs, into a dictionary of Dataframes
@@ -681,29 +681,29 @@ class CollectionConverters(object):
                 for input_name, inputCsv in csv_dict.items()}
 
     @staticmethod
-    def dfdict_to_azmltablesdict(dataframesDict  # type: Dict[str, pandas.DataFrame]
-                                 ):
+    def dfs_to_azmltables(dfs  # type: Dict[str, pandas.DataFrame]
+                          ):
         # type: (...) -> Dict[str, Dict[str, Union[str, Dict[str, List]]]]
         """
         Converts a dictionary of dataframes into a dictionary of dictionaries following the structure
         required for AzureML JSON conversion
 
-        :param dataframesDict: a dictionary containing input names and input content (each input content is a dataframe)
+        :param dfs: a dictionary containing input names and input content (each input content is a dataframe)
         :return: a dictionary of tables represented as dictionaries
         """
-        validate('dataframesDict', dataframesDict, instance_of=dict)
+        validate('dfs', dfs, instance_of=dict)
 
         # resultsDict = {}
         # for dfName, df in dataframesDict.items():
         #     resultsDict[dfName] = Converters.Df_to_AzmlTable(df, dfName)
         # return resultsDict
 
-        return {dfName: Converters.df_to_azmltable(df, table_name=dfName) for dfName, df in dataframesDict.items()}
+        return {df_name: Converters.df_to_azmltable(df, table_name=df_name) for df_name, df in dfs.items()}
 
     @staticmethod
-    def azmltablesdict_to_dfdict(azmlTablesDict,        # type: Dict[str, Dict[str, Union[str, Dict[str, List]]]]
-                                 isAzureMlOutput=False  # type: bool
-                                 ):
+    def azmltables_to_dfs(azmlTablesDict,  # type: Dict[str, Dict[str, Union[str, Dict[str, List]]]]
+                          isAzureMlOutput=False  # type: bool
+                          ):
         # type: (...) -> Dict[str, pandas.DataFrame]
 
         validate('azmlTablesDict', azmlTablesDict, instance_of=dict)
@@ -713,10 +713,10 @@ class CollectionConverters(object):
                 for input_name, dict_table in azmlTablesDict.items()}
 
     @staticmethod
-    def blobcsvrefdict_to_csvdict(blobcsvReferences,     # type: Dict[str, Dict[str, str]]
-                                  charset=None,          # type: str
-                                  requests_session=None  # type: requests.Session
-                                  ):
+    def blob_refs_to_csvs(blobcsvReferences,  # type: Dict[str, Dict[str, str]]
+                          charset=None,  # type: str
+                          requests_session=None  # type: requests.Session
+                          ):
         # type: (...) -> Dict[str, str]
         """
 
@@ -733,13 +733,13 @@ class CollectionConverters(object):
                 for blobName, csvBlobRef in blobcsvReferences.items()}
 
     @staticmethod
-    def csvdict_to_blobcsvrefdict(csvsDict,               # type: Dict[str, str]
-                                  blob_service,           # type: BlockBlobService
-                                  blob_container,         # type: str
-                                  blob_path_prefix=None,  # type: str
-                                  blob_name_prefix=None,  # type: str
-                                  charset=None            # type: str
-                                  ):
+    def csvs_to_blob_refs(csvsDict,  # type: Dict[str, str]
+                          blob_service,  # type: BlockBlobService
+                          blob_container,  # type: str
+                          blob_path_prefix=None,  # type: str
+                          blob_name_prefix=None,  # type: str
+                          charset=None  # type: str
+                          ):
         # type: (...) -> Dict[str, Dict[str, str]]
         """
         Utility method to push all inputs described in the provided dictionary into the selected blob storage on the cloud.
@@ -769,10 +769,10 @@ class CollectionConverters(object):
                 for blobName, csvStr in csvsDict.items()}
 
     @staticmethod
-    def blobcsvrefdict_to_dfdict(blobReferences,        # type: Dict[str, Dict[str, str]]
-                                 charset=None,          # type: str
-                                 requests_session=None  # type: requests.Session
-                                 ):
+    def blob_refs_to_dfs(blobReferences,  # type: Dict[str, Dict[str, str]]
+                         charset=None,  # type: str
+                         requests_session=None  # type: requests.Session
+                         ):
         # type: (...) -> Dict[str, pandas.DataFrame]
         """
         Reads Blob references, for example responses from an AzureMl Batch web service call, into a dictionary of
@@ -790,13 +790,13 @@ class CollectionConverters(object):
                 for blobName, csvBlobRef in blobReferences.items()}
 
     @staticmethod
-    def dfdict_to_blobcsvrefdict(dataframesDict,         # type: Dict[str, pandas.DataFrame]
-                                 blob_service,           # type: BlockBlobService
-                                 blob_container,         # type: str
-                                 blob_path_prefix=None,  # type: str
-                                 blob_name_prefix=None,  # type: str
-                                 charset=None            # type: str
-                                 ):
+    def dfs_to_blob_refs(dataframesDict,  # type: Dict[str, pandas.DataFrame]
+                         blob_service,  # type: BlockBlobService
+                         blob_container,  # type: str
+                         blob_path_prefix=None,  # type: str
+                         blob_name_prefix=None,  # type: str
+                         charset=None  # type: str
+                         ):
         # type: (...) -> Dict[str, Dict[str, str]]
 
         validate('dataframesDict', dataframesDict, instance_of=dict)

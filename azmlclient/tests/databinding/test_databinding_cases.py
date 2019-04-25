@@ -7,7 +7,7 @@ except ImportError:
     from functools32 import lru_cache
 from pytest_cases import cases_generator
 
-from azmlclient.data_binding import convert_all_datetime_columns, localize_all_datetime_columns
+from azmlclient.base_databinding import convert_all_datetime_columns, localize_all_datetime_columns
 
 
 class DataBindingTestCase(object):

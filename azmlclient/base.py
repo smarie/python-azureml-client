@@ -2,6 +2,8 @@ import json
 import time
 import urllib
 from datetime import datetime
+from distutils.util import strtobool
+from urllib.parse import urlparse
 
 import pandas as pd
 import requests
@@ -13,7 +15,7 @@ except ImportError:
     pass
 
 from azure.storage.blob import BlockBlobService
-from azmlclient.data_binding import AzmlException, Converters, CollectionConverters
+from azmlclient.base_databinding import AzmlException, Converters, CollectionConverters
 
 
 class IllegalJobStateException(Exception):
@@ -22,6 +24,85 @@ class IllegalJobStateException(Exception):
 
 class JobExecutionException(Exception):
     """ This is raised whenever a job ended in failed mode"""
+
+
+def create_session_for_proxy_from_strings(http_proxy=None,   # type: str
+                                          https_proxy=None,  # type: str
+                                          ssl_verify=True,   # type: Union[str, bool]
+                                          ):
+    # type: (...) -> Optional[requests.Session]
+    """
+    Similar to `create_session_for_proxy` but with string information for proxies.
+    Note that if this is called with no arguments, this function will return None.
+
+    :param http_proxy:
+    :param https_proxy:
+    :param ssl_verify:
+    :return:
+    """
+
+    if not isinstance(ssl_verify, bool):
+        ssl_verify = strtobool(ssl_verify)
+
+    if http_proxy or https_proxy:
+        opts = dict()
+
+        if http_proxy is not None:
+            host, port, protocol = parse_proxy_info(http_proxy)
+            if protocol != 'http':
+                raise ValueError("Only http protocol is supported for http proxy")
+            opts['http_proxyhost'] = host
+            opts['http_proxyport'] = port
+
+        if https_proxy is not None:
+            host, port, protocol = parse_proxy_info(https_proxy)
+            use_http_for_https_proxy = (protocol == 'http')
+            opts['use_http_for_https_proxy'] = use_http_for_https_proxy
+
+            if http_proxy is None:
+                if use_http_for_https_proxy:
+                    opts['http_proxyhost'] = host
+                    opts['http_proxyport'] = port
+                else:
+                    raise ValueError("http proxy information is missing, and https proxy uses the https protocol. "
+                                     "Please provide a value for http_proxy or change the https_proxy protocol to http")
+            else:
+                opts['https_proxyhost'] = host
+                opts['https_proxyport'] = port
+
+        opts['ssl_verify'] = ssl_verify
+        session = create_session_for_proxy(**opts)
+    else:
+        if not ssl_verify:
+            # warnings are now issued by `requests` by default, no need to add more
+            # warn("It is not recommended to disable ssl validation in general. It is only allowed for "
+            #      "temporary logging using fiddler")
+            session = requests.Session()
+            session.verify = False
+            session.trust_env = False
+        else:
+            # no need for a specific session, return None
+            session = None
+
+    return session
+
+
+def parse_proxy_info(proxy_url
+                     ):
+    """
+    Parses a
+    :param proxy_url:
+    :return:
+    """
+    o = urlparse(proxy_url)
+
+    validate('hostname', o.hostname, min_len=1)
+    validate('port', o.port)
+    validate('scheme', o.scheme, is_in={'http', 'https'},
+             help_msg="Only http and https protocols are supported for http(s) proxies. "
+                      "Found: '{var_value}' from '%s'" % proxy_url)
+
+    return o.hostname, o.port, o.scheme
 
 
 def create_session_for_proxy(http_proxyhost,                  # type: str
@@ -219,7 +300,7 @@ def execute_bes(api_key,                              # type: str
     print('Retrieving the outputs from the blob storage')
 
     # dont use the output of the job status (outputs_refs2), it does not contain the connectionString
-    result_dfs = CollectionConverters.blobcsvrefdict_to_dfdict(output_refs, requests_session=requests_session)
+    result_dfs = CollectionConverters.blob_refs_to_dfs(output_refs, requests_session=requests_session)
 
     return result_dfs
 
@@ -357,7 +438,7 @@ class RequestResponseClient(BaseHttpClient):
             params_df_or_dict = {}
 
         # inputs
-        inputs = CollectionConverters.dfdict_to_azmltablesdict(input_df_dict)
+        inputs = CollectionConverters.dfs_to_azmltables(input_df_dict)
 
         # params
         if isinstance(params_df_or_dict, dict):
@@ -412,7 +493,7 @@ class RequestResponseClient(BaseHttpClient):
         result_dict = Converters.json_to_azmltable(body_json)
 
         # then transform it into a dataframe
-        result_dfs = CollectionConverters.azmltablesdict_to_dfdict(result_dict['Results'], isAzureMlOutput=True)
+        result_dfs = CollectionConverters.azmltables_to_dfs(result_dict['Results'], isAzureMlOutput=True)
 
         if output_names is None:
             # return all outputs
@@ -442,7 +523,7 @@ class RequestResponseClient(BaseHttpClient):
         # first read the json as a dictionary
         result_dct = Converters.json_to_azmltable(body_json)
 
-        return CollectionConverters.azmltablesdict_to_dfdict(result_dct['Inputs']), result_dct['GlobalParameters']
+        return CollectionConverters.azmltables_to_dfs(result_dct['Inputs']), result_dct['GlobalParameters']
 
 
 class BatchClient(BaseHttpClient):
@@ -483,11 +564,11 @@ class BatchClient(BaseHttpClient):
         unique_blob_name_prefix = now.strftime("%Y-%m-%d_%H%M%S_%f")
 
         # 2- store INPUTS and retrieve references
-        input_refs = CollectionConverters.dfdict_to_blobcsvrefdict(inputs_df_dict, blob_service=blob_service,
-                                                                   blob_container=blob_container,
-                                                                   blob_path_prefix=blob_path_prefix,
-                                                                   blob_name_prefix=unique_blob_name_prefix + '-input-',
-                                                                   charset=charset)
+        input_refs = CollectionConverters.dfs_to_blob_refs(inputs_df_dict, blob_service=blob_service,
+                                                           blob_container=blob_container,
+                                                           blob_path_prefix=blob_path_prefix,
+                                                           blob_name_prefix=unique_blob_name_prefix + '-input-',
+                                                           charset=charset)
 
         # 3- create OUTPUT references
         output_refs = CollectionConverters.create_blob_refs(blob_names=output_names, blob_service=blob_service,
