@@ -18,9 +18,10 @@ class DummyClient(DummyProvider, AzureMLClient):
     """
 
     def __init__(self,
-                 client_config: ClientConfig,
-                 logger: Logger = default_logger,
-                 with_plots: bool = False):
+                 client_config,          # type: ClientConfig
+                 logger=default_logger,  # type: Logger
+                 with_plots=False        # type: bool
+                 ):
         """
         Constructor. Same than super but with an additional `with_plots` attribute.
 

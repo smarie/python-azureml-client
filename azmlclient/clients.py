@@ -82,6 +82,9 @@ def get_azureml_service_name(f):
     :return:
     """
     try:
+        # if this is the bound method, get the unbound one
+        if hasattr(f, '__func__'):
+            f = f.__func__
         azml_name = getattr(f, AZML_SERVICE_ID)
     except AttributeError:
         raise ValueError("Method '%s' can not be bound to an azureml service, please decorate it with "
@@ -284,10 +287,10 @@ class AzureMLClient:
     # ------
 
     def call_azureml(self,
-                     service_id: Union[str, Callable],
-                     ws_inputs: Dict[str, pd.DataFrame],
-                     ws_output_names: List[str],
-                     ws_params: Dict[str, str] = None,
+                     service_id,       # type: Union[str, Callable]
+                     ws_inputs,        # type: Dict[str, pd.DataFrame]
+                     ws_output_names,  # type: List[str]
+                     ws_params=None,   # type: Dict[str, str]
                      ):
         """
         Calls the service identified with id service_id in the services configuration.
@@ -306,10 +309,7 @@ class AzureMLClient:
         """
         # -- one can provide a method as the service id
         if callable(service_id):
-            # if this is the bound method, get the unbound one
-            if hasattr(service_id, '__func__'):
-                service_id = service_id.__func__
-            service_id = service_id.__name__
+            service_id = get_azureml_service_name(service_id)
 
         # -- Retrieve service configuration
         if service_id not in self.client_config.services_configs.keys():

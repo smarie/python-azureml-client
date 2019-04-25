@@ -1,8 +1,7 @@
 import csv
-import io
 import pandas as pd
 
-from azmlclient import Converters
+from azmlclient.base_databinding import Converters, create_dest_buffer_for_csv, create_reading_buffer
 
 
 class AzuremlWebServiceMock(object):
@@ -58,12 +57,12 @@ def convert_dct_table_to_df(input_name, dict_table, is_timeseries):
             if len(values) > 0:
                 # use pandas parser to infer most of the types
                 # -- for that we first dump in a buffer in a CSV format
-                buffer = io.StringIO(initial_value='', newline='\n')
+                buffer = create_dest_buffer_for_csv()
                 writer = csv.writer(buffer, dialect='unix')
                 writer.writerows([dict_table['ColumnNames']])
                 writer.writerows(values)
                 # -- and then we parse with pandas
-                res = pd.read_csv(io.StringIO(buffer.getvalue()), sep=',', decimal='.')
+                res = pd.read_csv(create_reading_buffer(buffer.getvalue()), sep=',', decimal='.')
                 buffer.close()
                 return res
             else:

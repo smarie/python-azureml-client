@@ -15,9 +15,10 @@ services:
    api_key: none
 
    # -- blob storage to use for inputs and outputs in BATCH mode
-   blob_account_for_batch: none
-   blob_apikey_for_batch: none
-   blob_containername_for_batch: none
+   blob_account: none
+   blob_api_key: none
+   blob_container: none
+   blob_path_prefix: none
 
  subtract_columns:
    # -- Endpoint for RR by value and BATCH
@@ -25,6 +26,7 @@ services:
    api_key: none
 
    # -- blob storage to use for inputs and outputs in BATCH mode
-   blob_account_for_batch:
-   blob_apikey_for_batch:
-   blob_containername_for_batch:
+   blob_account: none
+   blob_api_key: none
+   blob_container: none
+   blob_path_prefix: none

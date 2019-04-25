@@ -1,4 +1,6 @@
 from abc import abstractmethod, ABCMeta
+
+from valid8 import validate
 from six import with_metaclass
 
 try:  # python 3.5+
@@ -43,7 +45,7 @@ class RemoteCallMode(CallMode):
                      ):
         # type: (...) -> Dict[str, pd.DataFrame]
         """
-        This method is called
+        This method is called by `AzureMLClient` instances when their current call mode is a remote call mode.
 
         :param service_config:
         :param ws_inputs:
@@ -103,16 +105,15 @@ class Batch(RemoteCallMode):
         """
         return execute_bes(
             # all of this is filled using the `service_config`
-            api_key=service_config.api_key,
-            base_url=service_config.base_url,
-            blob_storage_account=service_config.blob_account_for_batch,
-            blob_storage_apikey=service_config.blob_apikey_for_batch,
-            blob_container=service_config.blob_containername_for_batch,
-            blob_path_prefix='',  # blob_charset=None,
+            api_key=service_config.api_key, base_url=service_config.base_url,
+            blob_storage_account=service_config.blob_account, blob_storage_apikey=service_config.blob_api_key,
+            blob_container=service_config.blob_container, blob_path_prefix=service_config.blob_path_prefix,
+            # blob_charset=None,
             # -------
             inputs=ws_inputs, params=ws_params, output_names=ws_output_names,
             nb_seconds_between_status_queries=self.polling_period_seconds,
-            requests_session=session)
+            requests_session=session
+        )
 
 
 # class RequestResponseInputsByRef(RequestResponse):
@@ -189,7 +190,7 @@ class Batch(RemoteCallMode):
 #                                                            blob_container=service_config.blob_containername_for_batch,
 #                                                            blob_path_prefix='')
 #
-#     # -- then generate shared acces key (public SAS access to blob)
+#     # -- then generate shared access key (public SAS access to blob)
 #     blob_relative_loc = input_refs[by_ref_input_name]['RelativeLocation']
 #     blob_name = blob_relative_loc[blob_relative_loc.find('/') + 1:]
 #     expiry_date = datetime.now() + timedelta(hours=2)  # expires in 2 hours

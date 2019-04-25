@@ -1,11 +1,12 @@
 import sys
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from logging import getLogger, StreamHandler, INFO
 
 import pandas as pd
+from six import with_metaclass
 
 
-class DummyProvider(ABC):
+class DummyProvider(with_metaclass(ABCMeta, object)):
     """
     The API of a dummy component
     """

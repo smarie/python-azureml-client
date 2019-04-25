@@ -34,7 +34,8 @@ def mock_server():
 
 
 @pytest.fixture(params=['yaml', 'cfg'])
-def client_impl(request) -> DummyProvider:
+def client_impl(request):
+    # type: (...) -> DummyProvider
     """
     Creates a client from the configuration file
     :return:
@@ -52,7 +53,9 @@ def client_impl(request) -> DummyProvider:
 
 
 @pytest.mark.parametrize('mode', ['local', 'RR', 'Batch'], ids="mode={}".format)
-def test_client_call_simple(client_impl: DummyClient, mode: str):
+def test_client_call_simple(client_impl,  # type: DummyClient
+                            mode          # type: str
+                            ):
     """ Tests that the client can be used to use the 'add columns' service """
 
     # input data

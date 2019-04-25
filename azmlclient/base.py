@@ -3,7 +3,11 @@ import time
 import urllib
 from datetime import datetime
 from distutils.util import strtobool
-from urllib.parse import urlparse
+try:  # python 3+
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 
 import pandas as pd
 import requests
