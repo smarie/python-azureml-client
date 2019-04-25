@@ -321,7 +321,8 @@ class AzureMLClient:
         session = self.get_requests_session()
 
         # -- Perform call according to options
-        return self.current_call_mode.call_azureml(service_config=service_config, ws_inputs=ws_inputs,
+        return self.current_call_mode.call_azureml(service_id,
+                                                   service_config=service_config, ws_inputs=ws_inputs,
                                                    ws_output_names=ws_output_names, ws_params=ws_params,
                                                    session=session)
 

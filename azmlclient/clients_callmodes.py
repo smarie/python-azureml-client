@@ -35,6 +35,7 @@ class RemoteCallMode(CallMode):
     """
     @abstractmethod
     def call_azureml(self,
+                     service_id,            # type: str
                      service_config,        # type: ServiceEndpointsConfig
                      ws_inputs,             # type: Dict[str, pd.DataFrame]
                      ws_params=None,        # type: Dict[str, str]
@@ -47,6 +48,7 @@ class RemoteCallMode(CallMode):
         """
         This method is called by `AzureMLClient` instances when their current call mode is a remote call mode.
 
+        :param service_id: the service id that will be used in error messages
         :param service_config:
         :param ws_inputs:
         :param ws_params:
@@ -66,6 +68,7 @@ class RequestResponse(RemoteCallMode):
 
     # noinspection PyMethodOverriding
     def call_azureml(self,
+                     service_id,            # type: str
                      service_config,        # type: ServiceEndpointsConfig
                      ws_inputs,             # type: Dict[str, pd.DataFrame]
                      ws_params=None,        # type: Dict[str, str]
@@ -76,6 +79,9 @@ class RequestResponse(RemoteCallMode):
         """
         (See super for description)
         """
+        validate("%s:base_url" % service_id, service_config.base_url)
+        validate("%s:api_key" % service_id, service_config.api_key)
+
         # standard azureml request-response call
         return execute_rr(api_key=service_config.api_key, base_url=service_config.base_url,
                           inputs=ws_inputs, params=ws_params, output_names=ws_output_names,
@@ -93,6 +99,7 @@ class Batch(RemoteCallMode):
 
     # noinspection PyMethodOverriding
     def call_azureml(self,
+                     service_id,            # type: str
                      service_config,        # type: ServiceEndpointsConfig
                      ws_inputs,             # type: Dict[str, pd.DataFrame]
                      ws_params=None,        # type: Dict[str, str]
@@ -103,6 +110,12 @@ class Batch(RemoteCallMode):
         (See super for base description)
         :return:
         """
+        validate("%s:base_url" % service_id, service_config.base_url)
+        validate("%s:api_key" % service_id, service_config.api_key)
+        validate("%s:blob_account" % service_id, service_config.blob_account)
+        validate("%s:blob_api_key" % service_id, service_config.blob_api_key)
+        validate("%s:blob_container" % service_id, service_config.blob_container)
+
         return execute_bes(
             # all of this is filled using the `service_config`
             api_key=service_config.api_key, base_url=service_config.base_url,
