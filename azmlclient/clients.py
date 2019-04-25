@@ -36,9 +36,9 @@ AZML_SERVICE_ID = '__azml_service__'
 
 
 @function_decorator
-def component_service(service_name=None,  # type: str
-                      f=DECORATED,
-                      ):
+def azureml_service(service_name=None,  # type: str
+                    f=DECORATED,
+                    ):
     """
     A decorator for methods in your `AzureMLClient` subclasses, that you should use to indicate that a given method
     corresponds to an AzureML service. That way, the `AzureMLClient` base class will be able to link this method
@@ -88,7 +88,7 @@ def get_azureml_service_name(f):
         azml_name = getattr(f, AZML_SERVICE_ID)
     except AttributeError:
         raise ValueError("Method '%s' can not be bound to an azureml service, please decorate it with "
-                         "@component_service." % f.__name__)
+                         "@azureml_service." % f.__name__)
     else:
         return azml_name if azml_name is not None else f.__name__
 
@@ -141,7 +141,7 @@ class AzureMLClient:
     def service_methods(self):
         """
         returns a dictionary of all service methods referenced by azureml service name.
-        These are all methods in the class that have been decorated with `@component_service`
+        These are all methods in the class that have been decorated with `@azureml_service`
         :return:
         """
         return {get_azureml_service_name(v[1]): v[1]
@@ -174,7 +174,7 @@ class AzureMLClient:
                            service_name,  # type: str
                            *args, **kwargs):
         """
-        This method is called automatically when a service method (i.e. decorated with `@component_service`)
+        This method is called automatically when a service method (i.e. decorated with `@azureml_service`)
         is called and this instance is in "local" mode. It delegates to local.
 
         :param service_name:

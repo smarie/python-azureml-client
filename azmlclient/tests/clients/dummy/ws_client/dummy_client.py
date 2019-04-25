@@ -1,7 +1,7 @@
 import sys
 from logging import Logger, getLogger, StreamHandler, INFO
 
-from azmlclient import AzureMLClient, ClientConfig, component_service
+from azmlclient import AzureMLClient, ClientConfig, azureml_service
 from azmlclient.tests.clients.dummy.api_and_core import DummyProvider
 
 
@@ -43,7 +43,7 @@ class DummyClient(DummyProvider, AzureMLClient):
         from azmlclient.tests.clients.dummy.api_and_core import DummyImpl
         return DummyImpl(logger=self.logger, with_plots=self.with_plots)
 
-    @component_service
+    @azureml_service
     def add_columns(self, a_name, b_name, df):
         """
         Implements the remote calls to the service.
@@ -67,7 +67,7 @@ class DummyClient(DummyProvider, AzureMLClient):
 
         return results_df
 
-    @component_service
+    @azureml_service
     def subtract_columns(self, a_name, b_name, df):
         # remote call
         raise NotImplementedError("Remote calls for this service are not implemented yet.")

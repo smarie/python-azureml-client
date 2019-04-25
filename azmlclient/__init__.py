@@ -4,7 +4,7 @@ from azmlclient.base import execute_rr, execute_bes, IllegalJobStateException, J
 
 from azmlclient.clients_config import GlobalConfig, ServiceEndpointsConfig, ClientConfig
 from azmlclient.clients_callmodes import CallMode, RemoteCallMode, RequestResponse, Batch
-from azmlclient.clients import AzureMLClient, component_service
+from azmlclient.clients import AzureMLClient, azureml_service
 
 __all__ = [
     # submodules
@@ -20,5 +20,5 @@ __all__ = [
     # -- clients_callmodes
     'CallMode', 'RemoteCallMode', 'RequestResponse', 'Batch',
     # -- clients
-    'AzureMLClient', 'component_service'
+    'AzureMLClient', 'azureml_service'
 ]
