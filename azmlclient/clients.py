@@ -336,3 +336,25 @@ class AzureMLClient:
         :return: a requests session or None
         """
         return self.global_cfg.get_requests_session()
+
+
+def unpack_single_value_from_df(name,             # type: str
+                                df,               # type: pd.DataFrame
+                                allow_empty=True  # type: bool
+                                ):
+    """
+    Utility method to unpack a single value from a dataframe.
+    If allow_empty is True (default), an empty dataframe will be accepted and None will be returned.
+
+    :param name: the name of the dataframe, for validation purposes
+    :param df:
+    :param allow_empty:
+    :return:
+    """
+    vals = df.values.ravel()
+    if len(vals) == 1:
+        return vals[0]
+    elif len(vals) == 0 and allow_empty:
+        return None
+    else:
+        raise ValueError("Dataframe '%s' is supposed to contain a single value but does not: \n%s" % (name, df))
