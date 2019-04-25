@@ -1,0 +1,30 @@
+!yamlable/org.pypi.azmlclient.ClientConfig
+
+global:
+   # use fiddler proxy
+   # https_proxy: http://localhost:8888
+
+   # do not verify ssl cert: this is the cherrypy testserver
+   ssl_verify: false
+
+
+services:
+ add_columns:
+   # -- Endpoint for RR by value and BATCH
+   base_url: https://localhost:4443/a_plus_b
+   api_key: none
+
+   # -- blob storage to use for inputs and outputs in BATCH mode
+   blob_account_for_batch: none
+   blob_apikey_for_batch: none
+   blob_containername_for_batch: none
+
+ subtract_columns:
+   # -- Endpoint for RR by value and BATCH
+   base_url: https://localhost:4443/a_minus_b
+   api_key: none
+
+   # -- blob storage to use for inputs and outputs in BATCH mode
+   blob_account_for_batch:
+   blob_apikey_for_batch:
+   blob_containername_for_batch:

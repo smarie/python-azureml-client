@@ -20,7 +20,7 @@ from autoclass import autodict
 from yamlable import YamlAble, yaml_info
 
 
-YAML_NS = 'org.python.azmlclient'
+YAML_NS = 'org.pypi.azmlclient'
 
 
 @autodict

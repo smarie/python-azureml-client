@@ -15,7 +15,7 @@ INSTALL_REQUIRES = ['functools32;python_version<"3.3"', 'valid8>=2.1', 'requests
                     'decopatch', 'makefun', 'yamlable>=0.7', 'autoclass>=1.15,<2', 'numpy', 'pandas']
 DEPENDENCY_LINKS = []
 SETUP_REQUIRES = ['pytest-runner', 'setuptools_scm', 'pypandoc', 'pandoc']
-TESTS_REQUIRE = ['pytest', 'pytest-logging', 'pytest-cov', 'pytest-cases']
+TESTS_REQUIRE = ['pytest', 'pytest-logging', 'pytest-cov', 'pytest-cases', 'cherrypy']
 EXTRAS_REQUIRE = {}
 
 # simple check
