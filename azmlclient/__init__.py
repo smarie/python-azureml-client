@@ -1,12 +1,24 @@
-from azmlclient.data_binding import AzmlException, Converters, ByReference_Converters, Collection_Converters
-from azmlclient.service_calls import execute_rr, execute_bes, IllegalJobStateException, JobExecutionException, \
-    create_session_for_proxy, RR_Client, Batch_Client
+from azmlclient.base_databinding import AzmlException, Converters, BlobConverters, CollectionConverters
+from azmlclient.base import execute_rr, execute_bes, IllegalJobStateException, JobExecutionException, \
+    create_session_for_proxy, create_session_for_proxy_from_strings, RequestResponseClient, BatchClient
+
+from azmlclient.clients_config import GlobalConfig, ServiceEndpointsConfig, ClientConfig
+from azmlclient.clients_callmodes import CallMode, RemoteCallMode, RequestResponse, Batch
+from azmlclient.clients import AzureMLClient, component_service
 
 __all__ = [
     # submodules
-    'data_binding', 'service_calls',
+    'base_databinding', 'base', 'clients', 'clients_callmodes', 'clients_config',
     # symbols imported above
-    'AzmlException', 'Converters', 'ByReference_Converters', 'Collection_Converters',
+    # -- base_databinding
+    'AzmlException', 'Converters', 'BlobConverters', 'CollectionConverters',
+    # -- base
     'execute_rr', 'execute_bes', 'IllegalJobStateException', 'JobExecutionException', 'create_session_for_proxy',
-    'RR_Client', 'Batch_Client'
+    'RequestResponseClient', 'BatchClient', 'create_session_for_proxy_from_strings',
+    # -- clients_config
+    'GlobalConfig', 'ServiceEndpointsConfig', 'ClientConfig',
+    # -- clients_callmodes
+    'CallMode', 'RemoteCallMode', 'RequestResponse', 'Batch',
+    # -- clients
+    'AzureMLClient', 'component_service'
 ]

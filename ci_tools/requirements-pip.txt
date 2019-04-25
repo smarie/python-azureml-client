@@ -6,6 +6,10 @@ pypandoc
 pytest-cases
 
 # --- to install
+decopatch
+makefun
+yamlable
+autoclass
 valid8
 requests
 numpy
