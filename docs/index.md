@@ -6,7 +6,9 @@
 
 [![Documentation](https://img.shields.io/badge/doc-latest-blue.svg)](https://smarie.github.io/python-azureml-client/) [![PyPI](https://img.shields.io/pypi/v/azmlclient.svg)](https://pypi.python.org/pypi/azmlclient/) [![Downloads](https://pepy.tech/badge/azmlclient)](https://pepy.tech/project/azmlclient) [![Downloads per week](https://pepy.tech/badge/azmlclient/week)](https://pepy.tech/project/azmlclient) [![GitHub stars](https://img.shields.io/github/stars/smarie/python-azureml-client.svg)](https://github.com/smarie/python-azureml-client/stargazers)
 
-`azmlclient` helps you consume web services deployed on the AzureML platform easily. It provides you with a [low-level API](#low-level-api) to call web services in request-response or batch mode. It also offers optional tools if you wish to create [high-level applicative APIs](#creating-high-level-apis) on top of these web services. 
+!!! success "New `AzureMLClient` base class to create high-level clients is here, [check it out](#2-creating-high-level-apis)"
+
+`azmlclient` helps you consume web services deployed on the AzureML platform easily. It provides you with a [low-level API](#1-low-level-api) to call web services in request-response or batch mode. It also offers optional tools if you wish to create [high-level applicative APIs](#2-creating-high-level-apis) on top of these web services. 
 
 
 As opposed to [AzureML client library](https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage), 
@@ -26,7 +28,7 @@ You may use it for example
 > pip install azmlclient
 ```
 
-## Low level API
+## 1. Low level API
 
 This API is the python equivalent of the "execute" generic AzureML operation. It supports both request-response and batch mode, as well as swagger and non-swagger format.
 
@@ -117,7 +119,7 @@ response_body = rr_client.execute_rr(base_url, api_key, request_body)
 result_dfs = rr_client.read_response_json_body(response_body, output_names)
 ```
 
-## Creating high-level APIs
+## 2. Creating high-level APIs
 
 Even though the above API is enough to consume your AzureML web services, it is still very low-level: 
 
@@ -130,7 +132,7 @@ For all these reasons, `azmlclient` offers tools to help you create higher-level
 
 ### Creating the main client class
 
-Let's imagine that we have **two AzureML services** deployed: one for *adding dataframe columns* and another for *subtracting them*. We wish to provide our users with a more pythonic way to call them than the [low-level api](#low-level-api) that we saw previously.
+Let's imagine that we have **two AzureML services** deployed: one for *adding dataframe columns* and another for *subtracting them*. We wish to provide our users with a more pythonic way to call them than the [low-level api](#1-low-level-api) that we saw previously.
 
 A nice way to do this is to create a **"client class"**, that will hide away the AzureML specific syntax. We will name our class `MathsProvider`, it will offer one pythonic method mapped on each AzureML service: `add_columns(a_name, b_name, df)` and `subtract_columns(a_name, b_name, df)` respectively.
  
@@ -139,7 +141,7 @@ It is extremely easy to create such a class, by inheriting from `AzureMLClient`.
 For each service that we want to offer, we create a method. That method should
 
  * be decorated with `@azureml_service`,
- * transform the received arguments (python objects) into azureml inputs and parameters dictionaries, in the same format that presented previously in the [low-level api](#low-level-api),
+ * transform the received arguments (python objects) into azureml inputs and parameters dictionaries, in the same format that presented previously in the [low-level api](#1-low-level-api),
  * use the `self.call_azureml(...)` helper function to perform the AzureML call. Note that this helper function handles the call mode (request response or batch) for you as we'll see below.
  * unpack the various results and create the appropriate outputs (python objects) from them.
 
