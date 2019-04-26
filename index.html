@@ -297,8 +297,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-creating-high-level-apis" title="2. Creating high-level APIs" class="md-nav__link">
-    2. Creating high-level APIs
+  <a href="#2-providing-high-level-apis" title="2. Providing high-level APIs" class="md-nav__link">
+    2. Providing high-level APIs
   </a>
   
     <nav class="md-nav">
@@ -456,8 +456,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-creating-high-level-apis" title="2. Creating high-level APIs" class="md-nav__link">
-    2. Creating high-level APIs
+  <a href="#2-providing-high-level-apis" title="2. Providing high-level APIs" class="md-nav__link">
+    2. Providing high-level APIs
   </a>
   
     <nav class="md-nav">
@@ -554,9 +554,9 @@
 <p><a href="https://pypi.python.org/pypi/azmlclient/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/azmlclient.svg" /></a> <a href="https://travis-ci.org/smarie/python-azureml-client"><img alt="Build Status" src="https://travis-ci.org/smarie/python-azureml-client.svg?branch=master" /></a> <a href="https://smarie.github.io/python-azureml-client/junit/report.html"><img alt="Tests Status" src="https://smarie.github.io/python-azureml-client/junit/junit-badge.svg?dummy=8484744" /></a> <a href="https://codecov.io/gh/smarie/python-azureml-client"><img alt="codecov" src="https://codecov.io/gh/smarie/python-azureml-client/branch/master/graph/badge.svg" /></a></p>
 <p><a href="https://smarie.github.io/python-azureml-client/"><img alt="Documentation" src="https://img.shields.io/badge/doc-latest-blue.svg" /></a> <a href="https://pypi.python.org/pypi/azmlclient/"><img alt="PyPI" src="https://img.shields.io/pypi/v/azmlclient.svg" /></a> <a href="https://pepy.tech/project/azmlclient"><img alt="Downloads" src="https://pepy.tech/badge/azmlclient" /></a> <a href="https://pepy.tech/project/azmlclient"><img alt="Downloads per week" src="https://pepy.tech/badge/azmlclient/week" /></a> <a href="https://github.com/smarie/python-azureml-client/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/smarie/python-azureml-client.svg" /></a></p>
 <div class="admonition success">
-<p class="admonition-title">New <code>AzureMLClient</code> base class to create high-level clients is here, <a href="#2-creating-high-level-apis">check it out</a></p>
+<p class="admonition-title">New <code>AzureMLClient</code> base class to create high-level clients is here, <a href="#2-providing-high-level-apis">check it out</a></p>
 </div>
-<p><code>azmlclient</code> helps you consume web services deployed on the AzureML platform easily. It provides you with a <a href="#1-low-level-api">low-level API</a> to call web services in request-response or batch mode. It also offers optional tools if you wish to create <a href="#2-creating-high-level-apis">high-level applicative APIs</a> on top of these web services. </p>
+<p><code>azmlclient</code> helps you consume web services deployed on the AzureML platform easily. It provides you with a <a href="#1-low-level-api">low-level API</a> to call web services in request-response or batch mode. It also offers optional tools if you wish to provide <a href="#2-providing-high-level-apis">high-level applicative APIs</a> on top of these web services. </p>
 <p>As opposed to <a href="https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage">AzureML client library</a>, </p>
 <ul>
 <li>this library is <em>much simpler</em> and is only focused on <em>consuming</em> web services. </li>
@@ -652,7 +652,7 @@
 </pre></div>
 
 
-<h2 id="2-creating-high-level-apis">2. Creating high-level APIs<a class="headerlink" href="#2-creating-high-level-apis" title="Permanent link">&para;</a></h2>
+<h2 id="2-providing-high-level-apis">2. Providing high-level APIs<a class="headerlink" href="#2-providing-high-level-apis" title="Permanent link">&para;</a></h2>
 <p>Even though the above API is enough to consume your AzureML web services, it is still very low-level: </p>
 <ul>
 <li>the services are not mapped to python methods with friendly names</li>
@@ -660,7 +660,7 @@
 <li>changing the call mode between request-response and batch requires you to change your code</li>
 <li>there is no easy way to switch between remote and local call, for example for hybrid implementations (computationally intensive operations in the cloud, computationally cheap operations executed locally)</li>
 </ul>
-<p>For all these reasons, <code>azmlclient</code> offers tools to help you create higher-level APIs. </p>
+<p>For all these reasons, <code>azmlclient</code> offers tools to help you provide higher-level APIs. </p>
 <h3 id="creating-the-main-client-class">Creating the main client class<a class="headerlink" href="#creating-the-main-client-class" title="Permanent link">&para;</a></h3>
 <p>Let's imagine that we have <strong>two AzureML services</strong> deployed: one for <em>adding dataframe columns</em> and another for <em>subtracting them</em>. We wish to provide our users with a more pythonic way to call them than the <a href="#1-low-level-api">low-level api</a> that we saw previously.</p>
 <p>A nice way to do this is to create a <strong>"client class"</strong>, that will hide away the AzureML specific syntax. We will name our class <code>MathsProvider</code>, it will offer one pythonic method mapped on each AzureML service: <code>add_columns(a_name, b_name, df)</code> and <code>subtract_columns(a_name, b_name, df)</code> respectively.</p>
