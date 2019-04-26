@@ -263,8 +263,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" title="Usage" class="md-nav__link">
-    Usage
+  <a href="#low-level-api" title="Low level API" class="md-nav__link">
+    Low level API
   </a>
   
     <nav class="md-nav">
@@ -287,6 +287,47 @@
           <li class="md-nav__item">
   <a href="#advanced-usage" title="Advanced usage" class="md-nav__link">
     Advanced usage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-high-level-apis" title="Creating high-level APIs" class="md-nav__link">
+    Creating high-level APIs
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-the-main-client-class" title="Creating the main client class" class="md-nav__link">
+    Creating the main client class
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-it" title="Using it" class="md-nav__link">
+    Using it
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging" title="Debugging" class="md-nav__link">
+    Debugging
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternate-call-modes-local-batch" title="Alternate call modes: local, batch.." class="md-nav__link">
+    Alternate call modes: local, batch..
   </a>
   
 </li>
@@ -381,8 +422,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" title="Usage" class="md-nav__link">
-    Usage
+  <a href="#low-level-api" title="Low level API" class="md-nav__link">
+    Low level API
   </a>
   
     <nav class="md-nav">
@@ -405,6 +446,47 @@
           <li class="md-nav__item">
   <a href="#advanced-usage" title="Advanced usage" class="md-nav__link">
     Advanced usage
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-high-level-apis" title="Creating high-level APIs" class="md-nav__link">
+    Creating high-level APIs
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creating-the-main-client-class" title="Creating the main client class" class="md-nav__link">
+    Creating the main client class
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-it" title="Using it" class="md-nav__link">
+    Using it
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging" title="Debugging" class="md-nav__link">
+    Debugging
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternate-call-modes-local-batch" title="Alternate call modes: local, batch.." class="md-nav__link">
+    Alternate call modes: local, batch..
   </a>
   
 </li>
@@ -468,13 +550,14 @@
                 
                 
                 <h1 id="azmlclient">azmlclient<a class="headerlink" href="#azmlclient" title="Permanent link">&para;</a></h1>
-<p><em>An <strong><em>unofficial</em></strong> generic client stack for azureML web services, working with both python 2 and 3.</em></p>
+<p><em>An <strong><em>unofficial</em></strong> generic client stack for AzureML web services, working with both python 2 and 3.</em></p>
 <p><a href="https://pypi.python.org/pypi/azmlclient/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/azmlclient.svg" /></a> <a href="https://travis-ci.org/smarie/python-azureml-client"><img alt="Build Status" src="https://travis-ci.org/smarie/python-azureml-client.svg?branch=master" /></a> <a href="https://smarie.github.io/python-azureml-client/junit/report.html"><img alt="Tests Status" src="https://smarie.github.io/python-azureml-client/junit/junit-badge.svg?dummy=8484744" /></a> <a href="https://codecov.io/gh/smarie/python-azureml-client"><img alt="codecov" src="https://codecov.io/gh/smarie/python-azureml-client/branch/master/graph/badge.svg" /></a></p>
 <p><a href="https://smarie.github.io/python-azureml-client/"><img alt="Documentation" src="https://img.shields.io/badge/doc-latest-blue.svg" /></a> <a href="https://pypi.python.org/pypi/azmlclient/"><img alt="PyPI" src="https://img.shields.io/pypi/v/azmlclient.svg" /></a> <a href="https://pepy.tech/project/azmlclient"><img alt="Downloads" src="https://pepy.tech/badge/azmlclient" /></a> <a href="https://pepy.tech/project/azmlclient"><img alt="Downloads per week" src="https://pepy.tech/badge/azmlclient/week" /></a> <a href="https://github.com/smarie/python-azureml-client/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/smarie/python-azureml-client.svg" /></a></p>
+<p><code>azmlclient</code> helps you consume web services deployed on the AzureML platform easily. It provides you with a <a href="#low-level-api">low-level API</a> to call web services in request-response or batch mode. It also offers optional tools if you wish to create <a href="#creating-high-level-apis">high-level applicative APIs</a> on top of these web services. </p>
 <p>As opposed to <a href="https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage">AzureML client library</a>, </p>
 <ul>
-<li>this library is much simpler and is only focused on consuming web services. </li>
-<li>It is compliant with all services deployed from AzureML experiments (using the AzureML drag'n drop UI), and should also work with python and R "dataframe" web services (not checked though). </li>
+<li>this library is <em>much simpler</em> and is only focused on <em>consuming</em> web services. </li>
+<li>It is compliant with all services deployed from AzureML experiments (using the AzureML studio UI), and should also work with python and R "dataframe" web services (not checked though). </li>
 <li>It does not require your AzureML workspace id and API key, only the deployed services' URL and API key.</li>
 </ul>
 <p>You may use it for example </p>
@@ -487,12 +570,12 @@
 </pre></div>
 
 
-<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<h2 id="low-level-api">Low level API<a class="headerlink" href="#low-level-api" title="Permanent link">&para;</a></h2>
+<p>This API is the python equivalent of the "execute" generic AzureML operation. It supports both request-response and batch mode, as well as swagger and non-swagger format.</p>
 <h3 id="first-examples">First examples<a class="headerlink" href="#first-examples" title="Permanent link">&para;</a></h3>
 <p>First create variables holding the endpoint information provided by AzureML</p>
 <div class="codehilite"><pre><span></span><span class="n">base_url</span> <span class="o">=</span> <span class="s1">&#39;https://&lt;geo&gt;.services.azureml.net/workspaces/&lt;wId&gt;/services/&lt;sId&gt;&#39;</span>
 <span class="n">api_key</span> <span class="o">=</span> <span class="s1">&#39;&lt;apiKey&gt;&#39;</span>
-<span class="n">use_new_ws</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c1"># &#39;new&#39; style web service endpoint</span>
 </pre></div>
 
 
@@ -550,23 +633,194 @@
 
 <p>Note that the session object will be passed to the underlying azure blob storage client to ensure consistency.</p>
 <h3 id="advanced-usage">Advanced usage<a class="headerlink" href="#advanced-usage" title="Permanent link">&para;</a></h3>
-<p>Advanced users may with to create <code>Batch_Client</code> or <code>RR_Client</code> classes to better control what's happening.</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">RR_Client</span>
+<p>Advanced users may with to create <code>BatchClient</code> or <code>RequestResponseClient</code> classes to better control what's happening.</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">RequestResponseClient</span>
 
 <span class="c1"># 0- Create the client</span>
-<span class="n">rr_client</span> <span class="o">=</span> <span class="n">RR_Client</span><span class="p">(</span><span class="n">requests_session</span><span class="o">=</span><span class="n">requests_session</span><span class="p">)</span>
+<span class="n">rr_client</span> <span class="o">=</span> <span class="n">RequestResponseClient</span><span class="p">(</span><span class="n">requests_session</span><span class="o">=</span><span class="n">requests_session</span><span class="p">)</span>
 
 <span class="c1"># 1- Create the query body</span>
 <span class="n">request_body</span> <span class="o">=</span> <span class="n">rr_client</span><span class="o">.</span><span class="n">create_request_body</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
 <span class="c1"># 2- Execute the query and receive the response body</span>
-<span class="n">response_body</span> <span class="o">=</span> <span class="n">rr_client</span><span class="o">.</span><span class="n">execute_rr</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">request_body</span><span class="p">,</span>
-                                     <span class="n">use_new_ws</span><span class="o">=</span><span class="n">use_new_ws</span><span class="p">)</span>
+<span class="n">response_body</span> <span class="o">=</span> <span class="n">rr_client</span><span class="o">.</span><span class="n">execute_rr</span><span class="p">(</span><span class="n">base_url</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">request_body</span><span class="p">)</span>
 <span class="c1"># 3- parse the response body into a dictionary of dataframes</span>
 <span class="n">result_dfs</span> <span class="o">=</span> <span class="n">rr_client</span><span class="o">.</span><span class="n">read_response_json_body</span><span class="p">(</span><span class="n">response_body</span><span class="p">,</span> <span class="n">output_names</span><span class="p">)</span>
 </pre></div>
 
 
+<h2 id="creating-high-level-apis">Creating high-level APIs<a class="headerlink" href="#creating-high-level-apis" title="Permanent link">&para;</a></h2>
+<p>Even though the above API is enough to consume your AzureML web services, it is still very low-level: </p>
+<ul>
+<li>the services are not mapped to python methods with friendly names</li>
+<li>their inputs, outputs and parameters have to be created by hand from python structures</li>
+<li>changing the call mode between request-response and batch requires you to change your code</li>
+<li>there is no easy way to switch between remote and local call, for example for hybrid implementations (computationally intensive operations in the cloud, computationally cheap operations executed locally)</li>
+</ul>
+<p>For all these reasons, <code>azmlclient</code> offers tools to help you create higher-level APIs. </p>
+<h3 id="creating-the-main-client-class">Creating the main client class<a class="headerlink" href="#creating-the-main-client-class" title="Permanent link">&para;</a></h3>
+<p>Let's imagine that we have <strong>two AzureML services</strong> deployed: one for <em>adding dataframe columns</em> and another for <em>subtracting them</em>. We wish to provide our users with a more pythonic way to call them than the <a href="#low-level-api">low-level api</a> that we saw previously.</p>
+<p>A nice way to do this is to create a <strong>"client class"</strong>, that will hide away the AzureML specific syntax. We will name our class <code>MathsProvider</code>, it will offer one pythonic method mapped on each AzureML service: <code>add_columns(a_name, b_name, df)</code> and <code>subtract_columns(a_name, b_name, df)</code> respectively.</p>
+<p>It is extremely easy to create such a class, by inheriting from <code>AzureMLClient</code>. This helper base class provide a bunch of mechanisms to automate both configuration and support for alternate call modes (local, request-response, batch) as we'll see below.</p>
+<p>For each service that we want to offer, we create a method. That method should</p>
+<ul>
+<li>be decorated with <code>@azureml_service</code>,</li>
+<li>transform the received arguments (python objects) into azureml inputs and parameters dictionaries, in the same format that presented previously in the <a href="#low-level-api">low-level api</a>,</li>
+<li>use the <code>self.call_azureml(...)</code> helper function to perform the AzureML call. Note that this helper function handles the call mode (request response or batch) for you as we'll see below.</li>
+<li>unpack the various results and create the appropriate outputs (python objects) from them.</li>
+</ul>
+<p>For example:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">AzureMLClient</span><span class="p">,</span> <span class="n">azureml_service</span>
+
+<span class="k">class</span> <span class="nc">MathsProvider</span><span class="p">(</span><span class="n">AzureMLClient</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A client for the `add_columns` and `subtract_columns` AzureML web services</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@azureml_service</span>
+    <span class="k">def</span> <span class="nf">add_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_name</span><span class="p">,</span> <span class="n">b_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Offers a pythonic API around the `add_columns` azureML service</span>
+
+<span class="sd">        :param a_name: name of the first column to add (a string)</span>
+<span class="sd">        :param b_name: name of the second column to add (a string)</span>
+<span class="sd">        :param df: the input dataframe, that should at least contain the 2 columns selected</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># (1) create the web service inputs and parameters from provided data.</span>
+        <span class="n">ws_inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">}</span>
+        <span class="n">ws_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a_name&#39;</span><span class="p">:</span> <span class="n">a_name</span><span class="p">,</span> <span class="s1">&#39;b_name&#39;</span><span class="p">:</span> <span class="n">b_name</span><span class="p">}</span>
+
+        <span class="c1"># (2) call the azureml web service</span>
+        <span class="n">result_dfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_azureml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">add_columns</span><span class="p">,</span>
+                                       <span class="n">ws_inputs</span><span class="o">=</span><span class="n">ws_inputs</span><span class="p">,</span> 
+                                       <span class="n">ws_params</span><span class="o">=</span><span class="n">ws_params</span><span class="p">,</span>
+                                       <span class="n">ws_output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span>  <span class="c1"># optional</span>
+                                       <span class="p">)</span>
+
+        <span class="c1"># (3) unpack the results</span>
+        <span class="k">return</span> <span class="n">result_dfs</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span>
+
+    <span class="nd">@azureml_service</span>
+    <span class="k">def</span> <span class="nf">subtract_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_name</span><span class="p">,</span> <span class="n">b_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="c1"># (similar contents than `add_columns` here) </span>
+        <span class="k">pass</span>
+</pre></div>
+
+
+<h3 id="using-it">Using it<a class="headerlink" href="#using-it" title="Permanent link">&para;</a></h3>
+<p>Using your new client is extremely easy: simply instantiate it with a <code>ClientConfig</code> configuration object describing the AzureML services endpoints and you're set:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">ClientConfig</span><span class="p">,</span> <span class="n">GlobalConfig</span><span class="p">,</span> <span class="n">ServiceConfig</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+
+<span class="c1"># create a configuration indicating the endpoints for each service id</span>
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">ClientConfig</span><span class="p">(</span><span class="n">add_columns</span><span class="o">=</span><span class="n">ServiceConfig</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://.....&quot;</span><span class="p">,</span> 
+                                             <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;....&quot;</span><span class="p">),</span>
+                   <span class="n">subtract_columns</span><span class="o">=</span><span class="n">ServiceConfig</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://.....&quot;</span><span class="p">,</span> 
+                                                  <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;....&quot;</span><span class="p">))</span>
+
+<span class="c1"># instantiate the client</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">MathsProvider</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+<span class="c1"># use it</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">]})</span>
+<span class="n">result_df</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+</pre></div>
+
+
+<p>The configuration object can alternately be loaded from a <code>.yaml</code> file such as <a href="https://github.com/smarie/python-azureml-client/blob/master/azmlclient/tests/clients/dummy/ws_client/dummy_client_conf.yaml">this one</a>:</p>
+<div class="codehilite"><pre><span></span><span class="n">cfg</span> <span class="o">=</span> <span class="n">ClientConfig</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">(</span><span class="n">yaml_file_path</span><span class="p">)</span>
+</pre></div>
+
+
+<p>or from a <code>configparser</code>-compliant <code>.ini</code>/<code>.cfg</code> file such as <a href="https://github.com/smarie/python-azureml-client/blob/master/azmlclient/tests/clients/dummy/ws_client/dummy_client_conf.cfg">this one</a>:</p>
+<div class="codehilite"><pre><span></span><span class="n">cfg</span> <span class="o">=</span> <span class="n">ClientConfig</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="n">cfg_file_path</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Note that the service names in the configuration are by default the method names in your client class. If you wish to use different names, simply provide the service name to the <code>@azureml_service</code> decorator, for example:</p>
+<div class="codehilite"><pre><span></span>    <span class="nd">@azureml_service</span><span class="p">(</span><span class="s1">&#39;subtract_columns&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">minus_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_name</span><span class="p">,</span> <span class="n">b_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="o">...</span>
+</pre></div>
+
+
+<h3 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h3>
+<p>If you wish to debug the calls made by your client, there are two things that you can do:</p>
+<ul>
+<li>
+<p>(recommended) use a tool to capture network traffic such as Fiddler or Wireshark. Some tools such as Fiddler require you to change to http(s) proxy. This can be done in the <code>ClientConfig</code> object, by passing a <code>GlobalConfig</code>. See <a href="https://github.com/smarie/python-azureml-client/blob/master/azmlclient/tests/clients/dummy/ws_client/dummy_client_conf.cfg">this example</a> for the properties to be set.</p>
+</li>
+<li>
+<p>alternatively you can use the <code>with client.debug_requests()</code> context manager on your client. This will print the http requests contents on stdout:</p>
+</li>
+</ul>
+<div class="codehilite"><pre><span></span><span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">debug_requests</span><span class="p">():</span>
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+</pre></div>
+
+
+<h3 id="alternate-call-modes-local-batch">Alternate call modes: local, batch..<a class="headerlink" href="#alternate-call-modes-local-batch" title="Permanent link">&para;</a></h3>
+<p>In the example above, <code>client.add_columns</code> calls the web service in request-response mode. This call mode can be changed temporarily thanks to the context managers provided:</p>
+<div class="codehilite"><pre><span></span><span class="c1"># change to BATCH mode</span>
+<span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">batch_calls</span><span class="p">(</span><span class="n">polling_period_seconds</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+
+<span class="c1"># change to RR mode (useless since that&#39;s already the default)</span>
+<span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">rr_calls</span><span class="p">():</span>
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+
+<span class="c1"># change to LOCAL mode</span>
+<span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">local_calls</span><span class="p">():</span>
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+</pre></div>
+
+
+<p>For the local calls by default it does not work and yields:</p>
+<div class="codehilite"><pre><span></span><span class="ne">NotImplementedError</span><span class="p">:</span> <span class="n">Local</span> <span class="n">execution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">available</span> <span class="k">for</span> <span class="n">this</span> <span class="n">client</span><span class="o">.</span> 
+<span class="n">Please</span> <span class="n">override</span> <span class="sb">`__init_local_impl__`</span> <span class="ow">or</span> <span class="nb">set</span> <span class="n">a</span> <span class="n">non</span><span class="o">-</span><span class="n">none</span> <span class="sb">`self._local_impl`</span> 
+<span class="k">if</span> <span class="n">you</span> <span class="n">wish</span> <span class="n">local</span> <span class="n">calls</span> <span class="n">to</span> <span class="n">be</span> <span class="n">made</span> <span class="n">available</span>
+</pre></div>
+
+
+<p>But if you override the <code>__init_local_impl__</code> method and return an object on which the methods are available, it works:</p>
+<div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">MathsProviderLocal</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A local implementation of the same services</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">add_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_name</span><span class="p">,</span> <span class="n">b_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;sum&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">a_name</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="p">[</span><span class="n">b_name</span><span class="p">]})</span>
+
+    <span class="k">def</span> <span class="nf">subtract_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_name</span><span class="p">,</span> <span class="n">b_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;diff&#39;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">a_name</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="n">b_name</span><span class="p">]})</span>
+
+<span class="k">class</span> <span class="nc">MathsProvider</span><span class="p">(</span><span class="n">AzureMLClient</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init_local_impl__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Use our local implementation in &#39;local&#39; call mode&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MathsProviderLocal</span><span class="p">()</span>
+
+    <span class="nd">@azureml_service</span>
+    <span class="k">def</span> <span class="nf">add_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_name</span><span class="p">,</span> <span class="n">b_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="o">...</span>
+
+    <span class="nd">@azureml_service</span>
+    <span class="k">def</span> <span class="nf">subtract_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_name</span><span class="p">,</span> <span class="n">b_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="o">...</span>
+</pre></div>
+
+
+<p>we can test it :</p>
+<div class="codehilite"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">client</span><span class="o">.</span><span class="n">local_calls</span><span class="p">():</span>
+<span class="o">&gt;&gt;&gt;</span>    <span class="n">result_df</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">add_columns</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">result_df</span><span class="p">)</span>
+
+   <span class="nb">sum</span>
+<span class="mi">0</span>    <span class="mi">1</span>
+<span class="mi">1</span>    <span class="mi">7</span>
+<span class="mi">2</span>   <span class="mi">13</span>
+</pre></div>
+
+
+<p>Note that the default call mode can also be changed permanentlyby specifying another mode in the <code>AzureMLClient</code> constructor arguments, or by changing the <code>client._current_call_mode</code> attribute.</p>
 <h2 id="main-features">Main features<a class="headerlink" href="#main-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too</li>
@@ -575,6 +829,7 @@
 <li>In Batch mode, performs all the Blob storage and retrieval for you.</li>
 <li>Properly handles file encoding in both modes (<code>utf-8</code> is used by default as the pivot encoding)</li>
 <li>Supports global <code>requests.Session</code> configuration to configure the HTTP clients behaviour (including the underlying blob storage client).</li>
+<li>Provides tools to create higher-level clients supporting both remote and local call modes. </li>
 </ul>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
