@@ -40,8 +40,8 @@ def test_readme_high_level_basic():
             pass
 
     # create a configuration indicating the endpoints for each service id
-    cfg = ClientConfig(add_columns=ServiceConfig(base_url="https://.....", api_key="...."),
-                       subtract_columns=ServiceConfig(base_url="https://.....", api_key="...."))
+    cfg = ClientConfig(add_columns=ServiceConfig(base_url="https://notavailbl", api_key="dummy"),
+                       subtract_columns=ServiceConfig(base_url="https://notavailbl", api_key="dummy"))
 
     # instantiate the client
     client = MathsProvider(cfg)
