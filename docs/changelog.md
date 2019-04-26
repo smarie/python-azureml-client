@@ -16,6 +16,7 @@ Refactoring:
  
  * renamed `RR_Client` into `RequestResponseClient` and `Batch_Client` into `BatchClient`. Old names will stay around for a version or two for compatibility reasons. 
 
+ * got rid of the useless `Converters` container classes for data binding.
 
 ### 1.2.0 - Support for "swagger" mode 
 
