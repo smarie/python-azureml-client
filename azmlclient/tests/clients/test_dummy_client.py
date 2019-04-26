@@ -34,8 +34,8 @@ def mock_server():
 
 
 @pytest.fixture(params=['yaml', 'cfg'])
-def client_impl(request):
-    # type: (...) -> DummyProvider
+def client_cfg(request):
+    # type: (...) -> ClientConfig
     """
     Creates a client from the configuration file
     :return:
@@ -48,6 +48,12 @@ def client_impl(request):
     else:
         raise ValueError("unknown : %s" % request.param)
 
+    return client_cfg
+
+
+@pytest.fixture
+def client_impl(client_cfg):
+    # type: (...) -> DummyProvider
     client = DummyClient(client_config=client_cfg, with_plots=False)
     return client
 
