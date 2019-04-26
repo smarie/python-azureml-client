@@ -6,9 +6,9 @@
 
 [![Documentation](https://img.shields.io/badge/doc-latest-blue.svg)](https://smarie.github.io/python-azureml-client/) [![PyPI](https://img.shields.io/pypi/v/azmlclient.svg)](https://pypi.python.org/pypi/azmlclient/) [![Downloads](https://pepy.tech/badge/azmlclient)](https://pepy.tech/project/azmlclient) [![Downloads per week](https://pepy.tech/badge/azmlclient/week)](https://pepy.tech/project/azmlclient) [![GitHub stars](https://img.shields.io/github/stars/smarie/python-azureml-client.svg)](https://github.com/smarie/python-azureml-client/stargazers)
 
-!!! success "New `AzureMLClient` base class to create high-level clients is here, [check it out](#2-creating-high-level-apis)"
+!!! success "New `AzureMLClient` base class to create high-level clients is here, [check it out](#2-providing-high-level-apis)"
 
-`azmlclient` helps you consume web services deployed on the AzureML platform easily. It provides you with a [low-level API](#1-low-level-api) to call web services in request-response or batch mode. It also offers optional tools if you wish to create [high-level applicative APIs](#2-creating-high-level-apis) on top of these web services. 
+`azmlclient` helps you consume web services deployed on the AzureML platform easily. It provides you with a [low-level API](#1-low-level-api) to call web services in request-response or batch mode. It also offers optional tools if you wish to provide [high-level applicative APIs](#2-providing-high-level-apis) on top of these web services. 
 
 
 As opposed to [AzureML client library](https://github.com/Azure/Azure-MachineLearning-ClientLibrary-Python#services-usage), 
@@ -119,7 +119,7 @@ response_body = rr_client.execute_rr(base_url, api_key, request_body)
 result_dfs = rr_client.read_response_json_body(response_body, output_names)
 ```
 
-## 2. Creating high-level APIs
+## 2. Providing high-level APIs
 
 Even though the above API is enough to consume your AzureML web services, it is still very low-level: 
 
@@ -128,7 +128,7 @@ Even though the above API is enough to consume your AzureML web services, it is 
  * changing the call mode between request-response and batch requires you to change your code
  * there is no easy way to switch between remote and local call, for example for hybrid implementations (computationally intensive operations in the cloud, computationally cheap operations executed locally)
 
-For all these reasons, `azmlclient` offers tools to help you create higher-level APIs. 
+For all these reasons, `azmlclient` offers tools to help you provide higher-level APIs. 
 
 ### Creating the main client class
 
