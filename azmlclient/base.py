@@ -1,13 +1,22 @@
 import json
 import time
-import urllib
+
 from datetime import datetime
 from distutils.util import strtobool
+
+from six import raise_from
+
 try:  # python 3+
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
 
+try:
+    from urllib.error import HTTPError as Urllib_HTTPError
+except ImportError:
+    # create a dummy class
+    class Urllib_HTTPError(Exception):
+        pass
 
 import pandas as pd
 import requests
@@ -18,8 +27,8 @@ try:  # python 3.5+
 except ImportError:
     pass
 
-from azure.storage.blob import BlockBlobService
-from azmlclient.base_databinding import AzmlException, Converters, CollectionConverters
+from azmlclient.base_databinding import AzmlException, dfs_to_azmltables, params_df_to_params_dict, azmltable_to_json, \
+    json_to_azmltable, azmltables_to_dfs
 
 
 class IllegalJobStateException(Exception):
@@ -188,11 +197,11 @@ def execute_rr(api_key,               # type: str
     :param api_key: the api key for the AzureML web service to call. For example 'fdjmxkqktcuhifljflkdmw'
     :param base_url: the URL of the AzureML web service to call. It should not contain the "execute". This is typically
         in the form 'https://<geo>.services.azureml.net/workspaces/<wId>/services/<sId>'.
-    :param inputs: an optional dictionary containing the inputs, by name. Inputs should be dataframes.
-    :param params: an optional dictionary containing the parameters by name, or a dataframe containing the parameters.
+    :param inputs: an optional dictionary containing the inputs, by name. Inputs should be DataFrames.
+    :param params: an optional dictionary containing the parameters by name, or a DataFrame containing the parameters.
     :param output_names: an optional list of expected output names
     :param requests_session: an optional requests.Session object, for example created from create_session_for_proxy()
-    :return: a dictionary of outputs, by name. Outputs are dataframes
+    :return: a dictionary of outputs, by name. Outputs are DataFrames
     """
     # 0- Create the generic request-response client
     rr_client = RequestResponseClient(requests_session=requests_session)
@@ -203,7 +212,7 @@ def execute_rr(api_key,               # type: str
     # 2- Execute the query and receive the response body
     response_body = rr_client.execute_rr(base_url, api_key, request_body)
 
-    # 3- parse the response body into a dictionary of dataframes
+    # 3- parse the response body into a dictionary of DataFrames
     result_dfs = rr_client.read_response_json_body(response_body, output_names)
 
     return result_dfs
@@ -238,20 +247,25 @@ def execute_bes(api_key,                              # type: str
     :param blob_container: the container in the blob storage, that will be used to store the inputs and outputs
     :param blob_path_prefix: an optional prefix that will be used to store the blobs
     :param blob_charset: optional encoding of files used on the blob storage
-    :param inputs: an optional dictionary containing the inputs, by name. Inputs should be dataframes.
-    :param params: an optional dictionary containing the parameters by name, or a dataframe containing the parameters.
+    :param inputs: an optional dictionary containing the inputs, by name. Inputs should be DataFrames.
+    :param params: an optional dictionary containing the parameters by name, or a DataFrame containing the parameters.
     :param output_names: an optional list of expected output names. Note that contrary to rr mode, no outputs will be
         provided if this is empty.
     :param nb_seconds_between_status_queries: nb of seconds that the engine waits between job status queries. By
         default this is set to 5.
     :param requests_session: an optional requests.Session object, for example created from create_session_for_proxy()
-    :return: a dictionary of outputs, by name. Outputs are dataframes
+    :return: a dictionary of outputs, by name. Outputs are DataFrames
     """
 
     # 0 create the blob service client and the generic batch mode client
+    batch_client = BatchClient(requests_session=requests_session)
+
+    # if we're here without error that means that `azure-storage` is available
+    from azure.storage.blob import BlockBlobService
+    from azmlclient.base_databinding_blobs import blob_refs_to_dfs
+
     blob_service = BlockBlobService(account_name=blob_storage_account, account_key=blob_storage_apikey,
                                     request_session=requests_session)
-    batch_client = BatchClient(requests_session=requests_session)
 
     # 1- Push inputs to blob storage and create output references
     print('Pushing inputs to blob storage')
@@ -304,7 +318,7 @@ def execute_bes(api_key,                              # type: str
     print('Retrieving the outputs from the blob storage')
 
     # dont use the output of the job status (outputs_refs2), it does not contain the connectionString
-    result_dfs = CollectionConverters.blob_refs_to_dfs(output_refs, requests_session=requests_session)
+    result_dfs = blob_refs_to_dfs(output_refs, requests_session=requests_session)
 
     return result_dfs
 
@@ -411,7 +425,7 @@ class BaseHttpClient(object):
             print(error.response.headers)
             raise AzmlException(error)
 
-        except urllib.error.HTTPError as error:
+        except Urllib_HTTPError as error:
             print("The request failed with status code: %s" + error.code)
             # Print the headers - they include the request ID and timestamp, which are useful for debugging the failure
             print(error.info())
@@ -429,9 +443,9 @@ class RequestResponseClient(BaseHttpClient):
                             ):
         # type (...) -> str
         """
-        Helper method to create a JSON AzureML web service input from inputs and parameters dataframes
+        Helper method to create a JSON AzureML web service input from inputs and parameters DataFrames
 
-        :param input_df_dict: a dictionary containing input names and input content (each input content is a dataframe)
+        :param input_df_dict: a dictionary containing input names and input content (each input content is a DataFrame)
         :param params_df_or_dict: a dictionary of parameter names and values
         :return: a string representation of the request JSON body (not yet encoded in bytes)
         """
@@ -442,22 +456,22 @@ class RequestResponseClient(BaseHttpClient):
             params_df_or_dict = {}
 
         # inputs
-        inputs = CollectionConverters.dfs_to_azmltables(input_df_dict)
+        inputs = dfs_to_azmltables(input_df_dict)
 
         # params
         if isinstance(params_df_or_dict, dict):
             params = params_df_or_dict
         elif isinstance(params_df_or_dict, pd.DataFrame):
-            params = Converters.params_df_to_params_dict(params_df_or_dict)
+            params = params_df_to_params_dict(params_df_or_dict)
         else:
-            raise TypeError('paramsDfOrDict should be a dataframe or a dictionary, or None, found: '
+            raise TypeError('paramsDfOrDict should be a DataFrame or a dictionary, or None, found: '
                             + str(type(params_df_or_dict)))
 
         # final body : combine them into a single dictionary ...
         body_dict = {'Inputs': inputs, 'GlobalParameters': params}
 
         # ... and serialize as Json
-        json_body_str = Converters.azmltable_to_json(body_dict)
+        json_body_str = azmltable_to_json(body_dict)
         return json_body_str
 
     def execute_rr(self,
@@ -487,17 +501,17 @@ class RequestResponseClient(BaseHttpClient):
                                 ):
         # type: (...) -> Dict[str, pd.DataFrame]
         """
-        Reads a response body from a request-response web service call, into a dictionary of pandas dataframe
+        Reads a response body from a request-response web service call, into a dictionary of pandas DataFrame
 
         :param body_json: the response body, already decoded as a string
         :param output_names: the names of the outputs to find. If empty, all outputs will be provided
-        :return: the dictionary of corresponding dataframes mapped to the output names
+        :return: the dictionary of corresponding DataFrames mapped to the output names
         """
         # first read the json as a dictionary
-        result_dict = Converters.json_to_azmltable(body_json)
+        result_dict = json_to_azmltable(body_json)
 
-        # then transform it into a dataframe
-        result_dfs = CollectionConverters.azmltables_to_dfs(result_dict['Results'], isAzureMlOutput=True)
+        # then transform it into a DataFrame
+        result_dfs = azmltables_to_dfs(result_dict['Results'], is_azureml_output=True)
 
         if output_names is None:
             # return all outputs
@@ -518,20 +532,31 @@ class RequestResponseClient(BaseHttpClient):
                                  ):
         # type: (...) -> Tuple[Dict[str, pd.DataFrame], Dict]
         """
-        Reads a request body from a request-response web service call, into a dictionary of pandas dataframe + a
+        Reads a request body from a request-response web service call, into a dictionary of pandas DataFrame + a
         dictionary of parameters. This is typically useful if you want to debug a request provided by someone else.
 
         :param body_json:
         :return:
         """
         # first read the json as a dictionary
-        result_dct = Converters.json_to_azmltable(body_json)
+        result_dct = json_to_azmltable(body_json)
 
-        return CollectionConverters.azmltables_to_dfs(result_dct['Inputs']), result_dct['GlobalParameters']
+        return azmltables_to_dfs(result_dct['Inputs']), result_dct['GlobalParameters']
 
 
 class BatchClient(BaseHttpClient):
     """ This class provides static methods to call AzureML services in batch mode"""
+
+    def __init__(self,
+                 requests_session=None  # type: requests.Session
+                 ):
+        # check that the `azure-storage` package is installed
+        try:
+            from azure.storage.blob import BlockBlobService
+        except ImportError as e:
+            raise_from(ValueError("Please install `azure-storage==0.33` to use BATCH mode"), e)
+
+        super(BaseHttpClient, self).__init__(requests_session=requests_session)
 
     def push_inputs_to_blob__and__create_output_references(self,
                                                            inputs_df_dict,         # type: Dict[str, pd.DataFrame]
@@ -560,6 +585,8 @@ class BatchClient(BaseHttpClient):
         :return: a tuple containing (1) a dictionary of "by reference" input descriptions
                 and (2) a dictionary of "by reference" output descriptions
         """
+        from azmlclient.base_databinding_blobs import dfs_to_blob_refs, create_blob_refs
+
         if output_names is None:
             output_names = []
 
@@ -568,14 +595,14 @@ class BatchClient(BaseHttpClient):
         unique_blob_name_prefix = now.strftime("%Y-%m-%d_%H%M%S_%f")
 
         # 2- store INPUTS and retrieve references
-        input_refs = CollectionConverters.dfs_to_blob_refs(inputs_df_dict, blob_service=blob_service,
+        input_refs = dfs_to_blob_refs(inputs_df_dict, blob_service=blob_service,
                                                            blob_container=blob_container,
                                                            blob_path_prefix=blob_path_prefix,
                                                            blob_name_prefix=unique_blob_name_prefix + '-input-',
                                                            charset=charset)
 
         # 3- create OUTPUT references
-        output_refs = CollectionConverters.create_blob_refs(blob_names=output_names, blob_service=blob_service,
+        output_refs = create_blob_refs(blob_names=output_names, blob_service=blob_service,
                                                             blob_container=blob_container,
                                                             blob_path_prefix=blob_path_prefix,
                                                             blob_name_prefix=unique_blob_name_prefix + '-output-')
@@ -589,7 +616,7 @@ class BatchClient(BaseHttpClient):
                             ):
         # type: (...) -> str
         """
-        Helper method to create a JSON AzureML web service input in Batch mode, from 'by reference' inputs, and parameters as dataframe
+        Helper method to create a JSON AzureML web service input in Batch mode, from 'by reference' inputs, and parameters as DataFrame
 
         :param input_refs: a dictionary containing input names and input references (each input reference is a dictionary)
         :param params_df_or_dict: a dictionary of parameter names and values
@@ -604,16 +631,16 @@ class BatchClient(BaseHttpClient):
         if isinstance(params_df_or_dict, dict):
             params = params_df_or_dict
         elif isinstance(params_df_or_dict, pd.DataFrame):
-            params = Converters.params_df_to_params_dict(params_df_or_dict)
+            params = params_df_to_params_dict(params_df_or_dict)
         else:
             raise TypeError(
-                'paramsDfOrDict should be a dataframe or a dictionary, or None, found: ' + str(type(params_df_or_dict)))
+                'paramsDfOrDict should be a DataFrame or a dictionary, or None, found: ' + str(type(params_df_or_dict)))
 
         # final body : combine them into a single dictionary ...
         body_dict = {'Inputs': input_refs, 'GlobalParameters': params, 'Outputs': output_refs}
 
         # ... and serialize as Json
-        json_body_str = Converters.azmltable_to_json(body_dict)
+        json_body_str = azmltable_to_json(body_dict)
         return json_body_str
 
     def execute_batch_createJob(self,
@@ -705,7 +732,7 @@ class BatchClient(BaseHttpClient):
         """
 
         # first read the json as a dictionary
-        result_dict = Converters.json_to_azmltable(jobstatus_or_result_json)
+        result_dict = json_to_azmltable(jobstatus_or_result_json)
 
         try:
             status_code = result_dict['StatusCode']

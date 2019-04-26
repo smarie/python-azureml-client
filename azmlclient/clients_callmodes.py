@@ -12,7 +12,7 @@ from requests import Session
 import pandas as pd
 
 from azmlclient.base import execute_bes, execute_rr
-from azmlclient.clients_config import ServiceEndpointsConfig
+from azmlclient.clients_config import ServiceConfig
 
 
 class CallMode(with_metaclass(ABCMeta, object)):
@@ -36,7 +36,7 @@ class RemoteCallMode(CallMode):
     @abstractmethod
     def call_azureml(self,
                      service_id,            # type: str
-                     service_config,        # type: ServiceEndpointsConfig
+                     service_config,        # type: ServiceConfig
                      ws_inputs,             # type: Dict[str, pd.DataFrame]
                      ws_params=None,        # type: Dict[str, str]
                      ws_output_names=None,  # type: List[str]
@@ -69,7 +69,7 @@ class RequestResponse(RemoteCallMode):
     # noinspection PyMethodOverriding
     def call_azureml(self,
                      service_id,            # type: str
-                     service_config,        # type: ServiceEndpointsConfig
+                     service_config,        # type: ServiceConfig
                      ws_inputs,             # type: Dict[str, pd.DataFrame]
                      ws_params=None,        # type: Dict[str, str]
                      ws_output_names=None,  # type: List[str]
@@ -100,7 +100,7 @@ class Batch(RemoteCallMode):
     # noinspection PyMethodOverriding
     def call_azureml(self,
                      service_id,            # type: str
-                     service_config,        # type: ServiceEndpointsConfig
+                     service_config,        # type: ServiceConfig
                      ws_inputs,             # type: Dict[str, pd.DataFrame]
                      ws_params=None,        # type: Dict[str, str]
                      ws_output_names=None,  # type: List[str]
@@ -136,7 +136,7 @@ class Batch(RemoteCallMode):
 #     """
 #     # noinspection PyMethodOverriding
 #     def call_azureml(self,
-#                      service_config,        # type: ServiceEndpointsConfig
+#                      service_config,        # type: ServiceConfig
 #                      ws_inputs,             # type: Dict[str, pd.DataFrame]
 #                      ws_params=None,        # type: Dict[str, str]
 #                      ws_output_names=None,  # type: List[str]
@@ -177,7 +177,7 @@ class Batch(RemoteCallMode):
 #
 #
 # def push_blob_and_get_ref(input,
-#                           service_config: ServiceEndpointsConfig,
+#                           service_config: ServiceConfig,
 #                           session: Session):
 #     """
 #     Uploads input to the blob storage defined in service_config (blob_account_for_batch, blob_apikey_for_batch).

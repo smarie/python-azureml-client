@@ -65,9 +65,16 @@ class GlobalConfig:
 
 
 @autodict
-class ServiceEndpointsConfig:
+class ServiceConfig:
     """
-    Represents the configuration to use to interact with an endpoint, that is, a single web service in a component.
+    Represents the configuration to use to interact with an azureml service.
+
+    A service has a main endpoint defined by a base url and an api key.
+    An optional blob storage configuration can be specified to interact with the service in batch mode (BES)
+
+    Finally, an optional alternate endpoint can be specified for "some inputs by reference" calls. In that case the
+    endpoint should correspond to a service able to understand the input references and to retrieve them (this is not a
+    standard AzureML mechanism).
     """
     def __init__(self,
                  base_url,              # type: str
@@ -131,19 +138,22 @@ class ClientConfig(YamlAble):
     An AzureML client configuration. It is made of two parts:
 
      * A 'global' configuration (a `GlobalConfig`)
-     * services configurations (one `ServiceEndpointsConfig` for each. Each is registered under a name that will be used
+     * services configurations (one `ServiceConfig` for each. Each is registered under a name that will be used
      to bind the configuration with the appropriate method in `AzureMLClient`. See `@azureml_service` for details.
     """
     def __init__(self,
-                 global_config,    # type: GlobalConfig
-                 services_configs  # type: Dict[str, ServiceEndpointsConfig]
+                 global_config=None,    # type: GlobalConfig
+                 **services_configs     # type: ServiceConfig
                  ):
         """
 
         :param global_config: the global configuration, a GlobalConfig
-        :param services_configs: a dictionary of {service_name: ServiceEndpointsConfig}
+        :param services_configs: a dictionary of {service_name: ServiceConfig}
         """
+        if global_config is None:
+            global_config = GlobalConfig()
         self.global_config = global_config
+
         self.services_configs = services_configs
 
     def assert_valid_for_services(self,
@@ -165,17 +175,21 @@ class ClientConfig(YamlAble):
     def __to_yaml_dict__(self):
         # type: (...) -> Dict[str, Any]
         """ This optional method is called when you call yaml.dump(). See `yamlable` for details."""
-        return {'global': vars(self.global_config),
-                'services': {service_name: vars(service) for service_name, service in self.services_configs.items()}}
+        # notes:
+        # - we do not make `GlobalConfig` and `ServiceConfig` yamlable objects because their custom yaml names would
+        # have to appear in the configuration, which seems tideous
+        # - we use `dict()` not `var()` so that we benefit from their `@autodict` capability to hide private fields
+        return {'global': dict(self.global_config),
+                'services': {service_name: dict(service) for service_name, service in self.services_configs.items()}}
 
     @classmethod
     def __from_yaml_dict__(cls, dct, yaml_tag):
-        # type: (...) -> ServiceEndpointsConfig
+        # type: (...) -> ClientConfig
         """ This optional method is called when you call yaml.load(). See `yamlable` for details."""
         global_cfg = GlobalConfig(**dct['global'])
-        services_cfg = {service_name: ServiceEndpointsConfig(**service_cfg_dct)
+        services_cfg = {service_name: ServiceConfig(**service_cfg_dct)
                         for service_name, service_cfg_dct in dct['services'].items()}
-        return ClientConfig(global_cfg, services_cfg)
+        return ClientConfig(global_cfg, **services_cfg)
 
     # ---- configparser interface ----
 
@@ -210,6 +224,6 @@ class ClientConfig(YamlAble):
                 if len(section_contents) > 0:
                     warn('Configuration contains a DEFAULT section, that will be ignored')
             else:
-                services_cfgs[section_name] = ServiceEndpointsConfig(**section_contents)
+                services_cfgs[section_name] = ServiceConfig(**section_contents)
 
-        return ClientConfig(global_cfg, services_cfgs)
+        return ClientConfig(global_cfg, **services_cfgs)

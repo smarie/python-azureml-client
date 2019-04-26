@@ -1,7 +1,7 @@
 import csv
 import pandas as pd
 
-from azmlclient.base_databinding import Converters, create_dest_buffer_for_csv, create_reading_buffer
+from azmlclient.base_databinding import create_dest_buffer_for_csv, create_reading_buffer, azmltable_to_df
 
 
 class AzuremlWebServiceMock(object):
@@ -74,4 +74,4 @@ def convert_dct_table_to_df(input_name, dict_table, is_timeseries):
                     dict_table.keys()) + ' for table object: ' + input_name)
     else:
         # there is a datetime as first column, this is ok
-        return Converters.azmltable_to_df(dict_table, is_azml_output=False, table_name=input_name)
+        return azmltable_to_df(dict_table, is_azml_output=False, table_name=input_name)

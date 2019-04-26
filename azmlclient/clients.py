@@ -162,7 +162,9 @@ class AzureMLClient:
         Implementors should create a local implementation and return it
         :return:
         """
-        raise NotImplementedError("You should override this method to use local service calls")
+        raise NotImplementedError("Local execution is not available for this client. Please override "
+                                  "`__init_local_impl__` or set a non-none `self._local_impl` if you wish local calls "
+                                  "to be made available")
 
     @property
     def local_impl(self):

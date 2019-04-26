@@ -4,9 +4,9 @@ from logging import getLogger, StreamHandler, INFO
 import cherrypy
 import os
 
-from azmlclient import Converters
 from azmlclient.utils_testing import AzuremlWebServiceMock
 from azmlclient.tests.clients.dummy.api_and_core import DummyImpl
+from azmlclient.base_databinding import df_to_azmltable
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -48,7 +48,7 @@ class AddColumnsWS(AzuremlWebServiceMock):
         result_df = provider.add_columns(params['a_name'], params['b_name'], inputs['input'])
 
         # converts all output dataframes to azureml format
-        res_dict = {'output': Converters.df_to_azmltable(result_df, mimic_azml_output=True)}
+        res_dict = {'output': df_to_azmltable(result_df, mimic_azml_output=True)}
 
         return {"Results": res_dict}
 
@@ -70,7 +70,7 @@ class SubtractColumnsWS(AzuremlWebServiceMock):
         result_df = provider.subtract_columns(params['a_name'], params['b_name'], inputs['input'])
 
         # converts all output dataframes to azureml format
-        res_dict = {'output': Converters.df_to_azmltable(result_df, mimic_azml_output=True)}
+        res_dict = {'output': df_to_azmltable(result_df, mimic_azml_output=True)}
 
         return {"Results": res_dict}
 

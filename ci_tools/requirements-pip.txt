@@ -14,7 +14,6 @@ valid8
 requests
 numpy
 pandas
-azure-storage==0.33.0
 
 # --- to run the tests
 pytest  #$PYTEST_VERSION
@@ -22,6 +21,7 @@ pytest-logging  # ==2015.11.4
 # for cherrypy to run on python 2 we need these version constraints
 more-itertools<6
 cherrypy<18
+azure-storage==0.33.0
 
 # --- to generate the reports (see scripts in ci_tools, called by .travis)
 pytest-cov==2.6.0  # after 2.6.1 it requires pytest 3.6
