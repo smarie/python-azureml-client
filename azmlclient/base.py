@@ -556,7 +556,7 @@ class BatchClient(BaseHttpClient):
         except ImportError as e:
             raise_from(ValueError("Please install `azure-storage==0.33` to use BATCH mode"), e)
 
-        super(BaseHttpClient, self).__init__(requests_session=requests_session)
+        super(BatchClient, self).__init__(requests_session=requests_session)
 
     def push_inputs_to_blob__and__create_output_references(self,
                                                            inputs_df_dict,         # type: Dict[str, pd.DataFrame]
