@@ -35,8 +35,29 @@ default_logger.setLevel(INFO)
 AZML_SERVICE_ID = '__azml_service__'
 
 
+class LocalCallModeNotAllowed(Exception):
+    """
+    Exception raised when users call a method corresponding to a
+    """
+    __slots__ = 'f',
+
+    def __init__(self, f):
+        self.f = f
+        super(LocalCallModeNotAllowed, self).__init__()
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        azml_service_name = get_azureml_service_name(self.f)
+        return "function '%s' (service '%s') is remote-only and can not be executed in local mode " \
+               "(`allow_local=False`). Please change call mode to request-response or batch before using it." \
+               % (self.f.__name__, azml_service_name)
+
+
 @function_decorator
 def azureml_service(service_name=None,  # type: str
+                    remote_only=False,  # type: bool
                     f=DECORATED,
                     ):
     """
@@ -51,6 +72,8 @@ def azureml_service(service_name=None,  # type: str
 
     :param service_name: the optional service name appearing in the `AzureMLClient` configuration (`ClientConfig`). By
         default this is `None` and means that the method name should be used as the service name.
+    :param remote_only: a boolean (default False) indicating if a service should be considered remote-only. If True, an
+        appropriate exception will be raised if the service is used in local mode.
     """
     @wraps(f)
     def f_wrapper(self,  # type: AzureMLClient
@@ -64,8 +87,11 @@ def azureml_service(service_name=None,  # type: str
         :return:
         """
         if self.is_local_mode():
-            # execute the same method on local implementor rather than client.
-            return self.call_local_service(f.__name__, *args, **kwargs)
+            if not remote_only:
+                # execute the same method on local implementor rather than client.
+                return self.call_local_service(f.__name__, *args, **kwargs)
+            else:
+                raise LocalCallModeNotAllowed(f_wrapper)
         else:
             # execute as usual
             return f(self, *args, **kwargs)
@@ -82,7 +108,7 @@ def get_azureml_service_name(f):
     :return:
     """
     try:
-        # if this is the bound method, get the unbound one
+        # If this is the bound (=instance) method, get the unbound (=class) one
         if hasattr(f, '__func__'):
             f = f.__func__
         azml_name = getattr(f, AZML_SERVICE_ID)

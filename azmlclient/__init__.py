@@ -6,7 +6,7 @@ from azmlclient.base import execute_rr, execute_bes, IllegalJobStateException, J
 
 from azmlclient.clients_config import GlobalConfig, ServiceConfig, ClientConfig
 from azmlclient.clients_callmodes import CallMode, RemoteCallMode, RequestResponse, Batch
-from azmlclient.clients import AzureMLClient, azureml_service, unpack_single_value_from_df
+from azmlclient.clients import AzureMLClient, azureml_service, unpack_single_value_from_df, LocalCallModeNotAllowed
 
 __all__ = [
     # submodules
@@ -24,5 +24,5 @@ __all__ = [
     # -- clients_callmodes
     'CallMode', 'RemoteCallMode', 'RequestResponse', 'Batch',
     # -- clients
-    'AzureMLClient', 'azureml_service', 'unpack_single_value_from_df'
+    'AzureMLClient', 'azureml_service', 'unpack_single_value_from_df', 'LocalCallModeNotAllowed'
 ]

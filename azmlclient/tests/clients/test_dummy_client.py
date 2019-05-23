@@ -5,7 +5,7 @@ import pytest
 
 import pandas as pd
 
-from azmlclient import ClientConfig
+from azmlclient import ClientConfig, LocalCallModeNotAllowed
 
 from azmlclient.tests.clients.dummy.api_and_core import DummyProvider
 from azmlclient.tests.clients.dummy.web_services import start_ws_mock
@@ -84,3 +84,14 @@ def test_client_call_simple(client_impl,  # type: DummyClient
 
     # check that the result is correct
     assert (res_df['sum'] == df['x'] + df['y']).all()
+
+
+def test_client_call_remote_only(client_impl  # type: DummyClient
+                                 ):
+    """ Tests that remote-only services can not """
+    with pytest.raises(LocalCallModeNotAllowed) as exc_info:
+        with client_impl.local_calls():
+            client_impl.subtract_columns('a', 'b', None)
+
+    assert str(exc_info.value).startswith("function 'subtract_columns' (service 'subtract_columns') is remote-only and "
+                                          "can not be executed in local mode")

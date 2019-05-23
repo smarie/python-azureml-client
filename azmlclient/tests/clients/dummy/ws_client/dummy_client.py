@@ -67,7 +67,7 @@ class DummyClient(DummyProvider, AzureMLClient):
 
         return results_df
 
-    @azureml_service
+    @azureml_service(remote_only=True)
     def subtract_columns(self, a_name, b_name, df):
         # remote call
         raise NotImplementedError("Remote calls for this service are not implemented yet.")
