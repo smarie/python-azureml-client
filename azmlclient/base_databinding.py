@@ -77,7 +77,11 @@ class AzmlException(Exception):
             self.error_code = self.error_dict['code']
             # noinspection PyTypeChecker
             self.error_message = self.error_dict['message']
-            self.details = error_as_dict['details']
+            # try:
+            self.details = self.error_dict['details']
+            # except KeyError:
+            #     # legacy format ?
+            #     self.details = error_as_dict['details']
         except KeyError:
             raise ValueError("Unrecognized format for AzureML http error. JSON content is :\n %s" % error_as_dict)
 
