@@ -173,19 +173,19 @@ class AzureMLClient:
         return self._local_impl
 
     def call_local_service(self,
-                           service_name,  # type: str
+                           function_name,  # type: str
                            *args, **kwargs):
         """
         This method is called automatically when a service method (i.e. decorated with `@azureml_service`)
         is called and this instance is in "local" mode. It delegates to local.
 
-        :param service_name:
+        :param function_name:
         :param args:
         :param kwargs:
         :return:
         """
         local_provider = self.local_impl
-        local_method = getattr(local_provider, service_name)
+        local_method = getattr(local_provider, function_name)
         return local_method(*args, **kwargs)
 
     # --------- configuration
