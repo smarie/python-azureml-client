@@ -1,5 +1,20 @@
 # Changelog
 
+### 2.1.0 - High-level clients: swagger, remote-only services + Bugfix 
+
+New:
+
+ * Swagger format is now supported in both high-level (call modes) and low-level (RR and Batch clients) API. Fixes [#5](https://github.com/smarie/python-azureml-client/issues/5).
+
+ * New argument `remote_only` to disable local usage of a service. Fixes [#8](https://github.com/smarie/python-azureml-client/issues/8).
+
+Misc:
+
+ * Fixed bug with decoding AzureML errors. Fixes [#7](https://github.com/smarie/python-azureml-client/issues/7).
+
+ * `call_local_service`: renamed argument `service_name` to `function_name` to distinguish better between the service (azureml) and the function (local implementation's method).
+
+
 ### 2.0.0 - New tools for high level api creation
 
 New features:
