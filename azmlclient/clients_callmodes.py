@@ -66,6 +66,16 @@ class RequestResponse(RemoteCallMode):
     Represents the request-response call mode
     """
 
+    def __init__(self,
+                 use_swagger_format=False
+                 ):
+        """
+
+        :param use_swagger_format: a boolean (default False) indicating if the 'swagger' azureml format should be used
+            to format the data tables in json payloads.
+        """
+        self.use_swagger_format = use_swagger_format
+
     # noinspection PyMethodOverriding
     def call_azureml(self,
                      service_id,            # type: str
@@ -85,7 +95,7 @@ class RequestResponse(RemoteCallMode):
         # standard azureml request-response call
         return execute_rr(api_key=service_config.api_key, base_url=service_config.base_url,
                           inputs=ws_inputs, params=ws_params, output_names=ws_output_names,
-                          requests_session=session)
+                          use_swagger_format=self.use_swagger_format, requests_session=session)
 
 
 class Batch(RemoteCallMode):

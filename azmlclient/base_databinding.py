@@ -197,10 +197,10 @@ def csvs_to_dfs(csv_dict  # type: Dict[str, str]
             for input_name, inputCsv in csv_dict.items()}
 
 
-def df_to_azmltable(df,                         # type: pandas.DataFrame
-                    table_name=None,            # type: str
-                    swagger=False,              # type: bool
-                    mimic_azml_output=False,    # type: bool
+def df_to_azmltable(df,                       # type: pandas.DataFrame
+                    table_name=None,          # type: str
+                    swagger_format=False,     # type: bool
+                    mimic_azml_output=False,  # type: bool
                     ):
     # type: (...) -> Union[AzmlTable, AzmlOutputTable]
     """
@@ -209,32 +209,54 @@ def df_to_azmltable(df,                         # type: pandas.DataFrame
 
     :param df: the DataFrame to convert
     :param table_name: the table name for error messages
-    :param swagger: a boolean indicating if the swagger format should be used (more verbose). Default: False
+    :param swagger_format: a boolean (default: False) indicating if the swagger format should be used (more verbose).
     :param mimic_azml_output: set this to True if the result should be wrapped in a dictionary like AzureML outputs.
         This is typically needed if you wish to mimic an AzureML web service's behaviour, for a mock web server.
     :return:
     """
     validate(table_name, df, instance_of=pandas.DataFrame)
 
+    # only 2-dimensions tables are supported
+    validate("%s_nb_dimensions" % table_name, len(df.shape), equals=2,
+             help_msg="Only 2-dimensional tables are supported for AzureML format conversion.")
+
     if mimic_azml_output:
         # use this method recursively, in 'not output' mode
-        return {'type': 'table', 'value': df_to_azmltable(df, table_name=table_name, swagger=swagger)}
+        return {'type': 'table', 'value': df_to_azmltable(df, table_name=table_name, swagger_format=swagger_format)}
     else:
         col_names = df.columns.values.tolist()
-        if swagger:
+
+        # Convert the table entries to json-able format.
+        if swagger_format:
             # swagger mode: the table is a list of object rows
-            return [OrderedDict([(col_name, df[col_name].iloc[i]) for col_name in col_names])
+
+            def _get_item_in_df(df, col_name, row_idx):
+                """ Internal routine to convert all possible items to python primitive by asking numpy if possible.
+                Pandas types do not support it so return 'as is' then"""
+                cell = df[col_name].iloc[row_idx]
+                try:
+                    return cell.item()
+                except AttributeError:
+                    return cell
+
+            return [OrderedDict([(col_name, to_jsonable_primitive(_get_item_in_df(df, col_name, i)))
+                                 for col_name in col_names])
                     for i in range(df.shape[0])]
         else:
             # non-swagger mode: the columns and values are separate attributes.
-            #
+
             # "ColumnTypes": [dtype_to_azmltyp(dt) for dt in df.dtypes],
             # --> dont do type conversion, AzureML type mapping does not seem to be reliable enough.
-            return {'ColumnNames': col_names,
-                    "Values": df.values.tolist()}
+
+            # convert all values in the table to primitives so that the json serializer supports it
+            list_of_rows = df.values.tolist()
+            values = [list(map(to_jsonable_primitive, row)) for row in list_of_rows]
+
+            return {'ColumnNames': col_names, "Values": values}
 
 
-def dfs_to_azmltables(dfs  # type: Dict[str, pandas.DataFrame]
+def dfs_to_azmltables(dfs,                   # type: Dict[str, pandas.DataFrame]
+                      swagger_format=False,  # type: bool
                       ):
     # type: (...) -> Dict[str, Dict[str, Union[str, Dict[str, List]]]]
     """
@@ -242,6 +264,7 @@ def dfs_to_azmltables(dfs  # type: Dict[str, pandas.DataFrame]
     required for AzureML JSON conversion
 
     :param dfs: a dictionary containing input names and input content (each input content is a DataFrame)
+    :param swagger_format: a boolean (default: False) indicating if the 'swagger' azureml format should be used
     :return: a dictionary of tables represented as dictionaries
     """
     validate('dfs', dfs, instance_of=dict)
@@ -251,12 +274,14 @@ def dfs_to_azmltables(dfs  # type: Dict[str, pandas.DataFrame]
     #     resultsDict[dfName] = Df_to_AzmlTable(df, dfName)
     # return resultsDict
 
-    return {df_name: df_to_azmltable(df, table_name=df_name) for df_name, df in dfs.items()}
+    return {df_name: df_to_azmltable(df, table_name=df_name, swagger_format=swagger_format)
+            for df_name, df in dfs.items()}
 
 
 def azmltable_to_df(azmltable,             # type: Union[AzmlTable, AzmlOutputTable]
                     is_azml_output=False,  # type: bool
-                    table_name=None        # type: str
+                    table_name=None,       # type: str
+                    swagger_mode=None       # type: bool
                     ):
     # type: (...) -> pandas.DataFrame
     """
@@ -268,11 +293,16 @@ def azmltable_to_df(azmltable,             # type: Union[AzmlTable, AzmlOutputTa
     :param is_azml_output: set this to True if the `azmltable` was received from an actual AzureML web service.
         Indeed in this case the table is usually wrapped in a dictionary that needs to be unwrapped.
     :param table_name: the table name for error messages
+    :param swagger_mode: a boolean (default None) indicating if the 'swagger' azureml format should be used
+        to read the data table. If None is provided, no check will be performed. Otherwise an error will be raised if
+        the actual format does not correspond.
     :return:
     """
     validate(table_name, azmltable, instance_of=(list, dict))
 
-    if is_azml_output:
+    is_swagger_format = isinstance(azmltable, list)
+
+    if not is_swagger_format and is_azml_output:
         if 'type' in azmltable.keys() and 'value' in azmltable.keys():
             if azmltable['type'] == 'table':
                 # use this method recursively, in 'not output' mode
@@ -284,8 +314,10 @@ def azmltable_to_df(azmltable,             # type: Union[AzmlTable, AzmlOutputTa
             raise ValueError("object should be a dictionary with two fields 'type' and 'value', found: %s for "
                              "table object: %s" % (azmltable.keys(), table_name))
     else:
-        if isinstance(azmltable, list):
+        if is_swagger_format:
             # swagger format
+            if swagger_mode is not None and not swagger_mode:
+                raise ValueError("Data table is in swagger format while non-swagger format is supposed to be received")
             values = []
             if len(azmltable) > 0:
                 col_names = list(azmltable[0].keys())
@@ -302,13 +334,18 @@ def azmltable_to_df(azmltable,             # type: Union[AzmlTable, AzmlOutputTa
             else:
                 col_names = []
 
-        elif 'ColumnNames' in azmltable.keys() and 'Values' in azmltable.keys():
-            # non-swagger format
-            values = azmltable['Values']
-            col_names = azmltable['ColumnNames']
         else:
-            raise ValueError("object should be a list or a dictionary with two fields ColumnNames and Values, "
-                             "found: %s for table object: %s" % (azmltable.keys(), table_name))
+            if 'ColumnNames' in azmltable.keys() and 'Values' in azmltable.keys():
+                # non-swagger format
+                if swagger_mode is not None and swagger_mode:
+                    raise ValueError(
+                        "Data table is in non-swagger format while swagger format is supposed to be received")
+
+                values = azmltable['Values']
+                col_names = azmltable['ColumnNames']
+            else:
+                raise ValueError("object should be a list or a dictionary with two fields ColumnNames and Values, "
+                                 "found: %s for table object: %s" % (azmltable.keys(), table_name))
 
         if len(values) > 0:
             # # create DataFrame manually
@@ -408,6 +445,18 @@ def json_to_azmltable(json_str  # type: str
     return json.loads(json_str, object_pairs_hook=OrderedDict)
 
 
+def to_jsonable_primitive(obj):
+    """
+    Converts the given item (should NOT be a container) to a json-able one.
+    :param obj:
+    :return:
+    """
+    if isinstance(obj, (int, str, bool, float)):  # , dict, list, tuple, set
+        return obj
+    else:
+        return azml_json_serializer(obj)
+
+
 def azml_json_serializer(obj):
     """
     JSON custom serializer for objects not serializable by default json code
@@ -424,7 +473,7 @@ def azml_json_serializer(obj):
         return float(obj)
     elif isinstance(obj, np.ndarray):
         return obj.tolist()
-    elif isinstance(obj, datetime) or np.issubdtype(type(obj), datetime):
+    elif isinstance(obj, datetime):  # or isinstance(obj, np.generic) and obj.kind='M':
         # Datetime are written as ISO format string
         return obj.isoformat()
     else:

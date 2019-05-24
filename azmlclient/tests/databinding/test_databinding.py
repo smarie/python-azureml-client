@@ -32,7 +32,7 @@ def test_df_to_json(swagger_mode_on,
                     ):
     """ Tests that a dataframe can be converted to azureml json representation and back. """
 
-    azt = df_to_azmltable(case.df, swagger=swagger_mode_on)
+    azt = df_to_azmltable(case.df, swagger_format=swagger_mode_on)
     az_json_df = azmltable_to_json(azt)
 
     print("Converted df -> json:")

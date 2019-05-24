@@ -58,9 +58,22 @@ def client_impl(client_cfg):
     return client
 
 
-@pytest.mark.parametrize('mode', ['local', 'RR', 'Batch'], ids="mode={}".format)
-def test_client_call_simple(client_impl,  # type: DummyClient
-                            mode          # type: str
+def _get_test_item_id(x):
+    """ custom test ids """
+    if isinstance(x, bool) or x is None:
+        return "swagger_format={}".format(x)
+    else:
+        return "call_mode={}".format(x)
+
+
+@pytest.mark.parametrize('call_mode,swagger_format', [('local', None),
+                                                      ('RR', False),
+                                                      ('RR', True),
+                                                      ('Batch', None)],
+                         ids=_get_test_item_id)
+def test_client_call_simple(client_impl,     # type: DummyClient
+                            call_mode,       # type: str
+                            swagger_format   # type: bool
                             ):
     """ Tests that the client can be used to use the 'add columns' service """
 
@@ -68,11 +81,11 @@ def test_client_call_simple(client_impl,  # type: DummyClient
     df = pd.DataFrame({'x': [1, 2, 3], 'y': [0, 5, 10]})
 
     # local or remote call
-    if mode == 'local':
+    if call_mode == 'local':
         context = client_impl.local_calls()
-    elif mode == 'RR':
-        context = client_impl.rr_calls()
-    elif mode == 'Batch':
+    elif call_mode == 'RR':
+        context = client_impl.rr_calls(use_swagger_format=swagger_format)
+    elif call_mode == 'Batch':
         context = client_impl.batch_calls()
         pytest.skip("Batch mode is not implemented on this mock server.")
     else:

@@ -268,16 +268,20 @@ class AzureMLClient:
         """
         return self.call_mode(LocalCallMode())
 
-    def rr_calls(self):
+    def rr_calls(self,
+                 use_swagger_format=False  # type: bool
+                 ):
         """
         Alias for the `call_mode` context manager to temporarily switch this client to 'request response' mode
 
         >>> with client.rr_calls():
         >>>     client.my_service(foo)
         """
-        return self.call_mode(RequestResponse())
+        return self.call_mode(RequestResponse(use_swagger_format=use_swagger_format))
 
-    def batch_calls(self, polling_period_seconds=5):
+    def batch_calls(self,
+                    polling_period_seconds=5,  # type: int
+                    ):
         """
         Alias for the `call_mode` context manager to temporarily switch this client to 'batch' mode
 

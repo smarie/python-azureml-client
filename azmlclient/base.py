@@ -182,12 +182,13 @@ def create_session_for_proxy(http_proxyhost,                  # type: str
     return s
 
 
-def execute_rr(api_key,               # type: str
-               base_url,              # type: str
-               inputs=None,           # type: Dict[str, pd.DataFrame]
-               params=None,           # type: Union[pd.DataFrame, Dict[str, Any]]
-               output_names=None,     # type: List[str]
-               requests_session=None  # type: requests.Session
+def execute_rr(api_key,                   # type: str
+               base_url,                  # type: str
+               inputs=None,               # type: Dict[str, pd.DataFrame]
+               params=None,               # type: Union[pd.DataFrame, Dict[str, Any]]
+               output_names=None,         # type: List[str]
+               use_swagger_format=False,  # type: bool
+               requests_session=None      # type: requests.Session
                ):
     # type: (...) -> Dict[str, pd.DataFrame]
     """
@@ -200,11 +201,13 @@ def execute_rr(api_key,               # type: str
     :param inputs: an optional dictionary containing the inputs, by name. Inputs should be DataFrames.
     :param params: an optional dictionary containing the parameters by name, or a DataFrame containing the parameters.
     :param output_names: an optional list of expected output names
+    :param use_swagger_format: a boolean (default False) indicating if the 'swagger' azureml format should be used
+            to format the data tables in json payloads.
     :param requests_session: an optional requests.Session object, for example created from create_session_for_proxy()
     :return: a dictionary of outputs, by name. Outputs are DataFrames
     """
     # 0- Create the generic request-response client
-    rr_client = RequestResponseClient(requests_session=requests_session)
+    rr_client = RequestResponseClient(requests_session=requests_session, use_swagger_format=use_swagger_format)
 
     # 1- Create the query body
     request_body = rr_client.create_request_body(inputs, params)
@@ -328,10 +331,12 @@ class BaseHttpClient(object):
     Base class for our http clients. It contains a `requests.Session` object and
     """
     def __init__(self,
-                 requests_session=None  # type: requests.Session
+                 requests_session=None,    # type: requests.Session
                  ):
         """
-        Constructor with an optional `requests.Session` to use for subsequent calls
+        Constructor with an optional `requests.Session` to use for subsequent calls.
+        Also you can declare to use the 'swagger' AzureML format for data table formatting (not enabled by default
+        because it is more verbose).
 
         :param requests_session:
         """
@@ -437,9 +442,28 @@ class RequestResponseClient(BaseHttpClient):
     A class providing static methods to perform Request-response calls to AzureML web services
     """
 
-    @staticmethod
-    def create_request_body(input_df_dict=None,     # type: Dict[str, pd.DataFrame]
-                            params_df_or_dict=None  # type: Union[pd.DataFrame, Dict[str, Any]]
+    def __init__(self,
+                 requests_session=None,    # type: requests.Session
+                 use_swagger_format=False  # type: bool
+                 ):
+        """
+        Constructor with an optional `requests.Session` to use for subsequent calls.
+        Also you can declare to use the 'swagger' AzureML format for data table formatting (not enabled by default
+        because it is more verbose).
+
+        :param requests_session:
+        :param use_swagger_format: a boolean (default False) indicating if the 'swagger' azureml format should be used
+            to format the data tables in json payloads.
+        """
+        # save swagger format
+        self.use_swagger_format = use_swagger_format
+
+        # super constructor
+        super(RequestResponseClient, self).__init__(requests_session=requests_session)
+
+    def create_request_body(self,
+                            input_df_dict=None,      # type: Dict[str, pd.DataFrame]
+                            params_df_or_dict=None,  # type: Union[pd.DataFrame, Dict[str, Any]]
                             ):
         # type (...) -> str
         """
@@ -456,7 +480,7 @@ class RequestResponseClient(BaseHttpClient):
             params_df_or_dict = {}
 
         # inputs
-        inputs = dfs_to_azmltables(input_df_dict)
+        inputs = dfs_to_azmltables(input_df_dict, swagger_format=self.use_swagger_format)
 
         # params
         if isinstance(params_df_or_dict, dict):
@@ -475,9 +499,9 @@ class RequestResponseClient(BaseHttpClient):
         return json_body_str
 
     def execute_rr(self,
-                   base_url,           # type: str
-                   api_key,            # type: str
-                   request_body_json,  # type: str
+                   base_url,              # type: str
+                   api_key,               # type: str
+                   request_body_json,     # type: str
                    ):
         # type: (...) -> str
         """
@@ -490,6 +514,8 @@ class RequestResponseClient(BaseHttpClient):
         :return: the json body of the response, as a string
         """
         rr_url = base_url + '/execute?api-version=2.0&details=true'
+        if self.use_swagger_format:
+            rr_url += '&format=swagger'
 
         json_result = self.azureml_http_call(url=rr_url, api_key=api_key, method='POST', body_str=request_body_json)
 

@@ -40,15 +40,22 @@ class AddColumnsWS(AzuremlWebServiceMock):
     def POST(self, **kwargs):
         cherrypy.log('[' + self.name + '] was asked to execute with params ' + str(kwargs))
 
+        # detect swagger mode
+        try:
+            swagger_mode = (kwargs['format'] == 'swagger')
+        except KeyError:
+            swagger_mode = False
+
         # Decode the body (cherrypy has already transformed the json into a dict)
-        inputs, params = self.unpack_azureml_query(cherrypy.request.json, table_input_names='input')
+        inputs, params = self.unpack_azureml_query(cherrypy.request.json, input_names='input',
+                                                   swagger_mode=swagger_mode)
 
         # Create the provider and execute
         provider = DummyImpl(logger=default_logger)
         result_df = provider.add_columns(params['a_name'], params['b_name'], inputs['input'])
 
         # converts all output dataframes to azureml format
-        res_dict = {'output': df_to_azmltable(result_df, mimic_azml_output=True)}
+        res_dict = {'output': df_to_azmltable(result_df, mimic_azml_output=True, swagger_format=swagger_mode)}
 
         return {"Results": res_dict}
 
@@ -62,15 +69,22 @@ class SubtractColumnsWS(AzuremlWebServiceMock):
     def POST(self, **kwargs):
         cherrypy.log('[' + self.name + '] was asked to execute with params ' + str(kwargs))
 
+        # detect swagger mode
+        try:
+            swagger_mode = (kwargs['format'] == 'swagger')
+        except KeyError:
+            swagger_mode = False
+
         # Decode the body (cherrypy has already transformed the json into a dict)
-        inputs, params = self.unpack_azureml_query(cherrypy.request.json, table_input_names='input')
+        inputs, params = self.unpack_azureml_query(cherrypy.request.json, input_names='input',
+                                                   swagger_mode=swagger_mode)
 
         # Create the provider and execute
         provider = DummyImpl(logger=default_logger)
         result_df = provider.subtract_columns(params['a_name'], params['b_name'], inputs['input'])
 
         # converts all output dataframes to azureml format
-        res_dict = {'output': df_to_azmltable(result_df, mimic_azml_output=True)}
+        res_dict = {'output': df_to_azmltable(result_df, mimic_azml_output=True, swagger_format=swagger_mode)}
 
         return {"Results": res_dict}
 
