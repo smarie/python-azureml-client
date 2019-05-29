@@ -96,14 +96,14 @@ def azureml_service(service_name=None,  # type: str
             # execute as usual
             return f(self, *args, **kwargs)
 
-    # tag the method as being related to an azureml service with given id
+    # tag the method as being related to an AzureML service with given id
     setattr(f_wrapper, AZML_SERVICE_ID, service_name)
     return f_wrapper
 
 
 def get_azureml_service_name(f):
     """
-    Returns the azureml service name associated with method `f`.
+    Returns the AzureML service name associated with method `f`.
     :param f:
     :return:
     """
@@ -113,7 +113,7 @@ def get_azureml_service_name(f):
             f = f.__func__
         azml_name = getattr(f, AZML_SERVICE_ID)
     except AttributeError:
-        raise ValueError("Method '%s' can not be bound to an azureml service, please decorate it with "
+        raise ValueError("Method '%s' can not be bound to an AzureML service, please decorate it with "
                          "@azureml_service." % f.__name__)
     else:
         return azml_name if azml_name is not None else f.__name__
@@ -166,7 +166,7 @@ class AzureMLClient:
     @property
     def service_methods(self):
         """
-        returns a dictionary of all service methods referenced by azureml service name.
+        returns a dictionary of all service methods referenced by AzureML service name.
         These are all methods in the class that have been decorated with `@azureml_service`
         :return:
         """
@@ -321,7 +321,7 @@ class AzureMLClient:
     def call_azureml(self,
                      service_id,       # type: Union[str, Callable]
                      ws_inputs,        # type: Dict[str, pd.DataFrame]
-                     ws_output_names,  # type: List[str]
+                     ws_output_names,  # type: Optional[List[str]]
                      ws_params=None,   # type: Dict[str, str]
                      ):
         """
@@ -330,13 +330,9 @@ class AzureMLClient:
         Inputs
 
         :param service_id: a string identifier or a method representing the service
-        :param ws_inputs: a (name, dataframe) dictionary of web service inputs
-        :param ws_output_names: a list of web service outputs
+        :param ws_inputs: a (name, DataFrame) dictionary of web service inputs
+        :param ws_output_names: a list of web service outputs, or `None` to allow all outputs to be received
         :param ws_params: a (param_name, value) dictionary of web service parameters
-        :param by_ref_inputs: a dictionary {<input_name>: <param_name>} containing one entry for each input to send
-            "by reference" rather than "by value". Each such input will be removed from the service inputs (the names
-            have to be valid input names), its contents will be stored in the blob storage (the same used for batch
-            mode), and the blob URL will be passed to a new parameter named <param_name>
         :return:
         """
         # -- one can provide a method as the service id
@@ -375,18 +371,18 @@ def unpack_single_value_from_df(name,             # type: str
                                 allow_empty=True  # type: bool
                                 ):
     """
-    Utility method to unpack a single value from a dataframe.
-    If allow_empty is True (default), an empty dataframe will be accepted and None will be returned.
+    Utility method to unpack a single value from a DataFrame.
+    If allow_empty is True (default), an empty DataFrame will be accepted and None will be returned.
 
-    :param name: the name of the dataframe, for validation purposes
+    :param name: the name of the DataFrame, for validation purposes
     :param df:
     :param allow_empty:
     :return:
     """
-    vals = df.values.ravel()
-    if len(vals) == 1:
-        return vals[0]
-    elif len(vals) == 0 and allow_empty:
+    values = df.values.ravel()
+    if len(values) == 1:
+        return values[0]
+    elif len(values) == 0 and allow_empty:
         return None
     else:
-        raise ValueError("Dataframe '%s' is supposed to contain a single value but does not: \n%s" % (name, df))
+        raise ValueError("DataFrame '%s' is supposed to contain a single value but does not: \n%s" % (name, df))
