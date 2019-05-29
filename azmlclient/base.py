@@ -182,13 +182,14 @@ def create_session_for_proxy(http_proxyhost,                  # type: str
     return s
 
 
-def execute_rr(api_key,                   # type: str
-               base_url,                  # type: str
-               inputs=None,               # type: Dict[str, pd.DataFrame]
-               params=None,               # type: Union[pd.DataFrame, Dict[str, Any]]
-               output_names=None,         # type: List[str]
-               use_swagger_format=False,  # type: bool
-               requests_session=None      # type: requests.Session
+def execute_rr(api_key,                                # type: str
+               base_url,                               # type: str
+               inputs=None,                            # type: Dict[str, pd.DataFrame]
+               params=None,                            # type: Union[pd.DataFrame, Dict[str, Any]]
+               output_names=None,                      # type: List[str]
+               only_keep_selected_output_names=False,  # type: bool
+               use_swagger_format=False,               # type: bool
+               requests_session=None                   # type: requests.Session
                ):
     # type: (...) -> Dict[str, pd.DataFrame]
     """
@@ -200,12 +201,19 @@ def execute_rr(api_key,                   # type: str
         in the form 'https://<geo>.services.azureml.net/workspaces/<wId>/services/<sId>'.
     :param inputs: an optional dictionary containing the inputs, by name. Inputs should be DataFrames.
     :param params: an optional dictionary containing the parameters by name, or a DataFrame containing the parameters.
-    :param output_names: an optional list of expected output names
+    :param output_names: an optional list of expected output names, for automatic validation.
+    :param only_keep_selected_output_names: a boolean (default False) to indicate if only the outputs selected in
+        `output_names` should be kept in the returned dictionary.
     :param use_swagger_format: a boolean (default False) indicating if the 'swagger' azureml format should be used
             to format the data tables in json payloads.
     :param requests_session: an optional requests.Session object, for example created from create_session_for_proxy()
     :return: a dictionary of outputs, by name. Outputs are DataFrames
     """
+    # quick check before spending time with the query
+    if output_names is None and only_keep_selected_output_names:
+        raise ValueError("`only_keep_selected_output_names` can only be used with a non-None list of "
+                         "`output_names`")
+
     # 0- Create the generic request-response client
     rr_client = RequestResponseClient(requests_session=requests_session, use_swagger_format=use_swagger_format)
 
@@ -218,7 +226,12 @@ def execute_rr(api_key,                   # type: str
     # 3- parse the response body into a dictionary of DataFrames
     result_dfs = rr_client.read_response_json_body(response_body, output_names)
 
-    return result_dfs
+    # 4- possibly filter outputs
+    if only_keep_selected_output_names:
+        selected_dfs = {k: result_dfs[k] for k in output_names}
+        return selected_dfs
+    else:
+        return result_dfs
 
 
 def execute_bes(api_key,                              # type: str
@@ -522,15 +535,16 @@ class RequestResponseClient(BaseHttpClient):
         return json_result
 
     @staticmethod
-    def read_response_json_body(body_json,  # type: str
-                                output_names=None  # type: List[str]
+    def read_response_json_body(body_json,                             # type: str
+                                output_names=None,                     # type: List[str]
                                 ):
         # type: (...) -> Dict[str, pd.DataFrame]
         """
         Reads a response body from a request-response web service call, into a dictionary of pandas DataFrame
 
         :param body_json: the response body, already decoded as a string
-        :param output_names: the names of the outputs to find. If empty, all outputs will be provided
+        :param output_names: if a non-None list of output names is provided, each of these names must be present in
+            the outputs dictionary, otherwise an error is raised.
         :return: the dictionary of corresponding DataFrames mapped to the output names
         """
         # first read the json as a dictionary
@@ -539,19 +553,15 @@ class RequestResponseClient(BaseHttpClient):
         # then transform it into a DataFrame
         result_dfs = azmltables_to_dfs(result_dict['Results'], is_azureml_output=True)
 
-        if output_names is None:
-            # return all outputs
-            return result_dfs
-        else:
-            # only return the selected outputs
-            try:
-                selected_dfs = {k: result_dfs[k] for k in output_names}
-            except KeyError:
-                missing = list(set(output_names) - set(result_dfs.keys()))
+        if output_names is not None:
+            # check the names
+            missing = list(set(output_names) - set(result_dfs.keys()))
+            if len(missing) > 0:
                 raise Exception("Error : the following outputs are missing in the results: %s. Found outputs: %s"
                                 "" % (missing, set(result_dfs.keys())))
-            else:
-                return selected_dfs
+
+        # return all outputs
+        return result_dfs
 
     @staticmethod
     def decode_request_json_body(body_json  # type: str
