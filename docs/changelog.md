@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.2.0 - Request-Response: new default behaviour concerning outputs, and new parameter.
+
+Low-level API:
+
+ - `RequestResponseClient.read_response_json_body` now does not filter outputs anymore even if a non-None `output_names` is provided.
+ 
+ - New parameter to `execute_rr`: `only_keep_selected_output_names`. If this is `True` the legacy behaviour of filtering outputs by names is preserved. Otherwise all outputs are preserved. Fixes [#9](https://github.com/smarie/python-azureml-client/issues/9)
+
+High-level API:
+
+ - `AzureMLClient.call_azureml`: `ws_output_names` now appears as optional in the type hints. Improved docstring comments slightly.
+
 ### 2.1.0 - High-level clients: swagger, remote-only services + Bugfix 
 
 New:
