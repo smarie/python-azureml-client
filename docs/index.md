@@ -230,7 +230,27 @@ Note that the service names in the configuration are by default the method names
 
 If you wish to debug the calls made by your client, there are two things that you can do:
 
- * (recommended) use a tool to capture network traffic such as Fiddler or Wireshark. Some tools such as Fiddler require you to change to http(s) proxy. This can be done in the `ClientConfig` object, by passing a `GlobalConfig`. See [this example](https://github.com/smarie/python-azureml-client/blob/master/azmlclient/tests/clients/dummy/ws_client/dummy_client_conf.cfg) for the properties to be set.
+ * (recommended) use a tool to capture network traffic such as [Fiddler](https://www.telerik.com/fiddler) or (more complex) [Wireshark](https://www.wireshark.org/). Some tools such as Fiddler require you to change to http(s) proxy. This can be done by setting the `http(s)_proxy` configuration option as shown below. Note that this can also be done programatically by passing a `GlobalConfig(https_proxy=...,)` in the `ClientConfig` constructor.
+ 
+```.ini
+(client_cfg.ini)
+
+[global]
+# (only for debug) use fiddler proxy and skip ssl verification
+# http_proxy = ...
+https_proxy = http://localhost:8888
+ssl_verify = false
+```
+
+```.yml
+(client_cfg.yaml)
+
+global:
+   # (only for debug) use fiddler proxy and skip ssl verification 
+   # http_proxy = ...
+   https_proxy = http://localhost:8888
+   ssl_verify: false
+```
  
  * alternatively you can use the `with client.debug_requests()` context manager on your client. This will print the http requests contents on stdout:
  
