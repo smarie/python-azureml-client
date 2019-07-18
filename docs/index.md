@@ -226,6 +226,27 @@ Note that the service names in the configuration are by default the method names
         ...
 ```
 
+#### Templating
+
+Finally, note that the yaml and ini/cfg configuration files can be templates, using the [`jinja2`](jinja.pocoo.org) syntax:
+
+```ini
+(...)
+
+[add_columns]
+base_url = https://localhost:4443/a_plus_b
+api_key = {{ api_key }}
+
+(...)
+```
+
+This way, you can for example specify api keys at configuration loading time without storing them in the configuration file. Simply provide the variables and their values as keyword arguments in any of the `load_config` or `load_yaml` function:
+
+```python
+cfg = ClientConfig.load_config(cfg_file_path, api_key="abc25d4789e=o")
+```
+
+
 ### Debugging
 
 If you wish to debug the calls made by your client, there are two things that you can do:
