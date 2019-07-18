@@ -14,6 +14,7 @@ valid8
 requests
 numpy
 pandas
+jinja2
 
 # --- to run the tests
 pytest  #$PYTEST_VERSION

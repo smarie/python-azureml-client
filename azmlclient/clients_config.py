@@ -1,6 +1,8 @@
 import sys
 from collections import OrderedDict
 from warnings import warn
+
+from jinja2 import Environment, StrictUndefined
 from requests import Session
 
 try:  # python 3+
@@ -191,10 +193,31 @@ class ClientConfig(YamlAble):
                         for service_name, service_cfg_dct in dct['services'].items()}
         return ClientConfig(global_cfg, **services_cfg)
 
+    @classmethod
+    def load_yaml(cls,                  # type: Type[Y]
+                  file_path_or_stream,  # type: Union[str, IOBase, StringIO]
+                  safe=True,            # type:
+                  **var_values  # type: Any
+                  ):  # type: (...) -> Y
+        """ applies the template before loading """
+        contents = read_file_and_apply_template(file_path_or_stream, **var_values)
+        return YamlAble.loads_yaml(contents, safe=safe)
+
+    @classmethod
+    def loads_yaml(cls,          # type: Type[Y]
+                   yaml_str,     # type: str
+                   safe=True,    # type: bool
+                   **var_values  # type: Any
+                   ):  # type: (...) -> Y
+        """ applies the template before loading """
+        contents = apply_template(yaml_str, **var_values)
+        return YamlAble.loads_yaml(contents, safe=safe)
+
     # ---- configparser interface ----
 
     @staticmethod
-    def load_config(cfg_file_path  # type: str
+    def load_config(cfg_file_path,  # type: str
+                    **var_values    # type: Any
                     ):
         # type: (...) -> ClientConfig
         """
@@ -202,10 +225,16 @@ class ClientConfig(YamlAble):
         That configuration file should have a 'global' section, and one section per service named with the service name.
 
         :param cfg_file_path: the path to the config file in `ConfigParser` supported format
+        :param var_values: variables to replace in the configuration file. For example `api_key="abcd"` will inject
+            `"abcd"` everywhere where `{{api_key}}` will be found in the file.
         :return:
         """
+        # read and apply template
+        contents = read_file_and_apply_template(cfg_file_path, **var_values)
+
+        # load the config
         config = ConfigParser()
-        config.read(cfg_file_path)
+        config.read_string(contents, source=cfg_file_path)
 
         global_cfg = GlobalConfig()
         services_cfgs = dict()
@@ -227,3 +256,63 @@ class ClientConfig(YamlAble):
                 services_cfgs[section_name] = ServiceConfig(**section_contents)
 
         return ClientConfig(global_cfg, **services_cfgs)
+
+
+def read_file_and_apply_template(file_path_or_stream,  # type: Union[str, IOBase, StringIO]
+                                 **var_values
+                                 ):
+    # type: (...) -> str
+    """
+    
+    :param file_path_or_stream:
+    :param var_values: 
+    :return: 
+    """
+    # first read the file or stream
+    if isinstance(file_path_or_stream, str):
+        with open(file_path_or_stream, mode='rt') as f:
+            contents = f.read()
+    else:
+        with file_path_or_stream as f:
+            contents = f.read()
+
+    return apply_template(contents, **var_values)
+
+
+# the jinja2 environment that will be used
+env = Environment(undefined=StrictUndefined)
+
+
+class ConfigTemplateSyntaxError(Exception):
+    def __init__(self, contents, idx, original_path):
+        self.extract = contents[idx-30:idx+32]
+        self.original_path = original_path
+
+    def __str__(self):
+        if self.original_path is not None:
+            tmpstr = "File: %s. " % self.original_path
+        else:
+            tmpstr = ""
+        return "Syntax error in template: a double curly brace remains after template processing. %s" \
+               "Extract: %s" % (tmpstr, self.extract)
+
+
+def apply_template(contents,            # type: str
+                   original_path=None,  # type: str
+                   **var_values
+                   ):
+    # type: (...) -> str
+
+    # apply the template using Jinja2
+    template = env.from_string(contents)
+    contents = template.render(**var_values)
+
+    # this check can not be done by Jinja2, do it ourselves
+    if '{{' in contents or '}}' in contents:
+        try:
+            idx = contents.index("{{")
+        except ValueError:
+            idx = contents.index("}}")
+        raise ConfigTemplateSyntaxError(contents, idx, original_path)
+
+    return contents

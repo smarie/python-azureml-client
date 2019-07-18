@@ -1,4 +1,7 @@
-from azmlclient import ClientConfig, GlobalConfig, ServiceConfig
+import pytest
+from jinja2 import UndefinedError
+
+from azmlclient import ClientConfig, GlobalConfig, ServiceConfig, ConfigTemplateSyntaxError
 
 
 def test_empty_cfg():
@@ -6,15 +9,32 @@ def test_empty_cfg():
 
     cfg = ClientConfig()
     s = cfg.dumps_yaml(default_flow_style=False)
-    assert s == """!yamlable/org.pypi.azmlclient.ClientConfig
+
+    ref = """!yamlable/org.pypi.azmlclient.ClientConfig
 global:
   http_proxy: null
   https_proxy: null
   ssl_verify: true
 services: {}
 """
+    assert s == ref
+
     cfg2 = ClientConfig.loads_yaml(s)
     assert cfg == cfg2
+
+    # templating
+    ref2 = ref.replace('true', '{{ my_ssl_verify }}')
+    cfg3 = ClientConfig.loads_yaml(ref2, my_ssl_verify='true')
+    assert cfg == cfg3
+
+    # error template 1
+    ref_err = ref.replace('true', '{ my_ssl_verify }}')
+    with pytest.raises(ConfigTemplateSyntaxError):
+        ClientConfig.loads_yaml(ref_err, my_ssl_verify='true')
+
+    # error template 2: not all variables set
+    with pytest.raises(UndefinedError):
+        ClientConfig.loads_yaml(ref2, my_sl_verify='true')
 
 
 def test_full_cfg():
