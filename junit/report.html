@@ -3,8 +3,150 @@
   <head>
     <meta charset="utf-8"/>
     <title>Test Report</title>
-    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
-  <body onLoad="init()">
+    <style>body {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	min-width: 1200px;
+	color: #999;
+}
+h2 {
+	font-size: 16px;
+	color: black;
+}
+
+p {
+    color: black;
+}
+
+a {
+	color: #999;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+
+#environment td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+}
+
+#environment tr:nth-child(odd) {
+	background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed, .passed .col-result {
+	color: green;
+}
+span.skipped, span.xfailed, span.rerun, .skipped .col-result, .xfailed .col-result, .rerun .col-result {
+	color: orange;
+}
+span.error, span.failed, span.xpassed, .error .col-result, .failed .col-result, .xpassed .col-result  {
+	color: red;
+}
+
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+
+#results-table {
+	border: 1px solid #e6e6e6;
+	color: #999;
+	font-size: 12px;
+	width: 100%
+}
+
+#results-table th, #results-table td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+	text-align: left
+}
+#results-table th {
+	font-weight: bold
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+
+.log:only-child {
+	height: inherit
+}
+.log {
+	background-color: #e6e6e6;
+	border: 1px solid #e6e6e6;
+	color: black;
+	display: block;
+	font-family: "Courier New", Courier, monospace;
+	height: 230px;
+	overflow-y: scroll;
+	padding: 5px;
+	white-space: pre-wrap
+}
+div.image {
+	border: 1px solid #e6e6e6;
+	float: right;
+	height: 240px;
+	margin-left: 5px;
+	overflow: hidden;
+	width: 320px
+}
+div.image img {
+	width: 320px
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+	cursor: pointer;
+}
+
+.sort-icon {
+	font-size: 0px;
+	float: left;
+	margin-right: 5px;
+	margin-top: 5px;
+	/*triangle*/
+	width: 0;
+	height: 0;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+}
+
+.inactive .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #E6E6E6;
+}
+
+.asc.active .sort-icon {
+	/*finish triangle*/
+	border-bottom: 8px solid #999;
+}
+
+.desc.active .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #999;
+}
+</style></head>
+  <body>
     <script>/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -45,80 +187,36 @@ function sort_column(elem) {
     sort_table(elem, key(colIndex));
 }
 
-function show_all_extras() {
-    find_all('.col-result').forEach(show_extras);
-}
-
-function hide_all_extras() {
-    find_all('.col-result').forEach(hide_extras);
-}
-
-function show_extras(colresult_elem) {
-    var extras = colresult_elem.parentNode.nextElementSibling;
-    var expandcollapse = colresult_elem.firstElementChild;
-    extras.classList.remove("collapsed");
-    expandcollapse.classList.remove("expander");
-    expandcollapse.classList.add("collapser");
-}
-
-function hide_extras(colresult_elem) {
-    var extras = colresult_elem.parentNode.nextElementSibling;
-    var expandcollapse = colresult_elem.firstElementChild;
-    extras.classList.add("collapsed");
-    expandcollapse.classList.remove("collapser");
-    expandcollapse.classList.add("expander");
-}
-
-function show_filters() {
-    var filter_items = document.getElementsByClassName('filter');
-    for (var i = 0; i < filter_items.length; i++)
-        filter_items[i].hidden = false;
-}
-
-function add_collapse() {
-    // Add links for show/hide all
-    var resulttable = find('table#results-table');
-    var showhideall = document.createElement("p");
-    showhideall.innerHTML = '<a href="javascript:show_all_extras()">Show all details</a> / ' +
-                            '<a href="javascript:hide_all_extras()">Hide all details</a>';
-    resulttable.parentElement.insertBefore(showhideall, resulttable);
-
-    // Add show/hide link to each result
-    find_all('.col-result').forEach(function(elem) {
-        var collapsed = get_query_parameter('collapsed') || 'Passed';
-        var extras = elem.parentNode.nextElementSibling;
-        var expandcollapse = document.createElement("span");
-        if (collapsed.includes(elem.innerHTML)) {
-            extras.classList.add("collapsed");
-            expandcollapse.classList.add("expander");
-        } else {
-            expandcollapse.classList.add("collapser");
-        }
-        elem.appendChild(expandcollapse);
-
-        elem.addEventListener("click", function(event) {
-            if (event.currentTarget.parentNode.nextElementSibling.classList.contains("collapsed")) {
-                show_extras(event.currentTarget);
-            } else {
-                hide_extras(event.currentTarget);
-            }
-        });
-    })
-}
-
-function get_query_parameter(name) {
-    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
-    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
-}
-
-function init () {
+addEventListener("DOMContentLoaded", function() {
     reset_sort_headers();
 
-    add_collapse();
+    sort_column(find('.initial-sort'));
 
-    show_filters();
+    find_all('.col-links a.image').forEach(function(elem) {
+        elem.addEventListener("click",
+                              function(event) {
+                                  var node = elem;
+                                  while (node && !node.classList.contains('results-table-row')) {
+                                      node = node.parentNode;
+                                  }
+                                  if (node != null) {
+                                      if (node.nextSibling &&
+                                          node.nextSibling.classList.contains("extra")) {
+                                          var href = find('.image img', node.nextSibling).src;
+                                          window.open(href);
+                                      }
+                                  }
+                                  event.preventDefault();
+                              }, false)
+    });
 
-    toggle_sort_states(find('.initial-sort'));
+    find_all('.image a').forEach(function(elem) {
+        elem.addEventListener("click",
+                              function(event) {
+                                  window.open(find('img', elem).getAttribute('src'));
+                                  event.preventDefault();
+                              }, false)
+    });
 
     find_all('.sortable').forEach(function(elem) {
         elem.addEventListener("click",
@@ -127,24 +225,17 @@ function init () {
                               }, false)
     });
 
-};
+});
 
 function sort_table(clicked, key_func) {
     var rows = find_all('.results-table-row');
     var reversed = !clicked.classList.contains('asc');
     var sorted_rows = sort(rows, key_func, reversed);
-    /* Whole table is removed here because browsers acts much slower
-     * when appending existing elements.
-     */
-    var thead = document.getElementById("results-table-head");
-    document.getElementById('results-table').remove();
-    var parent = document.createElement("table");
-    parent.id = "results-table";
-    parent.appendChild(thead);
+
+    var parent = document.getElementById('results-table');
     sorted_rows.forEach(function(elem) {
         parent.appendChild(elem);
     });
-    document.getElementsByTagName("BODY")[0].appendChild(parent);
 }
 
 function sort(items, key_func, reversed) {
@@ -179,8 +270,8 @@ function key_num(col_index) {
 
 function key_result(col_index) {
     return function(elem) {
-        var strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
-                       'Skipped', 'Passed'];
+        var strings = ['Error', 'Failed', 'XFailed', 'XPassed', 'Skipped',
+                       'Passed'];
         return strings.indexOf(elem.childNodes[1].childNodes[col_index].firstChild.data);
     };
 }
@@ -223,109 +314,39 @@ function filter_table(elem) {
     var outcome = elem.getAttribute(outcome_att);
     class_outcome = outcome + " results-table-row";
     var outcome_rows = document.getElementsByClassName(class_outcome);
-
+   
     for(var i = 0; i < outcome_rows.length; i++){
         outcome_rows[i].hidden = !elem.checked;
     }
 
     var rows = find_all('.results-table-row').filter(is_all_rows_hidden);
-    var all_rows_hidden = rows.length == 0 ? true : false;
+    var all_rows_hidden = rows.length == 0 ? true : false;    
     var not_found_message = document.getElementById("not-found-message");
     not_found_message.hidden = !all_rows_hidden;
 }
 </script>
-    <h1>report.html</h1>
-    <p>Report generated on 18-Jul-2019 at 13:23:04 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v1.21.1</p>
+    <p>Report generated on 01-Oct-2019 at 13:31:29</p>
     <h2>Environment</h2>
     <table id="environment">
       <tr>
-        <td>CI</td>
-        <td>true</td></tr>
-      <tr>
-        <td>JAVA_HOME</td>
-        <td>/usr/lib/jvm/java-8-oracle</td></tr>
-      <tr>
-        <td>Packages</td>
-        <td>{&apos;py&apos;: &apos;1.5.4&apos;, &apos;pluggy&apos;: &apos;0.7.1&apos;, &apos;pytest&apos;: &apos;3.7.1&apos;}</td></tr>
-      <tr>
         <td>Platform</td>
-        <td>Linux-4.4.0-101-generic-x86_64-with-debian-jessie-sid</td></tr>
-      <tr>
-        <td>Plugins</td>
-        <td>{&apos;cov&apos;: &apos;2.6.0&apos;, &apos;cases&apos;: &apos;1.10.1&apos;, &apos;metadata&apos;: &apos;1.8.0&apos;, &apos;html&apos;: &apos;1.21.1&apos;}</td></tr>
+        <td>Linux-4.15.0-1028-gcp-x86_64-with-debian-stretch-sid</td></tr>
       <tr>
         <td>Python</td>
-        <td>3.5.6</td></tr>
-      <tr>
-        <td>TRAVIS_BRANCH</td>
-        <td>2.3.1</td></tr>
-      <tr>
-        <td>TRAVIS_BUILD_ID</td>
-        <td>560479794</td></tr>
-      <tr>
-        <td>TRAVIS_BUILD_NUMBER</td>
-        <td>35</td></tr>
-      <tr>
-        <td>TRAVIS_COMMIT</td>
-        <td>a6d441fd9132f715869516b52e843d6e569aa2e1</td></tr>
-      <tr>
-        <td>TRAVIS_COMMIT_MESSAGE</td>
-        <td>2.3.1 changelog</td></tr>
-      <tr>
-        <td>TRAVIS_EVENT_TYPE</td>
-        <td>push</td></tr>
-      <tr>
-        <td>TRAVIS_JOB_ID</td>
-        <td>560479796</td></tr>
-      <tr>
-        <td>TRAVIS_JOB_NUMBER</td>
-        <td>35.2</td></tr>
-      <tr>
-        <td>TRAVIS_OS_NAME</td>
-        <td>linux</td></tr>
-      <tr>
-        <td>TRAVIS_PULL_REQUEST</td>
-        <td>false</td></tr>
-      <tr>
-        <td>TRAVIS_REPO_SLUG</td>
-        <td>smarie/python-azureml-client</td></tr>
-      <tr>
-        <td>TRAVIS_SUDO</td>
-        <td>true</td></tr>
-      <tr>
-        <td>TRAVIS_TAG</td>
-        <td>2.3.1</td></tr></table>
+        <td>3.5.6</td></tr></table>
     <h2>Summary</h2>
-    <p>16 tests ran in 1.74 seconds. </p>
-    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">16 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">2 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <p>16 tests ran in 1.58 seconds. </p>
+    <p>(Un)check the boxes to filter the results.</p><input checked="true" data-test-result="passed" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">16 passed</span> <input checked="true" data-test-result="skipped" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">2 skipped</span> <input checked="true" data-test-result="failed" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">0 failed</span> <input checked="true" data-test-result="error" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span> <input checked="true" data-test-result="xfailed" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span> <input checked="true" data-test-result="xpassed" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span> <input checked="true" data-test-result="rerun" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="rerun">0 rerun</span> 
     <h2>Results</h2>
     <table id="results-table">
       <thead id="results-table-head">
         <tr>
-          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable initial-sort result" col="result">Result</th>
           <th class="sortable" col="name">Test</th>
           <th class="sortable numeric" col="duration">Duration</th>
           <th>Links</th></tr>
         <tr hidden="true" id="not-found-message">
-          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
-      <tbody class="skipped results-table-row">
-        <tr>
-          <td class="col-result">Skipped</td>
-          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[yaml-call_mode=Batch-swagger_format=None]</td>
-          <td class="col-duration">0.00</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log">(&#x27;/home/travis/build/smarie/python-azureml-client/azmlclient/tests/clients/test_dummy_client.py&#x27;, 90, &#x27;Skipped: Batch mode is not implemented on this mock server.&#x27;)<br/></div></td></tr></tbody>
-      <tbody class="skipped results-table-row">
-        <tr>
-          <td class="col-result">Skipped</td>
-          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[cfg-call_mode=Batch-swagger_format=None]</td>
-          <td class="col-duration">0.00</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log">(&#x27;/home/travis/build/smarie/python-azureml-client/azmlclient/tests/clients/test_dummy_client.py&#x27;, 90, &#x27;Skipped: Batch mode is not implemented on this mock server.&#x27;)<br/></div></td></tr></tbody>
+          <th colspan="5">No results found. Try to check the filters</th></tr></thead>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
@@ -333,7 +354,7 @@ function filter_table(elem) {
           <td class="col-duration">0.01</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="empty log">No log output captured.</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -342,7 +363,7 @@ function filter_table(elem) {
           <td class="col-duration">0.01</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="empty log">No log output captured.</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -351,39 +372,39 @@ function filter_table(elem) {
           <td class="col-duration">0.01</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
-            <div class="log">---------------------------- Captured stderr setup -----------------------------<br/>[18/Jul/2019:13:23:03] ENGINE Listening for SIGUSR1.
-[18/Jul/2019:13:23:03] ENGINE Listening for SIGTERM.
-[18/Jul/2019:13:23:03] ENGINE Listening for SIGHUP.
-[18/Jul/2019:13:23:03] ENGINE Bus STARTING
-[18/Jul/2019:13:23:03] ENGINE Started monitor thread &#x27;Autoreloader&#x27;.
-[18/Jul/2019:13:23:03] ENGINE Serving on https://0.0.0.0:4443
-[18/Jul/2019:13:23:03] ENGINE Bus STARTED
------------------------------- Captured log setup ------------------------------<br/>_cplogging.py              222 INFO     [18/Jul/2019:13:23:03] ENGINE Listening for SIGUSR1.
-_cplogging.py              222 INFO     [18/Jul/2019:13:23:03] ENGINE Listening for SIGTERM.
-_cplogging.py              222 INFO     [18/Jul/2019:13:23:03] ENGINE Listening for SIGHUP.
-_cplogging.py              222 INFO     [18/Jul/2019:13:23:03] ENGINE Bus STARTING
-_cplogging.py              222 INFO     [18/Jul/2019:13:23:03] ENGINE Started monitor thread &#x27;Autoreloader&#x27;.
-_cplogging.py              222 INFO     [18/Jul/2019:13:23:03] ENGINE Serving on https://0.0.0.0:4443
-_cplogging.py              222 INFO     [18/Jul/2019:13:23:03] ENGINE Bus STARTED----------------------------- Captured stdout call -----------------------------<br/>adding columns
+          <td class="extra" colspan="5">
+            <div class="log">---------------------------- Captured stderr setup -----------------------------<br/>[01/Oct/2019:13:31:29] ENGINE Listening for SIGUSR1.
+[01/Oct/2019:13:31:29] ENGINE Listening for SIGHUP.
+[01/Oct/2019:13:31:29] ENGINE Listening for SIGTERM.
+[01/Oct/2019:13:31:29] ENGINE Bus STARTING
+[01/Oct/2019:13:31:29] ENGINE Started monitor thread &apos;Autoreloader&apos;.
+[01/Oct/2019:13:31:29] ENGINE Serving on https://0.0.0.0:4443
+[01/Oct/2019:13:31:29] ENGINE Bus STARTED
+------------------------------ Captured log setup ------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Listening for SIGUSR1.
+_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Listening for SIGHUP.
+_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Listening for SIGTERM.
+_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Bus STARTING
+_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Started monitor thread &apos;Autoreloader&apos;.
+_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Serving on https://0.0.0.0:4443
+_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Bus STARTED----------------------------- Captured stdout call -----------------------------<br/>adding columns
 ------------------------------ Captured log call -------------------------------<br/>dummy_api_and_core.py       38 INFO     adding columns</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
           <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[yaml-call_mode=RR-swagger_format=False]</td>
-          <td class="col-duration">0.03</td>
+          <td class="col-duration">0.02</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&#x27;
-send: b&#x27;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&#x27;
+          <td class="extra" colspan="5">
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&apos;
 adding columns
-127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
-reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
-header: Date header: Content-Length header: Server header: Content-Type header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
+127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
+reply: &apos;HTTP/1.1 200 OK\r\n&apos;
+header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
@@ -391,16 +412,25 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.02</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&#x27;
-send: b&#x27;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&#x27;
+          <td class="extra" colspan="5">
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&apos;
 adding columns
-127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
-reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
-header: Date header: Content-Length header: Server header: Content-Type header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
+127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
+reply: &apos;HTTP/1.1 200 OK\r\n&apos;
+header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[yaml-call_mode=Batch-swagger_format=None]</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="log">(&#x27;/home/travis/build/smarie/python-azureml-client/azmlclient/tests/clients/test_dummy_client.py&#x27;, 90, &#x27;Skipped: Batch mode is not implemented on this mock server.&#x27;)<br/></div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
@@ -408,7 +438,7 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.00</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="log">----------------------------- Captured stdout call -----------------------------<br/>adding columns
 ------------------------------ Captured log call -------------------------------<br/>dummy_api_and_core.py       38 INFO     adding columns</div></td></tr></tbody>
       <tbody class="passed results-table-row">
@@ -418,16 +448,16 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.02</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&#x27;
-send: b&#x27;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&#x27;
+          <td class="extra" colspan="5">
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&apos;
 adding columns
-127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
-reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
-header: Date header: Content-Length header: Server header: Content-Type header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
+127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
+reply: &apos;HTTP/1.1 200 OK\r\n&apos;
+header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
@@ -435,16 +465,25 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.02</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&#x27;
-send: b&#x27;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&#x27;
+          <td class="extra" colspan="5">
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&apos;
 adding columns
-127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
-reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
-header: Date header: Content-Length header: Server header: Content-Type header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Jul/2019:13:23:03]  [a_plus_b] was asked to execute with params {&#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;, &#x27;api-version&#x27;: &#x27;2.0&#x27;}
+127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
+reply: &apos;HTTP/1.1 200 OK\r\n&apos;
+header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[cfg-call_mode=Batch-swagger_format=None]</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="log">(&#x27;/home/travis/build/smarie/python-azureml-client/azmlclient/tests/clients/test_dummy_client.py&#x27;, 90, &#x27;Skipped: Batch mode is not implemented on this mock server.&#x27;)<br/></div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
@@ -452,7 +491,7 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.00</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="empty log">No log output captured.</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -461,16 +500,16 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.00</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="empty log">No log output captured.</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
           <td class="col-name">azmlclient/tests/clients/test_readme.py::test_readme_high_level_basic</td>
-          <td class="col-duration">0.04</td>
+          <td class="col-duration">0.02</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="empty log">No log output captured.</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -479,7 +518,7 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.01</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="empty log">No log output captured.</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -488,7 +527,7 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.03</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="empty log">No log output captured.</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -497,9 +536,9 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.03</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="log">----------------------------- Captured stdout call -----------------------------<br/>Converted df -&gt; json:
-{&quot;ColumnNames&quot;: [&quot;Datetime&quot;, &quot;att1_text_quotes&quot;, &quot;att2_float&quot;, &quot;att3_missing_text&quot;, &quot;att4_missing_float&quot;, &quot; att5_space_first_missing_datetime&quot;], &quot;Values&quot;: [[&quot;2015-10-09T07:30:00+00:00&quot;, &quot;fo,o&quot;, 2.0, NaN, NaN, &quot;NaT&quot;], [&quot;2015-10-09T08:30:00+00:00&quot;, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;2015-10-09T08:30:00+00:00&quot;]]}
+{&quot;ColumnNames&quot;: [&quot;Datetime&quot;, &quot;att1_text_quotes&quot;, &quot;att2_float&quot;, &quot;att3_missing_text&quot;, &quot;att4_missing_float&quot;, &quot; att5_space_first_missing_datetime&quot;], &quot;Values&quot;: [[&quot;2015-10-09T07:30:00+00:00&quot;, &quot;fo,o&quot;, 2.0, NaN, NaN, &quot;NaT&quot;], [&quot;2015-10-09T08:30:00+00:00&quot;, &quot;&apos;bar&apos;&quot;, -0.1, &quot;&apos;bar&apos;&quot;, -0.1, &quot;2015-10-09T08:30:00+00:00&quot;]]}
 </div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -508,9 +547,9 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.03</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="log">----------------------------- Captured stdout call -----------------------------<br/>Converted df -&gt; json:
-[{&quot;Datetime&quot;: &quot;2015-10-09T07:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;fo,o&quot;, &quot;att2_float&quot;: 2.0, &quot;att3_missing_text&quot;: NaN, &quot;att4_missing_float&quot;: NaN, &quot; att5_space_first_missing_datetime&quot;: &quot;NaT&quot;}, {&quot;Datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att2_float&quot;: -0.1, &quot;att3_missing_text&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att4_missing_float&quot;: -0.1, &quot; att5_space_first_missing_datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;}]
+[{&quot;Datetime&quot;: &quot;2015-10-09T07:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;fo,o&quot;, &quot;att2_float&quot;: 2.0, &quot;att3_missing_text&quot;: NaN, &quot;att4_missing_float&quot;: NaN, &quot; att5_space_first_missing_datetime&quot;: &quot;NaT&quot;}, {&quot;Datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;&apos;bar&apos;&quot;, &quot;att2_float&quot;: -0.1, &quot;att3_missing_text&quot;: &quot;&apos;bar&apos;&quot;, &quot;att4_missing_float&quot;: -0.1, &quot; att5_space_first_missing_datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;}]
 </div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -519,10 +558,10 @@ _cplogging.py              292 INFO     127.0.0.1 - - [18/Jul/2019:13:23:03] &qu
           <td class="col-duration">0.03</td>
           <td class="col-links"></td></tr>
         <tr>
-          <td class="extra" colspan="4">
+          <td class="extra" colspan="5">
             <div class="log">----------------------------- Captured stdout call -----------------------------<br/>Converted df -&gt; csv:
 Datetime,att1_text_quotes,att2_float,att3_missing_text,att4_missing_float, att5_space_first_missing_datetime
 2015-10-09T07:30:00.000+0000,&quot;fo,o&quot;,2.0,,,
-2015-10-09T08:30:00.000+0000,&#x27;bar&#x27;,-0.1,&#x27;bar&#x27;,-0.1,2015-10-09T08:30:00.000+0000
+2015-10-09T08:30:00.000+0000,&apos;bar&apos;,-0.1,&apos;bar&apos;,-0.1,2015-10-09T08:30:00.000+0000
 
 </div></td></tr></tbody></table></body></html>
