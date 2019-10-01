@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.3.2 - added `__version__` attribute
+
+Added `__version__` at package level.
+
 ### 2.3.1 - Config files can now be templates
 
 `ClientConfig.load_config()` now accepts keyword arguments that will be used as replacements for variables in the config files. Fixes [#10](https://github.com/smarie/python-azureml-client/issues/10).
