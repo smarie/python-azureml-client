@@ -349,6 +349,78 @@ we can test it :
 Note that the default call mode can also be changed permanentlyby specifying another mode in the `AzureMLClient` constructor arguments, or by changing the `client._current_call_mode` attribute.
 
 
+## 3. Payload conversion goodies 
+
+You can use the static methods available on the classes to convert data between json and python easily.
+
+### From json to python
+
+You can convert the body from the HTTP web service calls into python objects using `RequestResponseClient` static methods:
+
+ - for RR requests using `RequestResponseClient.decode_request_json_body(body)`
+ - for RR responses using `RequestResponseClient.read_response_json_body(body)`
+
+For example for requests:
+
+```python
+from azmlclient import RequestResponseClient
+
+# -- read from file
+# with open('./request_payload.json') as f:
+#     request_payload = f.read()
+
+# -- read from variable
+request_payload = """
+{
+"GlobalParameters": {"p1": "p1_val", "p2": "p2_val"}, 
+"Inputs": {
+      "trainDataset": {
+         "ColumnNames": ["a", "b"], 
+         "Values": [[0, 0], [1, 1], [2, 999]]}
+   }
+}
+"""
+
+# parse the payload from a web service request to create the python equivalents
+dfs, params = RequestResponseClient.decode_request_json_body(request_payload)
+
+# display results:
+for input_name, df in dfs.items():
+    print("Input %r:" % input_name)
+    print(df.head())
+
+print("""
+Parameters:
+{
+   %s
+}
+""" % "\n   ".join("%r: %r" % (k, v) for k, v in params.items()))
+``` 
+
+yields:
+
+```bash
+Input 'trainDataset':
+   a    b
+0  0    0
+1  1    1
+2  2  999
+
+
+Parameters:
+{
+   'p1': 'p1_val'
+   'p2': 'p2_val'
+}
+```
+
+### From python to json
+
+You can create json requests and even fake responses from a `RequestResponseClient` instance:
+
+ - the json request body using `rr_client.create_request_body(dfs, params)`
+ - the json response body using `rr_client.create_response_body(dfs)`
+
 ## Main features
 
  * Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too
