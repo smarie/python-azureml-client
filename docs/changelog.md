@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.4.0 - new helper method + doc
+
+New method `create_response_body` in `RequestResponseClient`. Updated doc to show how these goodies can be used.
+
 ### 2.3.2 - added `__version__` attribute
 
 Added `__version__` at package level.
