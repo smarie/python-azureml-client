@@ -511,6 +511,18 @@ class RequestResponseClient(BaseHttpClient):
         json_body_str = azmltable_to_json(body_dict)
         return json_body_str
 
+    def create_response_body(self,
+                             output_df_dict=None,  # type: Dict[str, pd.DataFrame]
+                             ):
+        """
+        Creates a fake server response mimicking AzureML behaviour, from a dictionary of output dataframes.
+
+        :param output_df_dict: a dictionary of {output_name: dataframe}
+        :return:
+        """
+        res_dict = dfs_to_azmltables(output_df_dict, swagger_format=self.use_swagger_format, mimic_azml_output=True)
+        return {"Results": res_dict}
+
     def execute_rr(self,
                    base_url,              # type: str
                    api_key,               # type: str

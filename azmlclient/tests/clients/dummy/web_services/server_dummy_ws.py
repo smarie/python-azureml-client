@@ -4,6 +4,7 @@ from logging import getLogger, StreamHandler, INFO
 import cherrypy
 import os
 
+from azmlclient import RequestResponseClient
 from azmlclient.utils_testing import AzuremlWebServiceMock
 from azmlclient.tests.clients.dummy.api_and_core import DummyImpl
 from azmlclient.base_databinding import df_to_azmltable
@@ -54,10 +55,8 @@ class AddColumnsWS(AzuremlWebServiceMock):
         provider = DummyImpl(logger=default_logger)
         result_df = provider.add_columns(params['a_name'], params['b_name'], inputs['input'])
 
-        # converts all output dataframes to azureml format
-        res_dict = {'output': df_to_azmltable(result_df, mimic_azml_output=True, swagger_format=swagger_mode)}
-
-        return {"Results": res_dict}
+        # return expected azureml output
+        return RequestResponseClient(use_swagger_format=swagger_mode).create_response_body({'output': result_df})
 
 
 @cherrypy.expose

@@ -257,6 +257,7 @@ def df_to_azmltable(df,                       # type: pandas.DataFrame
 
 def dfs_to_azmltables(dfs,                   # type: Dict[str, pandas.DataFrame]
                       swagger_format=False,  # type: bool
+                      mimic_azml_output=False,  # type: bool
                       ):
     # type: (...) -> Dict[str, Dict[str, Union[str, Dict[str, List]]]]
     """
@@ -274,7 +275,8 @@ def dfs_to_azmltables(dfs,                   # type: Dict[str, pandas.DataFrame]
     #     resultsDict[dfName] = Df_to_AzmlTable(df, dfName)
     # return resultsDict
 
-    return {df_name: df_to_azmltable(df, table_name=df_name, swagger_format=swagger_format)
+    return {df_name: df_to_azmltable(df, table_name=df_name, swagger_format=swagger_format,
+                                     mimic_azml_output=mimic_azml_output)
             for df_name, df in dfs.items()}
 
 
