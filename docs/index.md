@@ -421,6 +421,32 @@ You can create json requests and even fake responses from a `RequestResponseClie
  - the json request body using `rr_client.create_request_body(dfs, params)`
  - the json response body using `rr_client.create_response_body(dfs)`
 
+For example for the request:
+
+```python
+import pandas as pd
+from azmlclient import RequestResponseClient
+
+# some dataframe
+train_df = pd.DataFrame(data={'a': [0, 1, 2],
+                              'b': [1, 2, 3]})
+# give it a name
+dfs = {'trainDataset': train_df}
+
+# parameters
+params = {'foo': 1, 'bar': 2}
+
+# convert to json payload and print
+json_payload = RequestResponseClient().create_request_body(dfs, params)
+print(json_payload)
+```
+
+yields:
+
+```bash
+{"Inputs": {"trainDataset": {"ColumnNames": ["a", "b"], "Values": [[0, 1], [1, 2], [2, 3]]}}, "GlobalParameters": {"bar": 2, "foo": 1}}
+```
+
 ## Main features
 
  * Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too
