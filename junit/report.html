@@ -325,7 +325,7 @@ function filter_table(elem) {
     not_found_message.hidden = !all_rows_hidden;
 }
 </script>
-    <p>Report generated on 01-Oct-2019 at 13:31:29</p>
+    <p>Report generated on 18-Oct-2019 at 15:17:33</p>
     <h2>Environment</h2>
     <table id="environment">
       <tr>
@@ -335,7 +335,7 @@ function filter_table(elem) {
         <td>Python</td>
         <td>3.5.6</td></tr></table>
     <h2>Summary</h2>
-    <p>16 tests ran in 1.58 seconds. </p>
+    <p>16 tests ran in 1.76 seconds. </p>
     <p>(Un)check the boxes to filter the results.</p><input checked="true" data-test-result="passed" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">16 passed</span> <input checked="true" data-test-result="skipped" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">2 skipped</span> <input checked="true" data-test-result="failed" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">0 failed</span> <input checked="true" data-test-result="error" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span> <input checked="true" data-test-result="xfailed" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span> <input checked="true" data-test-result="xpassed" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span> <input checked="true" data-test-result="rerun" disabled="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="rerun">0 rerun</span> 
     <h2>Results</h2>
     <table id="results-table">
@@ -373,20 +373,20 @@ function filter_table(elem) {
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="5">
-            <div class="log">---------------------------- Captured stderr setup -----------------------------<br/>[01/Oct/2019:13:31:29] ENGINE Listening for SIGUSR1.
-[01/Oct/2019:13:31:29] ENGINE Listening for SIGHUP.
-[01/Oct/2019:13:31:29] ENGINE Listening for SIGTERM.
-[01/Oct/2019:13:31:29] ENGINE Bus STARTING
-[01/Oct/2019:13:31:29] ENGINE Started monitor thread &apos;Autoreloader&apos;.
-[01/Oct/2019:13:31:29] ENGINE Serving on https://0.0.0.0:4443
-[01/Oct/2019:13:31:29] ENGINE Bus STARTED
------------------------------- Captured log setup ------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Listening for SIGUSR1.
-_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Listening for SIGHUP.
-_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Listening for SIGTERM.
-_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Bus STARTING
-_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Started monitor thread &apos;Autoreloader&apos;.
-_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Serving on https://0.0.0.0:4443
-_cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Bus STARTED----------------------------- Captured stdout call -----------------------------<br/>adding columns
+            <div class="log">---------------------------- Captured stderr setup -----------------------------<br/>[18/Oct/2019:15:17:32] ENGINE Listening for SIGHUP.
+[18/Oct/2019:15:17:32] ENGINE Listening for SIGTERM.
+[18/Oct/2019:15:17:32] ENGINE Listening for SIGUSR1.
+[18/Oct/2019:15:17:32] ENGINE Bus STARTING
+[18/Oct/2019:15:17:32] ENGINE Started monitor thread &apos;Autoreloader&apos;.
+[18/Oct/2019:15:17:32] ENGINE Serving on https://0.0.0.0:4443
+[18/Oct/2019:15:17:32] ENGINE Bus STARTED
+------------------------------ Captured log setup ------------------------------<br/>_cplogging.py              222 INFO     [18/Oct/2019:15:17:32] ENGINE Listening for SIGHUP.
+_cplogging.py              222 INFO     [18/Oct/2019:15:17:32] ENGINE Listening for SIGTERM.
+_cplogging.py              222 INFO     [18/Oct/2019:15:17:32] ENGINE Listening for SIGUSR1.
+_cplogging.py              222 INFO     [18/Oct/2019:15:17:32] ENGINE Bus STARTING
+_cplogging.py              222 INFO     [18/Oct/2019:15:17:32] ENGINE Started monitor thread &apos;Autoreloader&apos;.
+_cplogging.py              222 INFO     [18/Oct/2019:15:17:32] ENGINE Serving on https://0.0.0.0:4443
+_cplogging.py              222 INFO     [18/Oct/2019:15:17:32] ENGINE Bus STARTED----------------------------- Captured stdout call -----------------------------<br/>adding columns
 ------------------------------ Captured log call -------------------------------<br/>dummy_api_and_core.py       38 INFO     adding columns</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
@@ -396,15 +396,15 @@ _cplogging.py              222 INFO     [01/Oct/2019:13:31:29] ENGINE Bus STARTE
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="5">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&apos;
-send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&apos;
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nConnection: keep-alive\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;b_name&quot;: &quot;y&quot;, &quot;a_name&quot;: &quot;x&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&apos;
 adding columns
-127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
+127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
 reply: &apos;HTTP/1.1 200 OK\r\n&apos;
-header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
+header: Content-Type header: Server header: Content-Length header: Allow header: Date ----------------------------- Captured stderr call -----------------------------<br/>[18/Oct/2019:15:17:32]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Oct/2019:15:17:32]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
@@ -413,15 +413,15 @@ _cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &qu
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="5">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&apos;
-send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&apos;
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nConnection: keep-alive\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;b_name&quot;: &quot;y&quot;, &quot;a_name&quot;: &quot;x&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&apos;
 adding columns
-127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
+127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
 reply: &apos;HTTP/1.1 200 OK\r\n&apos;
-header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
+header: Content-Type header: Server header: Content-Length header: Allow header: Date ----------------------------- Captured stderr call -----------------------------<br/>[18/Oct/2019:15:17:33]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;, &apos;format&apos;: &apos;swagger&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Oct/2019:15:17:33]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;, &apos;format&apos;: &apos;swagger&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
       <tbody class="skipped results-table-row">
         <tr>
           <td class="col-result">Skipped</td>
@@ -449,15 +449,15 @@ _cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &qu
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="5">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&apos;
-send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&apos;
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nConnection: keep-alive\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 139\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;b_name&quot;: &quot;y&quot;, &quot;a_name&quot;: &quot;x&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}}&apos;
 adding columns
-127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
+127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;
 reply: &apos;HTTP/1.1 200 OK\r\n&apos;
-header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
+header: Content-Type header: Server header: Content-Length header: Allow header: Date ----------------------------- Captured stderr call -----------------------------<br/>[18/Oct/2019:15:17:33]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Oct/2019:15:17:33]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
@@ -466,15 +466,15 @@ _cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &qu
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="5">
-            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nUser-Agent: python-requests/2.22.0\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&apos;
-send: b&apos;{&quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&apos;
+            <div class="log">----------------------------- Captured stdout call -----------------------------<br/>send: b&apos;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nAccept: */*\r\nConnection: keep-alive\r\nAccept-Encoding: gzip, deflate\r\nUser-Agent: python-requests/2.22.0\r\nContent-Type: application/json; charset=utf-8\r\nAuthorization: Bearer none\r\nContent-Length: 130\r\n\r\n&apos;
+send: b&apos;{&quot;GlobalParameters&quot;: {&quot;b_name&quot;: &quot;y&quot;, &quot;a_name&quot;: &quot;x&quot;}, &quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}}&apos;
 adding columns
-127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
+127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;
 reply: &apos;HTTP/1.1 200 OK\r\n&apos;
-header: Content-Length header: Content-Type header: Date header: Server header: Allow ----------------------------- Captured stderr call -----------------------------<br/>[01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
------------------------------- Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [01/Oct/2019:13:31:29]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;format&apos;: &apos;swagger&apos;, &apos;details&apos;: &apos;true&apos;}
+header: Content-Type header: Server header: Content-Length header: Allow header: Date ----------------------------- Captured stderr call -----------------------------<br/>[18/Oct/2019:15:17:33]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;, &apos;format&apos;: &apos;swagger&apos;}
+------------------------------ Captured log call -------------------------------<br/>_cplogging.py              222 INFO     [18/Oct/2019:15:17:33]  [a_plus_b] was asked to execute with params {&apos;api-version&apos;: &apos;2.0&apos;, &apos;details&apos;: &apos;true&apos;, &apos;format&apos;: &apos;swagger&apos;}
 dummy_api_and_core.py       38 INFO     adding columns
-_cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
+_cplogging.py              292 INFO     127.0.0.1 - - [18/Oct/2019:15:17:33] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.22.0&quot;</div></td></tr></tbody>
       <tbody class="skipped results-table-row">
         <tr>
           <td class="col-result">Skipped</td>
@@ -506,7 +506,7 @@ _cplogging.py              292 INFO     127.0.0.1 - - [01/Oct/2019:13:31:29] &qu
         <tr>
           <td class="col-result">Passed</td>
           <td class="col-name">azmlclient/tests/clients/test_readme.py::test_readme_high_level_basic</td>
-          <td class="col-duration">0.02</td>
+          <td class="col-duration">0.07</td>
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="5">

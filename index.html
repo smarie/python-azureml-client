@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -336,6 +336,33 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#3-payload-conversion-goodies" class="md-nav__link">
+    3. Payload conversion goodies
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-json-to-python" class="md-nav__link">
+    From json to python
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-python-to-json" class="md-nav__link">
+    From python to json
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#main-features" class="md-nav__link">
     Main features
   </a>
@@ -498,6 +525,33 @@
           <li class="md-nav__item">
   <a href="#alternate-call-modes-local-batch" class="md-nav__link">
     Alternate call modes: local, batch..
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-payload-conversion-goodies" class="md-nav__link">
+    3. Payload conversion goodies
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-json-to-python" class="md-nav__link">
+    From json to python
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-python-to-json" class="md-nav__link">
+    From python to json
   </a>
   
 </li>
@@ -870,6 +924,72 @@ global:
 
 
 <p>Note that the default call mode can also be changed permanentlyby specifying another mode in the <code>AzureMLClient</code> constructor arguments, or by changing the <code>client._current_call_mode</code> attribute.</p>
+<h2 id="3-payload-conversion-goodies">3. Payload conversion goodies<a class="headerlink" href="#3-payload-conversion-goodies" title="Permanent link">&para;</a></h2>
+<p>You can use the static methods available on the classes to convert data between json and python easily.</p>
+<h3 id="from-json-to-python">From json to python<a class="headerlink" href="#from-json-to-python" title="Permanent link">&para;</a></h3>
+<p>You can convert the body from the HTTP web service calls into python objects using <code>RequestResponseClient</code> static methods:</p>
+<ul>
+<li>for RR requests using <code>RequestResponseClient.decode_request_json_body(body)</code></li>
+<li>for RR responses using <code>RequestResponseClient.read_response_json_body(body)</code></li>
+</ul>
+<p>For example for requests:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">azmlclient</span> <span class="kn">import</span> <span class="n">RequestResponseClient</span>
+
+<span class="c1"># -- read from file</span>
+<span class="c1"># with open(&#39;./request_payload.json&#39;) as f:</span>
+<span class="c1">#     request_payload = f.read()</span>
+
+<span class="c1"># -- read from variable</span>
+<span class="n">request_payload</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">{</span>
+<span class="s2">&quot;GlobalParameters&quot;: {&quot;p1&quot;: &quot;p1_val&quot;, &quot;p2&quot;: &quot;p2_val&quot;}, </span>
+<span class="s2">&quot;Inputs&quot;: {</span>
+<span class="s2">      &quot;trainDataset&quot;: {</span>
+<span class="s2">         &quot;ColumnNames&quot;: [&quot;a&quot;, &quot;b&quot;], </span>
+<span class="s2">         &quot;Values&quot;: [[0, 0], [1, 1], [2, 999]]}</span>
+<span class="s2">   }</span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># parse the payload from a web service request to create the python equivalents</span>
+<span class="n">dfs</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">RequestResponseClient</span><span class="o">.</span><span class="n">decode_request_json_body</span><span class="p">(</span><span class="n">request_payload</span><span class="p">)</span>
+
+<span class="c1"># display results:</span>
+<span class="k">for</span> <span class="n">input_name</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">dfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Input </span><span class="si">%r</span><span class="s2">:&quot;</span> <span class="o">%</span> <span class="n">input_name</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Parameters:</span>
+<span class="s2">{</span>
+<span class="s2">   </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">   &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%r</span><span class="s2">: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+</pre></div>
+
+
+<p>yields:</p>
+<div class="codehilite"><pre><span></span>Input <span class="s1">&#39;trainDataset&#39;</span>:
+   a    b
+<span class="m">0</span>  <span class="m">0</span>    <span class="m">0</span>
+<span class="m">1</span>  <span class="m">1</span>    <span class="m">1</span>
+<span class="m">2</span>  <span class="m">2</span>  <span class="m">999</span>
+
+
+Parameters:
+<span class="o">{</span>
+   <span class="s1">&#39;p1&#39;</span>: <span class="s1">&#39;p1_val&#39;</span>
+   <span class="s1">&#39;p2&#39;</span>: <span class="s1">&#39;p2_val&#39;</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<h3 id="from-python-to-json">From python to json<a class="headerlink" href="#from-python-to-json" title="Permanent link">&para;</a></h3>
+<p>You can create json requests and even fake responses from a <code>RequestResponseClient</code> instance:</p>
+<ul>
+<li>the json request body using <code>rr_client.create_request_body(dfs, params)</code></li>
+<li>the json response body using <code>rr_client.create_response_body(dfs)</code></li>
+</ul>
 <h2 id="main-features">Main features<a class="headerlink" href="#main-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Creates the Web Services requests from dataframe inputs and dataframe/dictionary parameters, and maps the responses to dataframes too</li>
@@ -943,7 +1063,7 @@ global:
       
     </div>
     
-      <script src="assets/javascripts/application.c648116f.js"></script>
+      <script src="assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"."}})</script>
       
