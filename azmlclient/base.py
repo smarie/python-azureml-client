@@ -121,7 +121,7 @@ def parse_proxy_info(proxy_url
 def create_session_for_proxy(http_proxyhost,                  # type: str
                              http_proxyport,                  # type: int
                              https_proxyhost=None,            # type: str
-                             https_proxyport=None,            # type: str
+                             https_proxyport=None,            # type: int
                              use_http_for_https_proxy=False,  # type: bool
                              ssl_verify=None
                              ):
