@@ -459,6 +459,12 @@ def json_to_azmltable(json_str  # type: str
     return json.loads(json_str, object_pairs_hook=OrderedDict)
 
 
+if sys.version_info >= (3, 0, 0):
+    PRIM_TYPES = (int, str, bool)
+else:
+    PRIM_TYPES = (int, str, bool, eval('long'))
+
+
 def to_jsonable_primitive(obj,
                           replace_NaN_with=None,  # type: Any
                           replace_NaT_with=None   # type: Any
@@ -476,7 +482,7 @@ def to_jsonable_primitive(obj,
             return replace_NaN_with or obj
         else:
             return obj
-    elif isinstance(obj, (int, str, bool)):  # , dict, list, tuple, set
+    elif isinstance(obj, PRIM_TYPES):  # , dict, list, tuple, set
         return obj
     else:
         return azml_json_serializer(obj, replace_NaT_with=replace_NaT_with)
