@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.5.0 - New `replace_NaN_with` and `replace_NaT_with` options
+
+New `replace_NaN_with` and `replace_NaT_with` options to control how `NaN` and `NaT` get converted. Fixes [#11](https://github.com/smarie/python-azureml-client/issues/11)
+
 ### 2.4.0 - new helper method + doc
 
 New method `create_response_body` in `RequestResponseClient`. Updated doc to show how these goodies can be used.
