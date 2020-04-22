@@ -189,6 +189,8 @@ def execute_rr(api_key,                                # type: str
                output_names=None,                      # type: List[str]
                only_keep_selected_output_names=False,  # type: bool
                use_swagger_format=False,               # type: bool
+               replace_NaN_with=None,                  # type: Any
+               replace_NaT_with=None,                  # type: Any
                requests_session=None                   # type: requests.Session
                ):
     # type: (...) -> Dict[str, pd.DataFrame]
@@ -215,7 +217,8 @@ def execute_rr(api_key,                                # type: str
                          "`output_names`")
 
     # 0- Create the generic request-response client
-    rr_client = RequestResponseClient(requests_session=requests_session, use_swagger_format=use_swagger_format)
+    rr_client = RequestResponseClient(requests_session=requests_session, use_swagger_format=use_swagger_format,
+                                      replace_NaN_with=replace_NaN_with, replace_NaT_with=replace_NaT_with)
 
     # 1- Create the query body
     request_body = rr_client.create_request_body(inputs, params)
@@ -456,8 +459,10 @@ class RequestResponseClient(BaseHttpClient):
     """
 
     def __init__(self,
-                 requests_session=None,    # type: requests.Session
-                 use_swagger_format=False  # type: bool
+                 requests_session=None,     # type: requests.Session
+                 use_swagger_format=False,  # type: bool
+                 replace_NaN_with=None,     # type: Any
+                 replace_NaT_with=None,     # type: Any
                  ):
         """
         Constructor with an optional `requests.Session` to use for subsequent calls.
@@ -470,6 +475,8 @@ class RequestResponseClient(BaseHttpClient):
         """
         # save swagger format
         self.use_swagger_format = use_swagger_format
+        self.replace_NaN_with = replace_NaN_with
+        self.replace_NaT_with = replace_NaT_with
 
         # super constructor
         super(RequestResponseClient, self).__init__(requests_session=requests_session)
@@ -493,7 +500,8 @@ class RequestResponseClient(BaseHttpClient):
             params_df_or_dict = {}
 
         # inputs
-        inputs = dfs_to_azmltables(input_df_dict, swagger_format=self.use_swagger_format)
+        inputs = dfs_to_azmltables(input_df_dict, swagger_format=self.use_swagger_format,
+                                   replace_NaN_with=self.replace_NaN_with, replace_NaT_with=self.replace_NaT_with)
 
         # params
         if isinstance(params_df_or_dict, dict):

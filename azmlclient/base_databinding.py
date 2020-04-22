@@ -6,6 +6,7 @@ from collections import OrderedDict
 from datetime import datetime
 from io import BytesIO   # to handle byte strings
 from io import StringIO  # to handle unicode strings
+from math import isnan
 
 try:  # python 3.5+
     from typing import Dict, Union, List, Any, Tuple
@@ -201,6 +202,8 @@ def df_to_azmltable(df,                       # type: pandas.DataFrame
                     table_name=None,          # type: str
                     swagger_format=False,     # type: bool
                     mimic_azml_output=False,  # type: bool
+                    replace_NaN_with=None,    # type: Any
+                    replace_NaT_with=None,    # type: Any
                     ):
     # type: (...) -> Union[AzmlTable, AzmlOutputTable]
     """
@@ -222,7 +225,9 @@ def df_to_azmltable(df,                       # type: pandas.DataFrame
 
     if mimic_azml_output:
         # use this method recursively, in 'not output' mode
-        return {'type': 'table', 'value': df_to_azmltable(df, table_name=table_name, swagger_format=swagger_format)}
+        return {'type': 'table', 'value': df_to_azmltable(df, table_name=table_name, swagger_format=swagger_format,
+                                                          replace_NaN_with=replace_NaN_with,
+                                                          replace_NaT_with=replace_NaT_with)}
     else:
         col_names = df.columns.values.tolist()
 
@@ -239,7 +244,9 @@ def df_to_azmltable(df,                       # type: pandas.DataFrame
                 except AttributeError:
                     return cell
 
-            return [OrderedDict([(col_name, to_jsonable_primitive(_get_item_in_df(df, col_name, i)))
+            return [OrderedDict([(col_name, to_jsonable_primitive(_get_item_in_df(df, col_name, i),
+                                                                  replace_NaN_with=replace_NaN_with,
+                                                                  replace_NaT_with=replace_NaT_with))
                                  for col_name in col_names])
                     for i in range(df.shape[0])]
         else:
@@ -250,14 +257,18 @@ def df_to_azmltable(df,                       # type: pandas.DataFrame
 
             # convert all values in the table to primitives so that the json serializer supports it
             list_of_rows = df.values.tolist()
-            values = [list(map(to_jsonable_primitive, row)) for row in list_of_rows]
+            def to_js_prim(obj):
+                return to_jsonable_primitive(obj, replace_NaN_with=replace_NaN_with, replace_NaT_with=replace_NaT_with)
+            values = [list(map(to_js_prim, row)) for row in list_of_rows]
 
             return {'ColumnNames': col_names, "Values": values}
 
 
-def dfs_to_azmltables(dfs,                   # type: Dict[str, pandas.DataFrame]
-                      swagger_format=False,  # type: bool
+def dfs_to_azmltables(dfs,                      # type: Dict[str, pandas.DataFrame]
+                      swagger_format=False,     # type: bool
                       mimic_azml_output=False,  # type: bool
+                      replace_NaN_with=None,    # type: Any
+                      replace_NaT_with=None,    # type: Any
                       ):
     # type: (...) -> Dict[str, Dict[str, Union[str, Dict[str, List]]]]
     """
@@ -276,7 +287,8 @@ def dfs_to_azmltables(dfs,                   # type: Dict[str, pandas.DataFrame]
     # return resultsDict
 
     return {df_name: df_to_azmltable(df, table_name=df_name, swagger_format=swagger_format,
-                                     mimic_azml_output=mimic_azml_output)
+                                     mimic_azml_output=mimic_azml_output, replace_NaN_with=replace_NaN_with,
+                                     replace_NaT_with=replace_NaT_with)
             for df_name, df in dfs.items()}
 
 
@@ -447,19 +459,32 @@ def json_to_azmltable(json_str  # type: str
     return json.loads(json_str, object_pairs_hook=OrderedDict)
 
 
-def to_jsonable_primitive(obj):
+def to_jsonable_primitive(obj,
+                          replace_NaN_with=None,  # type: Any
+                          replace_NaT_with=None   # type: Any
+                          ):
     """
     Converts the given item (should NOT be a container) to a json-able one.
+
     :param obj:
+    :param replace_NaN_with:
+    :param replace_NaT_with:
     :return:
     """
-    if isinstance(obj, (int, str, bool, float)):  # , dict, list, tuple, set
+    if isinstance(obj, float):
+        if isnan(obj):
+            return replace_NaN_with or obj
+        else:
+            return obj
+    elif isinstance(obj, (int, str, bool)):  # , dict, list, tuple, set
         return obj
     else:
-        return azml_json_serializer(obj)
+        return azml_json_serializer(obj, replace_NaT_with=replace_NaT_with)
 
 
-def azml_json_serializer(obj):
+def azml_json_serializer(obj,
+                         replace_NaT_with=None  # type: Any
+                         ):
     """
     JSON custom serializer for objects not serializable by default json code
 
@@ -477,7 +502,10 @@ def azml_json_serializer(obj):
         return obj.tolist()
     elif isinstance(obj, datetime):  # or isinstance(obj, np.generic) and obj.kind='M':
         # Datetime are written as ISO format string
-        return obj.isoformat()
+        if pandas.isnull(obj):
+            return replace_NaT_with or obj.isoformat()  # returns "NaT"
+        else:
+            return obj.isoformat()
     else:
         raise TypeError("Type not serializable : " + str(obj))
 
