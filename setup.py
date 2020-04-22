@@ -3,9 +3,9 @@ See:
 https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
-from six import raise_from
 from os import path
 
+import pkg_resources
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
@@ -14,15 +14,14 @@ here = path.abspath(path.dirname(__file__))
 INSTALL_REQUIRES = ['functools32;python_version<"3.3"', 'valid8>=2.1', 'requests', 'jinja2',
                     'decopatch', 'makefun', 'yamlable>=0.7', 'autoclass>=1.15,<2', 'numpy', 'pandas']
 DEPENDENCY_LINKS = []
-SETUP_REQUIRES = ['pytest-runner', 'setuptools_scm', 'pypandoc', 'pandoc']
+SETUP_REQUIRES = ['pytest-runner', 'setuptools_scm']
 TESTS_REQUIRE = ['pytest', 'pytest-logging', 'pytest-cases', 'cherrypy', 'azure-storage==0.33.0']
 EXTRAS_REQUIRE = {}
 
-# simple check
-try:
-    from setuptools_scm import get_version
-except Exception as e:
-    raise_from(Exception('Required packages for setup not found. Please install `setuptools_scm`'), e)
+# (1) check required versions (from https://medium.com/@daveshawley/safely-using-setup-cfg-for-metadata-1babbe54c108)
+pkg_resources.require("setuptools>=39.2")
+pkg_resources.require("setuptools_scm")
+
 
 # ************** ID card *****************
 DISTNAME = 'azmlclient'
@@ -33,6 +32,7 @@ URL = 'https://github.com/smarie/python-azureml-client'
 LICENSE = 'MIT'
 LICENSE_LONG = 'License :: OSI Approved :: MIT License'
 
+from setuptools_scm import get_version
 version_for_download_url = get_version()
 DOWNLOAD_URL = URL + '/tarball/' + version_for_download_url
 
