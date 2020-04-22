@@ -79,6 +79,14 @@ outputs = execute_bes(api_key, base_url,
                       inputs=inputs, params=params, output_names=output_names)
 ```
 
+### Formatting options
+
+`execute_bes` provides several options to control how dataframes are converted to json in the request payloads:
+
+ - `swagger_format` is a boolean (default `False`) enabling the more verbose "swagger" (= json objects) format
+ - `replace_NaN_with` and `replace_NaT_with` control how `NaN` and `NaT` are converted
+
+
 ### Debug and proxies
 
 Users may wish to create a requests session object using the helper method provided, in order to override environment variable settings for HTTP requests. For example to use [`Fiddler`](https://www.telerik.com/fiddler) as a proxy to debug the web service calls: 
