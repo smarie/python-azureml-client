@@ -2,7 +2,8 @@
 
 ### 2.5.0 - New `replace_NaN_with` and `replace_NaT_with` options
 
-New `replace_NaN_with` and `replace_NaT_with` options to control how `NaN` and `NaT` get converted. Fixes [#11](https://github.com/smarie/python-azureml-client/issues/11)
+ - New `replace_NaN_with` and `replace_NaT_with` options to control how `NaN` and `NaT` get converted. Fixes [#11](https://github.com/smarie/python-azureml-client/issues/11)
+ - packaging improvements: set the "universal wheel" flag to 1, and cleaned up the `setup.py`. In particular removed dependency to `six` for setup and added `py.typed` file. Added pyproject.toml too. Fixes [#13](https://github.com/smarie/python-azureml-client/issues/13)
 
 ### 2.4.0 - new helper method + doc
 
