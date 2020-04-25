@@ -416,7 +416,10 @@
                 
                 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
 <h3 id="250-new-replace_nan_with-and-replace_nat_with-options">2.5.0 - New <code>replace_NaN_with</code> and <code>replace_NaT_with</code> options<a class="headerlink" href="#250-new-replace_nan_with-and-replace_nat_with-options" title="Permanent link">&para;</a></h3>
-<p>New <code>replace_NaN_with</code> and <code>replace_NaT_with</code> options to control how <code>NaN</code> and <code>NaT</code> get converted. Fixes <a href="https://github.com/smarie/python-azureml-client/issues/11">#11</a></p>
+<ul>
+<li>New <code>replace_NaN_with</code> and <code>replace_NaT_with</code> options to control how <code>NaN</code> and <code>NaT</code> get converted. Fixes <a href="https://github.com/smarie/python-azureml-client/issues/11">#11</a></li>
+<li>packaging improvements: set the "universal wheel" flag to 1, and cleaned up the <code>setup.py</code>. In particular removed dependency to <code>six</code> for setup and added <code>py.typed</code> file. Added pyproject.toml too. Fixes <a href="https://github.com/smarie/python-azureml-client/issues/13">#13</a></li>
+</ul>
 <h3 id="240-new-helper-method-doc">2.4.0 - new helper method + doc<a class="headerlink" href="#240-new-helper-method-doc" title="Permanent link">&para;</a></h3>
 <p>New method <code>create_response_body</code> in <code>RequestResponseClient</code>. Updated doc to show how these goodies can be used.</p>
 <h3 id="232-added-__version__-attribute">2.3.2 - added <code>__version__</code> attribute<a class="headerlink" href="#232-added-__version__-attribute" title="Permanent link">&para;</a></h3>
@@ -546,7 +549,7 @@
     </div>
     
       <script src="../assets/javascripts/vendor.c51dfa35.min.js"></script>
-      <script src="../assets/javascripts/bundle.eaaa3931.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "search.result.one": "1 matching document", "search.config.lang": "en", "search.config.separator": "[\\s\\-]+", "search.result.none": "No matching documents", "search.config.pipeline": "trimmer, stopWordFilter", "search.result.other": "# matching documents", "clipboard.copied": "Copied to clipboard", "search.result.placeholder": "Type to start searching"}</script>
+      <script src="../assets/javascripts/bundle.eaaa3931.min.js"></script><script id="__lang" type="application/json">{"search.result.one": "1 matching document", "search.config.lang": "en", "clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.result.none": "No matching documents", "search.config.separator": "[\\s\\-]+", "search.config.pipeline": "trimmer, stopWordFilter", "search.result.placeholder": "Type to start searching", "search.result.other": "# matching documents"}</script>
       
       <script>
         app = initialize({
