@@ -4,7 +4,7 @@ import pytest
 from pandas.util.testing import assert_frame_equal
 from pytest_cases import parametrize_with_cases, fixture
 
-from azmlclient.tests.databinding.test_databinding_cases import DataBindingTestCase
+from azmlclient.tests.databinding.test_databinding_cases import DataBindingTestKase
 from azmlclient.base_databinding import df_to_azmltable, azmltable_to_df, azmltable_to_json, json_to_azmltable, \
     df_to_csv, csv_to_df
 
@@ -18,7 +18,7 @@ def case(c):
 @pytest.mark.parametrize("swagger_mode_on", [False, True], ids="swagger_mode_on={}".format)
 @pytest.mark.parametrize("replace_NaN_with", [None, "null"], ids="replace_NaN_with={}".format)
 @pytest.mark.parametrize("replace_NaT_with", [None, "null"], ids="replace_NaT_with={}".format)
-def test_df_to_azmltable(case,  # type: DataBindingTestCase
+def test_df_to_azmltable(case,  # type: DataBindingTestKase
                          swagger_mode_on, replace_NaN_with, replace_NaT_with):
     """ Tests that a dataframe can be converted to azureml representation (as a dict) and back. """
 
@@ -42,7 +42,7 @@ def _is_datetime_dtype(series):
 @pytest.mark.parametrize("replace_NaN_with", [None, "null"], ids="replace_NaN_with={}".format)
 @pytest.mark.parametrize("replace_NaT_with", [None, "null"], ids="replace_NaT_with={}".format)
 def test_df_to_json(swagger_mode_on, replace_NaN_with, replace_NaT_with,
-                    case  # type: DataBindingTestCase
+                    case  # type: DataBindingTestKase
                     ):
     """ Tests that a dataframe can be converted to azureml json representation and back. """
 
@@ -87,7 +87,7 @@ def test_df_to_json(swagger_mode_on, replace_NaN_with, replace_NaT_with,
     assert_frame_equal(case.df, df2)
 
 
-def test_df_to_csv(case  # type: DataBindingTestCase
+def test_df_to_csv(case  # type: DataBindingTestKase
                    ):
     """ Tests that a dataframe can be converted to csv (for blob storage) and back. """
 

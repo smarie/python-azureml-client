@@ -11,7 +11,7 @@ from pytest_cases import parametrize
 from azmlclient.base_databinding import convert_all_datetime_columns, localize_all_datetime_columns
 
 
-class DataBindingTestCase(object):
+class DataBindingTestKase(object):
     """
     Represents a test case for the databinding tests
     """
@@ -68,4 +68,4 @@ def case_from_folders(case_name):
     :param case_name: 
     :return: 
     """
-    return DataBindingTestCase(TEST_DATA_DIR, case_name)
+    return DataBindingTestKase(TEST_DATA_DIR, case_name)
