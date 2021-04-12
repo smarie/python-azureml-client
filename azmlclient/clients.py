@@ -2,6 +2,7 @@ import sys
 from contextlib import contextmanager
 from inspect import getmembers, isroutine
 from logging import getLogger, StreamHandler, INFO
+from warnings import warn
 
 try:  # python 3+
     from configparser import ConfigParser
@@ -131,24 +132,41 @@ class AzureMLClient:
     """
 
     def __init__(self,
-                 client_config,          # type: ClientConfig
-                 logger=default_logger,  # type: Logger
-                 default_call_mode=None  # type: CallMode
+                 client_config,           # type: ClientConfig
+                 logger=default_logger,   # type: Logger
+                 default_call_mode=None,  # type: CallMode
+                 requests_session=None,   # type: Session
+                 auto_close_session=None  # type: bool
                  ):
         """
         Creates an `AzureMLClient` with an initial `ClientConfig` containing the global and per-service configurations.
-
 
         Constructor with a global configuration and service endpoint configurations. The service endpoint
         configurations should be provided in a dictionary with keys being the service names. Only names declared in the
         'services' meta attribute of the class will be accepted, otherwise and error will be raised. Note that you may
         provide configurations for some services only.
 
-        :param client_config: a configuration for this component client. It should be valid = contain
+        A `requests.Session` object is automatically created when the client is created, and possibly configured with
+        the proxy information obtained from the `ClientConfig`. The `Session` is automatically closed when the client
+        instance is garbaged out. A custom `Session` can be passed to the constructor instead. It won't be closed nor
+        configured by default, the user should do it (using `session.close()` and `<config>.configure_session(session)`
+        respectively).
+
+        :param client_config: a configuration for this component client. It should be valid = contain sections for
+            each service in this client. The configuration can contain proxy information, in which case it will
+            be used to configure the underlying requests Session that is created.
         :param logger:
         :param default_call_mode: (advanced) if a non-None `CallMode` instance is provided, it will be used as the
             default call mode for this client. Otherwise by default a request-response call mode will be set as the
             default call mode (`RequestResponse()`)
+        :param requests_session: (advanced) an optional `Session` object to use (from `requests` lib). If `None` is
+            provided, a new `Session` will be used, possibly configured with the proxy information in the `ClientConfig`
+            and deleted when this object is garbaged out. If a custom object is provided, you should close it yourself
+            or switch `auto_close_session` to `True` explicitly. You should also configure it yourself, for example
+            with `<config>.configure_session(session)`.
+        :param auto_close_session: an optional boolean indicating if `self.session` should be closed when this object
+            is garbaged out. By default this is `None` and means "`True` if no custom `requests_session` is passed, else
+            `False`"). Turning this to `False` can leave hanging Sockets unclosed.
         """
         # save the attributes
         self.client_config = client_config
@@ -160,6 +178,33 @@ class AzureMLClient:
 
         # init the local impl property
         self._local_impl = None
+
+        if requests_session is None:
+            # create and configure a session
+            self.session = Session()
+            self.global_cfg.configure_session(self.session)
+        else:
+            # custom provided : do not configure it
+            self.session = requests_session
+
+        # auto-close behaviour
+        if auto_close_session is None:
+            # default: only auto-close if this session was created by us.
+            auto_close_session = requests_session is None
+        self.auto_close_session = auto_close_session
+
+    def __del__(self):
+        """
+        This is called when the garbage collector deletes this object.
+        Let's use this opportunity to close the requests Session to avoid
+        leaving hanging Sockets, see https://github.com/smarie/python-odsclient/issues/27
+        """
+        if self.auto_close_session and self.session is not None:
+            try:
+                # close the underlying `requests.Session`
+                self.session.close()
+            except Exception as e:
+                warn("Error while closing session: %r" % e)
 
     # --------- remote service calls implementation
 
@@ -345,25 +390,11 @@ class AzureMLClient:
         else:
             service_config = self.client_config.services_configs[service_id]
 
-        # -- Retrieve session and endpoint to use
-        session = self.get_requests_session()
-
         # -- Perform call according to options
         return self.current_call_mode.call_azureml(service_id,
                                                    service_config=service_config, ws_inputs=ws_inputs,
                                                    ws_output_names=ws_output_names, ws_params=ws_params,
-                                                   session=session)
-
-    def get_requests_session(self):
-        # type: (...) -> Optional[Session]
-        """
-        Helper to get a `requests` (http client) session object, based on the local configuration. If the client is
-        configured for use with a proxy the session will be created accordingly. Note that if this client has
-        no particular configuration for the http proxy this function will return None
-
-        :return: a requests session or None
-        """
-        return self.global_cfg.get_requests_session()
+                                                   session=self.session)
 
 
 def unpack_single_value_from_df(name,             # type: str

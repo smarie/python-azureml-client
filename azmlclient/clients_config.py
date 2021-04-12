@@ -1,9 +1,9 @@
 import sys
 from collections import OrderedDict
+from distutils.util import strtobool
 from warnings import warn
 
 from jinja2 import Environment, StrictUndefined
-from requests import Session
 
 try:  # python 3+
     from configparser import ConfigParser
@@ -19,8 +19,7 @@ except ImportError:
 from autoclass import autodict
 from yamlable import YamlAble, yaml_info
 
-
-from azmlclient.base import create_session_for_proxy_from_strings
+from .requests_utils import set_http_proxy
 
 
 PY2 = sys.version_info < (3, 0)
@@ -52,18 +51,27 @@ class GlobalConfig:
         self.https_proxy = https_proxy
         self.ssl_verify = ssl_verify
 
-    def get_requests_session(self):
-        # type: (...) -> Optional[Session]
+    def configure_session(self, session):
         """
         Helper to get a `requests` (http client) session object, based on the local configuration.
 
         If the client is configured for use with a proxy the session will be created accordingly.
         Note that if this client has no particular configuration for the http proxy this function will return None.
 
-        :return: a requests session or None
+        :param session:
+        :return:
         """
-        return create_session_for_proxy_from_strings(http_proxy=self.http_proxy, https_proxy=self.https_proxy,
-                                                     ssl_verify=self.ssl_verify)
+        use_http_for_https = self.http_proxy and not self.https_proxy
+        set_http_proxy(session, http_url=self.http_proxy, https_url=self.https_proxy,
+                       use_http_proxy_for_https_requests=use_http_for_https)
+
+        if self.ssl_verify is not None:
+            try:
+                # try to parse a boolean
+                session.verify = bool(strtobool(self.ssl_verify))
+            except:
+                # otherwise this is a path
+                session.verify = self.ssl_verify
 
 
 @autodict

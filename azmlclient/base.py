@@ -2,14 +2,9 @@ import json
 import time
 
 from datetime import datetime
-from distutils.util import strtobool
+from warnings import warn
 
 from six import raise_from
-
-try:  # python 3+
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
 
 try:
     from urllib.error import HTTPError as Urllib_HTTPError
@@ -20,14 +15,14 @@ except ImportError:
 
 import pandas as pd
 import requests
-from valid8 import validate
 
 try:  # python 3.5+
     from typing import List, Dict, Tuple, Any, Union, Optional
 except ImportError:
     pass
 
-from azmlclient.base_databinding import AzmlException, dfs_to_azmltables, params_df_to_params_dict, azmltable_to_json, \
+from .requests_utils import set_http_proxy
+from .base_databinding import AzmlException, dfs_to_azmltables, params_df_to_params_dict, azmltable_to_json, \
     json_to_azmltable, azmltables_to_dfs
 
 
@@ -39,101 +34,24 @@ class JobExecutionException(Exception):
     """ This is raised whenever a job ended in failed mode"""
 
 
-def create_session_for_proxy_from_strings(http_proxy=None,   # type: str
-                                          https_proxy=None,  # type: str
-                                          ssl_verify=True,   # type: Union[str, bool]
-                                          ):
-    # type: (...) -> Optional[requests.Session]
-    """
-    Similar to `create_session_for_proxy` but with string information for proxies.
-    Note that if this is called with no arguments, this function will return None.
-
-    :param http_proxy:
-    :param https_proxy:
-    :param ssl_verify:
-    :return:
-    """
-
-    if not isinstance(ssl_verify, bool):
-        ssl_verify = strtobool(ssl_verify)
-
-    if http_proxy or https_proxy:
-        opts = dict()
-
-        if http_proxy is not None:
-            host, port, protocol = parse_proxy_info(http_proxy)
-            if protocol != 'http':
-                raise ValueError("Only http protocol is supported for http proxy")
-            opts['http_proxyhost'] = host
-            opts['http_proxyport'] = port
-
-        if https_proxy is not None:
-            host, port, protocol = parse_proxy_info(https_proxy)
-            use_http_for_https_proxy = (protocol == 'http')
-            opts['use_http_for_https_proxy'] = use_http_for_https_proxy
-
-            if http_proxy is None:
-                if use_http_for_https_proxy:
-                    opts['http_proxyhost'] = host
-                    opts['http_proxyport'] = port
-                else:
-                    raise ValueError("http proxy information is missing, and https proxy uses the https protocol. "
-                                     "Please provide a value for http_proxy or change the https_proxy protocol to http")
-            else:
-                opts['https_proxyhost'] = host
-                opts['https_proxyport'] = port
-
-        opts['ssl_verify'] = ssl_verify
-        session = create_session_for_proxy(**opts)
-    else:
-        if not ssl_verify:
-            # warnings are now issued by `requests` by default, no need to add more
-            # warn("It is not recommended to disable ssl validation in general. It is only allowed for "
-            #      "temporary logging using fiddler")
-            session = requests.Session()
-            session.verify = False
-            session.trust_env = False
-        else:
-            # no need for a specific session, return None
-            session = None
-
-    return session
-
-
-def parse_proxy_info(proxy_url
-                     ):
-    """
-    Parses a
-    :param proxy_url:
-    :return:
-    """
-    o = urlparse(proxy_url)
-
-    validate('hostname', o.hostname, min_len=1)
-    validate('port', o.port)
-    validate('scheme', o.scheme, is_in={'http', 'https'},
-             help_msg="Only http and https protocols are supported for http(s) proxies. "
-                      "Found: '{var_value}' from '%s'" % proxy_url)
-
-    return o.hostname, o.port, o.scheme
-
-
 def create_session_for_proxy(http_proxyhost,                  # type: str
                              http_proxyport,                  # type: int
                              https_proxyhost=None,            # type: str
                              https_proxyport=None,            # type: int
                              use_http_for_https_proxy=False,  # type: bool
-                             ssl_verify=None
+                             ssl_verify=None                  # type: Union[bool, str]
                              ):
     # type: (...) -> requests.Session
     """
+    DEPRECATED - users should rather create a Session() and use set_http_proxy(session, **kwargs) instead
+
     Helper method to configure the request package to use the proxy of your choice and adapt the SSL certificate
     validation accordingly.
-    
+
     ```python
     # create a temporary Session to use Fiddler as the network proxy
     debug_session = create_session_for_proxy('localhost', 8888, use_http_for_https_proxy=True, ssl_verify=False)
-    
+
     # use that session in a, AzureML web service call
     execute_rr(..., requests_session=debug_session)
     ```
@@ -150,36 +68,19 @@ def create_session_for_proxy(http_proxyhost,                  # type: str
         See here for details : http://docs.python-requests.org/en/master/user/advanced/#ssl-cert-verification
     :return: a requests.Session object that you may use with the rest of the library
     """
-    # (a) http proxy info
-    validate('http_proxyhost', http_proxyhost, instance_of=str)
-    validate('http_proxyport', http_proxyport, instance_of=int)
+    warn("This method is deprecated - please create a Session() and use set_http_proxy(session, **kwargs) instead")
 
-    # (b) https proxy info
-    if https_proxyhost is None:
-        # default: use http info
-        https_proxyhost = http_proxyhost
-    else:
-        validate('https_proxyhost', https_proxyhost, instance_of=str)
-    if https_proxyport is None:
-        # default: use http info
-        https_proxyport = http_proxyport
-    else:
-        validate('https_proxyport', https_proxyport, instance_of=int)
-    validate('use_http_for_https_proxy', use_http_for_https_proxy, instance_of=bool)
-    https_proxy_protocol = 'http' if use_http_for_https_proxy else 'https'
+    session = requests.Session()
 
-    # (c) create the session object
-    s = requests.Session()
-    s.proxies = {
-                    'http': 'http://%s:%s' % (http_proxyhost, http_proxyport),
-                    'https': '%s://%s:%s' % (https_proxy_protocol, https_proxyhost, https_proxyport),
-                }
+    set_http_proxy(session,
+                   http_proxyhost=http_proxyhost, http_proxyport=http_proxyport,
+                   https_proxyhost=https_proxyhost, https_proxyport=https_proxyport,
+                   use_http_proxy_for_https_requests=use_http_for_https_proxy)
+
     if ssl_verify is not None:
-        s.verify = ssl_verify
-    # IMPORTANT : otherwise the environment variables will always have precedence over user-provided settings
-    s.trust_env = False
+        session.verify = ssl_verify
 
-    return s
+    return session
 
 
 def execute_rr(api_key,                                # type: str
