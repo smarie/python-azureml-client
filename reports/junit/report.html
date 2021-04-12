@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>report.html</h1>
+    <p>Report generated on 12-Apr-2021 at 17:36:08 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>CI</td>
+        <td>true</td></tr>
+      <tr>
+        <td>JAVA_HOME</td>
+        <td>/usr/lib/jvm/adoptopenjdk-11-hotspot-amd64</td></tr>
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "0.13.1", "py": "1.10.0", "pytest": "6.2.3"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Linux-5.4.0-1043-azure-x86_64-with-debian-bullseye-sid</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"cases": "3.4.6", "html": "3.1.1", "metadata": "1.11.0"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.7.10</td></tr></table>
+    <h2>Summary</h2>
+    <p>29 tests ran in 2.14 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">29 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">2 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[yaml-call_mode=Batch-swagger_format=None]</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;/home/runner/work/python-azureml-client/python-azureml-client/azmlclient/tests/clients/test_dummy_client.py&#x27;, 92, &#x27;Skipped: Batch mode is not implemented on this mock server.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[cfg-call_mode=Batch-swagger_format=None]</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;/home/runner/work/python-azureml-client/python-azureml-client/azmlclient/tests/clients/test_dummy_client.py&#x27;, 92, &#x27;Skipped: Batch mode is not implemented on this mock server.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_configs.py::test_empty_cfg</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_configs.py::test_full_cfg</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[yaml-call_mode=local-swagger_format=None]</td>
+          <td class="col-duration">0.13</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -----------------------------Captured stderr setup------------------------------ <br/>[12/Apr/2021:17:36:07] ENGINE Listening for SIGTERM.
+[12/Apr/2021:17:36:07] ENGINE Listening for SIGHUP.
+[12/Apr/2021:17:36:07] ENGINE Listening for SIGUSR1.
+[12/Apr/2021:17:36:07] ENGINE Bus STARTING
+[12/Apr/2021:17:36:07] ENGINE Started monitor thread &#x27;Autoreloader&#x27;.
+[12/Apr/2021:17:36:07] ENGINE Serving on https://0.0.0.0:4443
+[12/Apr/2021:17:36:07] ENGINE Bus STARTED
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:07] ENGINE Listening for SIGTERM.
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:07] ENGINE Listening for SIGHUP.
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:07] ENGINE Listening for SIGUSR1.
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:07] ENGINE Bus STARTING
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:07] ENGINE Started monitor thread &#x27;Autoreloader&#x27;.
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:07] ENGINE Serving on https://0.0.0.0:4443
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:07] ENGINE Bus STARTED<br/> ------------------------------Captured stdout call------------------------------ <br/>adding columns
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     dummy:dummy_api_and_core.py:38 adding columns<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[yaml-call_mode=RR-swagger_format=False]</td>
+          <td class="col-duration">0.03</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nUser-Agent: python-requests/2.25.1\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nAuthorization: Bearer none\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 139\r\n\r\n&#x27;
+send: b&#x27;{&quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}, &quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}}&#x27;
+adding columns
+127.0.0.1 - - [12/Apr/2021:17:36:07] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.25.1&quot;
+reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
+header: Content-Type: application/json
+header: Server: CherryPy/18.6.0
+header: Date: Mon, 12 Apr 2021 17:36:07 GMT
+header: Allow: GET, HEAD, POST
+header: Content-Length: 105
+<br/> ------------------------------Captured stderr call------------------------------ <br/>[12/Apr/2021:17:36:07]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;}
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     cherrypy.error.140695335183312:_cplogging.py:216 [12/Apr/2021:17:36:07]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;}
+INFO     dummy impl in web server:dummy_api_and_core.py:38 adding columns
+INFO     cherrypy.access.140695335183312:_cplogging.py:284 127.0.0.1 - - [12/Apr/2021:17:36:07] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.25.1&quot;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[yaml-call_mode=RR-swagger_format=True]</td>
+          <td class="col-duration">0.03</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nUser-Agent: python-requests/2.25.1\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nAuthorization: Bearer none\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 130\r\n\r\n&#x27;
+send: b&#x27;{&quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}, &quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}}&#x27;
+adding columns
+127.0.0.1 - - [12/Apr/2021:17:36:07] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.25.1&quot;
+reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
+header: Content-Type: application/json
+header: Server: CherryPy/18.6.0
+header: Date: Mon, 12 Apr 2021 17:36:07 GMT
+header: Allow: GET, HEAD, POST
+header: Content-Length: 90
+<br/> ------------------------------Captured stderr call------------------------------ <br/>[12/Apr/2021:17:36:07]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;}
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     cherrypy.error.140695335183312:_cplogging.py:216 [12/Apr/2021:17:36:07]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;}
+INFO     dummy impl in web server:dummy_api_and_core.py:38 adding columns
+INFO     cherrypy.access.140695335183312:_cplogging.py:284 127.0.0.1 - - [12/Apr/2021:17:36:07] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.25.1&quot;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[cfg-call_mode=local-swagger_format=None]</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>adding columns
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     dummy:dummy_api_and_core.py:38 adding columns<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[cfg-call_mode=RR-swagger_format=False]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1\r\nHost: localhost:4443\r\nUser-Agent: python-requests/2.25.1\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nAuthorization: Bearer none\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 139\r\n\r\n&#x27;
+send: b&#x27;{&quot;Inputs&quot;: {&quot;input&quot;: {&quot;ColumnNames&quot;: [&quot;x&quot;, &quot;y&quot;], &quot;Values&quot;: [[1, 0], [2, 5], [3, 10]]}}, &quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}}&#x27;
+adding columns
+127.0.0.1 - - [12/Apr/2021:17:36:08] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.25.1&quot;
+reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
+header: Content-Type: application/json
+header: Server: CherryPy/18.6.0
+header: Date: Mon, 12 Apr 2021 17:36:08 GMT
+header: Allow: GET, HEAD, POST
+header: Content-Length: 105
+<br/> ------------------------------Captured stderr call------------------------------ <br/>[12/Apr/2021:17:36:08]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;}
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     cherrypy.error.140695335183312:_cplogging.py:216 [12/Apr/2021:17:36:08]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;}
+INFO     dummy impl in web server:dummy_api_and_core.py:38 adding columns
+INFO     cherrypy.access.140695335183312:_cplogging.py:284 127.0.0.1 - - [12/Apr/2021:17:36:08] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true HTTP/1.1&quot; 200 105 &quot;&quot; &quot;python-requests/2.25.1&quot;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_simple[cfg-call_mode=RR-swagger_format=True]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>send: b&#x27;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1\r\nHost: localhost:4443\r\nUser-Agent: python-requests/2.25.1\r\nAccept-Encoding: gzip, deflate\r\nAccept: */*\r\nConnection: keep-alive\r\nAuthorization: Bearer none\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 130\r\n\r\n&#x27;
+send: b&#x27;{&quot;Inputs&quot;: {&quot;input&quot;: [{&quot;x&quot;: 1, &quot;y&quot;: 0}, {&quot;x&quot;: 2, &quot;y&quot;: 5}, {&quot;x&quot;: 3, &quot;y&quot;: 10}]}, &quot;GlobalParameters&quot;: {&quot;a_name&quot;: &quot;x&quot;, &quot;b_name&quot;: &quot;y&quot;}}&#x27;
+adding columns
+127.0.0.1 - - [12/Apr/2021:17:36:08] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.25.1&quot;
+reply: &#x27;HTTP/1.1 200 OK\r\n&#x27;
+header: Content-Type: application/json
+header: Server: CherryPy/18.6.0
+header: Date: Mon, 12 Apr 2021 17:36:08 GMT
+header: Allow: GET, HEAD, POST
+header: Content-Length: 90
+<br/> ------------------------------Captured stderr call------------------------------ <br/>[12/Apr/2021:17:36:08]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;}
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     cherrypy.error.140695335183312:_cplogging.py:216 [12/Apr/2021:17:36:08]  [a_plus_b] was asked to execute with params {&#x27;api-version&#x27;: &#x27;2.0&#x27;, &#x27;details&#x27;: &#x27;true&#x27;, &#x27;format&#x27;: &#x27;swagger&#x27;}
+INFO     dummy impl in web server:dummy_api_and_core.py:38 adding columns
+INFO     cherrypy.access.140695335183312:_cplogging.py:284 127.0.0.1 - - [12/Apr/2021:17:36:08] &quot;POST /a_plus_b/execute?api-version=2.0&amp;details=true&amp;format=swagger HTTP/1.1&quot; 200 90 &quot;&quot; &quot;python-requests/2.25.1&quot;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_remote_only[yaml]</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_dummy_client.py::test_client_call_remote_only[cfg]</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ----------------------------Captured stderr teardown---------------------------- <br/>[12/Apr/2021:17:36:08] ENGINE Bus STOPPING
+[12/Apr/2021:17:36:08] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer((&#x27;0.0.0.0&#x27;, 4443)) shut down
+[12/Apr/2021:17:36:08] ENGINE Stopped thread &#x27;Autoreloader&#x27;.
+[12/Apr/2021:17:36:08] ENGINE Bus STOPPED
+[12/Apr/2021:17:36:08] ENGINE Bus EXITING
+[12/Apr/2021:17:36:08] ENGINE Bus EXITED
+<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:08] ENGINE Bus STOPPING
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:08] ENGINE HTTP Server cherrypy._cpwsgi_server.CPWSGIServer((&#x27;0.0.0.0&#x27;, 4443)) shut down
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:08] ENGINE Stopped thread &#x27;Autoreloader&#x27;.
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:08] ENGINE Bus STOPPED
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:08] ENGINE Bus EXITING
+INFO     cherrypy.error:_cplogging.py:216 [12/Apr/2021:17:36:08] ENGINE Bus EXITED<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_readme.py::test_readme_high_level_basic</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/clients/test_readme.py::test_readme_high_level_local</td>
+          <td class="col-duration">0.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=None-replace_NaN_with=None-swagger_mode_on=False]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=None-replace_NaN_with=None-swagger_mode_on=True]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=None-replace_NaN_with=null-swagger_mode_on=False]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=None-replace_NaN_with=null-swagger_mode_on=True]</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=null-replace_NaN_with=None-swagger_mode_on=False]</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=null-replace_NaN_with=None-swagger_mode_on=True]</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=null-replace_NaN_with=null-swagger_mode_on=False]</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_azmltable[from_folders-case_name=dummy-replace_NaT_with=null-replace_NaN_with=null-swagger_mode_on=True]</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=None-replace_NaN_with=None-swagger=False-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+{&quot;ColumnNames&quot;: [&quot;Datetime&quot;, &quot;att1_text_quotes&quot;, &quot;att2_float&quot;, &quot;att3_missing_text&quot;, &quot;att4_missing_float&quot;, &quot; att5_space_first_missing_datetime&quot;], &quot;Values&quot;: [[&quot;2015-10-09T07:30:00+00:00&quot;, &quot;fo,o&quot;, 2.0, NaN, NaN, &quot;NaT&quot;], [&quot;2015-10-09T08:30:00+00:00&quot;, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;2015-10-09T08:30:00+00:00&quot;]]}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=None-replace_NaN_with=None-swagger=True-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+[{&quot;Datetime&quot;: &quot;2015-10-09T07:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;fo,o&quot;, &quot;att2_float&quot;: 2.0, &quot;att3_missing_text&quot;: NaN, &quot;att4_missing_float&quot;: NaN, &quot; att5_space_first_missing_datetime&quot;: &quot;NaT&quot;}, {&quot;Datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att2_float&quot;: -0.1, &quot;att3_missing_text&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att4_missing_float&quot;: -0.1, &quot; att5_space_first_missing_datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;}]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=None-replace_NaN_with=null-swagger=False-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+{&quot;ColumnNames&quot;: [&quot;Datetime&quot;, &quot;att1_text_quotes&quot;, &quot;att2_float&quot;, &quot;att3_missing_text&quot;, &quot;att4_missing_float&quot;, &quot; att5_space_first_missing_datetime&quot;], &quot;Values&quot;: [[&quot;2015-10-09T07:30:00+00:00&quot;, &quot;fo,o&quot;, 2.0, &quot;null&quot;, &quot;null&quot;, &quot;NaT&quot;], [&quot;2015-10-09T08:30:00+00:00&quot;, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;2015-10-09T08:30:00+00:00&quot;]]}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=None-replace_NaN_with=null-swagger=True-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+[{&quot;Datetime&quot;: &quot;2015-10-09T07:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;fo,o&quot;, &quot;att2_float&quot;: 2.0, &quot;att3_missing_text&quot;: &quot;null&quot;, &quot;att4_missing_float&quot;: &quot;null&quot;, &quot; att5_space_first_missing_datetime&quot;: &quot;NaT&quot;}, {&quot;Datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att2_float&quot;: -0.1, &quot;att3_missing_text&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att4_missing_float&quot;: -0.1, &quot; att5_space_first_missing_datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;}]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=null-replace_NaN_with=None-swagger=False-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+{&quot;ColumnNames&quot;: [&quot;Datetime&quot;, &quot;att1_text_quotes&quot;, &quot;att2_float&quot;, &quot;att3_missing_text&quot;, &quot;att4_missing_float&quot;, &quot; att5_space_first_missing_datetime&quot;], &quot;Values&quot;: [[&quot;2015-10-09T07:30:00+00:00&quot;, &quot;fo,o&quot;, 2.0, NaN, NaN, &quot;null&quot;], [&quot;2015-10-09T08:30:00+00:00&quot;, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;2015-10-09T08:30:00+00:00&quot;]]}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=null-replace_NaN_with=None-swagger=True-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+[{&quot;Datetime&quot;: &quot;2015-10-09T07:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;fo,o&quot;, &quot;att2_float&quot;: 2.0, &quot;att3_missing_text&quot;: NaN, &quot;att4_missing_float&quot;: NaN, &quot; att5_space_first_missing_datetime&quot;: &quot;null&quot;}, {&quot;Datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att2_float&quot;: -0.1, &quot;att3_missing_text&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att4_missing_float&quot;: -0.1, &quot; att5_space_first_missing_datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;}]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=null-replace_NaN_with=null-swagger=False-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+{&quot;ColumnNames&quot;: [&quot;Datetime&quot;, &quot;att1_text_quotes&quot;, &quot;att2_float&quot;, &quot;att3_missing_text&quot;, &quot;att4_missing_float&quot;, &quot; att5_space_first_missing_datetime&quot;], &quot;Values&quot;: [[&quot;2015-10-09T07:30:00+00:00&quot;, &quot;fo,o&quot;, 2.0, &quot;null&quot;, &quot;null&quot;, &quot;null&quot;], [&quot;2015-10-09T08:30:00+00:00&quot;, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;&#x27;bar&#x27;&quot;, -0.1, &quot;2015-10-09T08:30:00+00:00&quot;]]}
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_json[replace_NaT_with=null-replace_NaN_with=null-swagger=True-from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; json:
+[{&quot;Datetime&quot;: &quot;2015-10-09T07:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;fo,o&quot;, &quot;att2_float&quot;: 2.0, &quot;att3_missing_text&quot;: &quot;null&quot;, &quot;att4_missing_float&quot;: &quot;null&quot;, &quot; att5_space_first_missing_datetime&quot;: &quot;null&quot;}, {&quot;Datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;, &quot;att1_text_quotes&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att2_float&quot;: -0.1, &quot;att3_missing_text&quot;: &quot;&#x27;bar&#x27;&quot;, &quot;att4_missing_float&quot;: -0.1, &quot; att5_space_first_missing_datetime&quot;: &quot;2015-10-09T08:30:00+00:00&quot;}]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azmlclient/tests/databinding/test_databinding.py::test_df_to_csv[from_folders-case_name=dummy]</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Converted df -&gt; csv:
+Datetime,att1_text_quotes,att2_float,att3_missing_text,att4_missing_float, att5_space_first_missing_datetime
+2015-10-09T07:30:00.000+0000,&quot;fo,o&quot;,2.0,,,
+2015-10-09T08:30:00.000+0000,&#x27;bar&#x27;,-0.1,&#x27;bar&#x27;,-0.1,2015-10-09T08:30:00.000+0000
+
+<br/></div></td></tr></tbody></table></body></html>

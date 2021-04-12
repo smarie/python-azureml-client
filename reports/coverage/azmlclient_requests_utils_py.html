@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=emulateIE7" />
+    <title>Coverage for azmlclient/requests_utils.py: 35%</title>
+    <link rel="icon" sizes="32x32" href="favicon_32.png">
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.hotkeys.js"></script>
+    <script type="text/javascript" src="jquery.isonscreen.js"></script>
+    <script type="text/javascript" src="coverage_html.js"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(coverage.pyfile_ready);
+    </script>
+</head>
+<body class="pyfile">
+<div id="header">
+    <div class="content">
+        <h1>Coverage for <b>azmlclient/requests_utils.py</b> :
+            <span class="pc_cov">35%</span>
+        </h1>
+        <img id="keyboard_icon" src="keybd_closed.png" alt="Show keyboard shortcuts" />
+        <h2 class="stats">
+            41 statements &nbsp;
+            <button type="button" class="run shortkey_r button_toggle_run" title="Toggle lines run">15 run</button>
+            <button type="button" class="mis show_mis shortkey_m button_toggle_mis" title="Toggle lines missing">26 missing</button>
+            <button type="button" class="exc show_exc shortkey_x button_toggle_exc" title="Toggle lines excluded">2 excluded</button>
+            <button type="button" class="par run show_par shortkey_p button_toggle_par" title="Toggle lines partially run">8 partial</button>
+        </h2>
+    </div>
+</div>
+<div class="help_panel">
+    <img id="panel_icon" src="keybd_open.png" alt="Hide keyboard shortcuts" />
+    <p class="legend">Hot-keys on this page</p>
+    <div>
+    <p class="keyhelp">
+        <span class="key">r</span>
+        <span class="key">m</span>
+        <span class="key">x</span>
+        <span class="key">p</span> &nbsp; toggle line displays
+    </p>
+    <p class="keyhelp">
+        <span class="key">j</span>
+        <span class="key">k</span> &nbsp; next/prev highlighted chunk
+    </p>
+    <p class="keyhelp">
+        <span class="key">0</span> &nbsp; (zero) top of page
+    </p>
+    <p class="keyhelp">
+        <span class="key">1</span> &nbsp; (one) first highlighted chunk
+    </p>
+    </div>
+</div>
+<div id="source">
+    <p id="t1" class="run"><span class="n"><a href="#t1">1</a></span><span class="t"><span class="key">try</span><span class="op">:</span>  <span class="com"># python 3+</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t2" class="run"><span class="n"><a href="#t2">2</a></span><span class="t">    <span class="key">from</span> <span class="nam">urllib</span><span class="op">.</span><span class="nam">parse</span> <span class="key">import</span> <span class="nam">urlparse</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t3" class="exc show_exc"><span class="n"><a href="#t3">3</a></span><span class="t"><span class="key">except</span> <span class="nam">ImportError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t4" class="exc show_exc"><span class="n"><a href="#t4">4</a></span><span class="t">    <span class="key">from</span> <span class="nam">urlparse</span> <span class="key">import</span> <span class="nam">urlparse</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t5" class="pln"><span class="n"><a href="#t5">5</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t6" class="run"><span class="n"><a href="#t6">6</a></span><span class="t"><span class="key">from</span> <span class="nam">requests</span> <span class="key">import</span> <span class="nam">Session</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t7" class="run"><span class="n"><a href="#t7">7</a></span><span class="t"><span class="key">from</span> <span class="nam">valid8</span> <span class="key">import</span> <span class="nam">validate</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t8" class="pln"><span class="n"><a href="#t8">8</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t9" class="pln"><span class="n"><a href="#t9">9</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t10" class="run"><span class="n"><a href="#t10">10</a></span><span class="t"><span class="key">def</span> <span class="nam">parse_proxy_info</span><span class="op">(</span><span class="nam">proxy_url</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t11" class="pln"><span class="n"><a href="#t11">11</a></span><span class="t">                     <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t12" class="pln"><span class="n"><a href="#t12">12</a></span><span class="t">    <span class="str">"""</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t13" class="pln"><span class="n"><a href="#t13">13</a></span><span class="t"><span class="str">    Parses a proxy url</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t14" class="pln"><span class="n"><a href="#t14">14</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t15" class="pln"><span class="n"><a href="#t15">15</a></span><span class="t"><span class="str">    :param proxy_url:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t16" class="pln"><span class="n"><a href="#t16">16</a></span><span class="t"><span class="str">    :return:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t17" class="pln"><span class="n"><a href="#t17">17</a></span><span class="t"><span class="str">    """</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t18" class="mis show_mis"><span class="n"><a href="#t18">18</a></span><span class="t">    <span class="nam">o</span> <span class="op">=</span> <span class="nam">urlparse</span><span class="op">(</span><span class="nam">proxy_url</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t19" class="pln"><span class="n"><a href="#t19">19</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t20" class="mis show_mis"><span class="n"><a href="#t20">20</a></span><span class="t">    <span class="nam">validate</span><span class="op">(</span><span class="str">'hostname'</span><span class="op">,</span> <span class="nam">o</span><span class="op">.</span><span class="nam">hostname</span><span class="op">,</span> <span class="nam">min_len</span><span class="op">=</span><span class="num">1</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t21" class="mis show_mis"><span class="n"><a href="#t21">21</a></span><span class="t">    <span class="nam">validate</span><span class="op">(</span><span class="str">'port'</span><span class="op">,</span> <span class="nam">o</span><span class="op">.</span><span class="nam">port</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t22" class="mis show_mis"><span class="n"><a href="#t22">22</a></span><span class="t">    <span class="nam">validate</span><span class="op">(</span><span class="str">'scheme'</span><span class="op">,</span> <span class="nam">o</span><span class="op">.</span><span class="nam">scheme</span><span class="op">,</span> <span class="nam">is_in</span><span class="op">=</span><span class="op">{</span><span class="str">'http'</span><span class="op">,</span> <span class="str">'https'</span><span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t23" class="pln"><span class="n"><a href="#t23">23</a></span><span class="t">             <span class="nam">help_msg</span><span class="op">=</span><span class="str">"Only http and https protocols are supported for http(s) proxies. "</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t24" class="pln"><span class="n"><a href="#t24">24</a></span><span class="t">                      <span class="str">"Found: '{var_value}' from '%s'"</span> <span class="op">%</span> <span class="nam">proxy_url</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t25" class="pln"><span class="n"><a href="#t25">25</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t26" class="mis show_mis"><span class="n"><a href="#t26">26</a></span><span class="t">    <span class="key">return</span> <span class="nam">o</span><span class="op">.</span><span class="nam">hostname</span><span class="op">,</span> <span class="nam">o</span><span class="op">.</span><span class="nam">port</span><span class="op">,</span> <span class="nam">o</span><span class="op">.</span><span class="nam">scheme</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t27" class="pln"><span class="n"><a href="#t27">27</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t28" class="pln"><span class="n"><a href="#t28">28</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t29" class="run"><span class="n"><a href="#t29">29</a></span><span class="t"><span class="key">def</span> <span class="nam">set_http_proxy</span><span class="op">(</span><span class="nam">session</span><span class="op">,</span>                                  <span class="com"># type: Session</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t30" class="pln"><span class="n"><a href="#t30">30</a></span><span class="t">                   <span class="nam">http_scheme</span><span class="op">=</span><span class="str">'http'</span><span class="op">,</span>                       <span class="com"># type: str</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t31" class="pln"><span class="n"><a href="#t31">31</a></span><span class="t">                   <span class="nam">http_host</span><span class="op">=</span><span class="key">None</span><span class="op">,</span>                           <span class="com"># type: str</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t32" class="pln"><span class="n"><a href="#t32">32</a></span><span class="t">                   <span class="nam">http_port</span><span class="op">=</span><span class="num">80</span><span class="op">,</span>                             <span class="com"># type: int</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t33" class="pln"><span class="n"><a href="#t33">33</a></span><span class="t">                   <span class="nam">http_url</span><span class="op">=</span><span class="key">None</span><span class="op">,</span>                            <span class="com"># type: str</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t34" class="pln"><span class="n"><a href="#t34">34</a></span><span class="t">                   <span class="nam">use_http_proxy_for_https_requests</span><span class="op">=</span><span class="key">False</span><span class="op">,</span>  <span class="com"># type: bool</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t35" class="pln"><span class="n"><a href="#t35">35</a></span><span class="t">                   <span class="nam">https_scheme</span><span class="op">=</span><span class="str">'https'</span><span class="op">,</span>                     <span class="com"># type: str</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t36" class="pln"><span class="n"><a href="#t36">36</a></span><span class="t">                   <span class="nam">https_host</span><span class="op">=</span><span class="key">None</span><span class="op">,</span>                          <span class="com"># type: str</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t37" class="pln"><span class="n"><a href="#t37">37</a></span><span class="t">                   <span class="nam">https_port</span><span class="op">=</span><span class="num">443</span><span class="op">,</span>                           <span class="com"># type: int</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t38" class="pln"><span class="n"><a href="#t38">38</a></span><span class="t">                   <span class="nam">https_url</span><span class="op">=</span><span class="key">None</span><span class="op">,</span>                           <span class="com"># type: str</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t39" class="pln"><span class="n"><a href="#t39">39</a></span><span class="t">                   <span class="nam">replace</span><span class="op">=</span><span class="key">False</span>                             <span class="com"># type: bool</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t40" class="pln"><span class="n"><a href="#t40">40</a></span><span class="t">                   <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t41" class="pln"><span class="n"><a href="#t41">41</a></span><span class="t">    <span class="str">"""Update or replace session.proxies with the provided proxy information.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t42" class="pln"><span class="n"><a href="#t42">42</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t43" class="pln"><span class="n"><a href="#t43">43</a></span><span class="t"><span class="str">    This method updates or replaces (depending on the value of `replace`) the dictionary in `session.proxies` with the</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t44" class="pln"><span class="n"><a href="#t44">44</a></span><span class="t"><span class="str">    provided information. For each kind of connection (http and https), there are two ways to pass the information:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t45" class="pln"><span class="n"><a href="#t45">45</a></span><span class="t"><span class="str">    either as an url string (`http_url`, `https_url`), or split in schema/host/port, with sensible defaults.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t46" class="pln"><span class="n"><a href="#t46">46</a></span><span class="t"><span class="str">    In addition if the exact same proxy information is to be used for http and https, you can pass only the http</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t47" class="pln"><span class="n"><a href="#t47">47</a></span><span class="t"><span class="str">    one and set `use_http_proxy_for_https_requests` to True.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t48" class="pln"><span class="n"><a href="#t48">48</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t49" class="pln"><span class="n"><a href="#t49">49</a></span><span class="t"><span class="str">    See the requests proxies documentation for details: https://requests.readthedocs.io/en/master/user/advanced/#proxies</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t50" class="pln"><span class="n"><a href="#t50">50</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t51" class="pln"><span class="n"><a href="#t51">51</a></span><span class="t"><span class="str">    Note: this was proposed as a PR in requests: https://github.com/psf/requests/pull/5670</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t52" class="pln"><span class="n"><a href="#t52">52</a></span><span class="t"><span class="str">    but because of the feature freeze it was then transformed into a simple doc update.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t53" class="pln"><span class="n"><a href="#t53">53</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t54" class="pln"><span class="n"><a href="#t54">54</a></span><span class="t"><span class="str">    :param http_host: (optional) a string indicating the http proxy host, for example '10.10.1.10' or 'acme.com'.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t55" class="pln"><span class="n"><a href="#t55">55</a></span><span class="t"><span class="str">    :param http_port: (optional) an int indicating the http proxy port, for example `3128`.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t56" class="pln"><span class="n"><a href="#t56">56</a></span><span class="t"><span class="str">    :param http_scheme: (optional) a string indicating the scheme to use for http proxy. By default this is 'http'</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t57" class="pln"><span class="n"><a href="#t57">57</a></span><span class="t"><span class="str">        but you can consider using 'socks5', 'socks5h'. See documentation for details.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t58" class="pln"><span class="n"><a href="#t58">58</a></span><span class="t"><span class="str">    :param http_url: (optional) a string indicating the full http proxy url. For example 'http://10.10.1.10:3128'</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t59" class="pln"><span class="n"><a href="#t59">59</a></span><span class="t"><span class="str">        or 'http://user:pass@10.10.1.10:3128/' or 'socks5://user:pass@host:port'.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t60" class="pln"><span class="n"><a href="#t60">60</a></span><span class="t"><span class="str">        Only one of {http_scheme + http_host + http_port} or {http_url} should be provided.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t61" class="pln"><span class="n"><a href="#t61">61</a></span><span class="t"><span class="str">    :param use_http_proxy_for_https_requests: (optional) a boolean indicating whether the information provided for</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t62" class="pln"><span class="n"><a href="#t62">62</a></span><span class="t"><span class="str">        the http proxy should be copied for the https proxy. Note that the full url will be copied including the</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t63" class="pln"><span class="n"><a href="#t63">63</a></span><span class="t"><span class="str">        scheme (so by default 'http').</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t64" class="pln"><span class="n"><a href="#t64">64</a></span><span class="t"><span class="str">    :param https_host: (optional) a string indicating the https proxy host, for example '10.10.1.10' or 'acme.com'.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t65" class="pln"><span class="n"><a href="#t65">65</a></span><span class="t"><span class="str">    :param https_port: (optional) an int indicating the https proxy port, for example `3128`.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t66" class="pln"><span class="n"><a href="#t66">66</a></span><span class="t"><span class="str">    :param https_scheme: (optional) a string indicating the scheme to use for https proxy. By default this is</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t67" class="pln"><span class="n"><a href="#t67">67</a></span><span class="t"><span class="str">        'https' but you can consider using 'socks5', 'socks5h'. See documentation for details.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t68" class="pln"><span class="n"><a href="#t68">68</a></span><span class="t"><span class="str">    :param https_url: (optional) a string indicating the full https proxy url. For example 'https://10.10.1.10:3128'</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t69" class="pln"><span class="n"><a href="#t69">69</a></span><span class="t"><span class="str">        or 'http://user:pass@10.10.1.10:3128/' or 'socks5://user:pass@host:port'.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t70" class="pln"><span class="n"><a href="#t70">70</a></span><span class="t"><span class="str">        Only one of {https_scheme + https_host + https_port} or {https_url} should be provided.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t71" class="pln"><span class="n"><a href="#t71">71</a></span><span class="t"><span class="str">    :param replace: (optional) a boolean indicating if the provided information should replace the existing one</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t72" class="pln"><span class="n"><a href="#t72">72</a></span><span class="t"><span class="str">        (True) or just update it (False, default).</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t73" class="pln"><span class="n"><a href="#t73">73</a></span><span class="t"><span class="str">    :return:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t74" class="pln"><span class="n"><a href="#t74">74</a></span><span class="t"><span class="str">    """</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t75" class="run"><span class="n"><a href="#t75">75</a></span><span class="t">    <span class="nam">proxies</span> <span class="op">=</span> <span class="nam">dict</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t76" class="pln"><span class="n"><a href="#t76">76</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t77" class="pln"><span class="n"><a href="#t77">77</a></span><span class="t">    <span class="com"># HTTPS</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t78" class="par run show_par"><span class="n"><a href="#t78">78</a></span><span class="t">    <span class="key">if</span> <span class="nam">http_host</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">78&#x202F;&#x219B;&#x202F;80</span><span class="annotate long">line 78 didn't jump to line 80, because the condition on line 78 was never true</span></span></p>
+    <p id="t79" class="pln"><span class="n"><a href="#t79">79</a></span><span class="t">        <span class="com"># (a) scheme + host + port</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t80" class="mis show_mis"><span class="n"><a href="#t80">80</a></span><span class="t">        <span class="key">if</span> <span class="nam">http_url</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t81" class="mis show_mis"><span class="n"><a href="#t81">81</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"Only one of `http_host` and `http_url` should be provided"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t82" class="mis show_mis"><span class="n"><a href="#t82">82</a></span><span class="t">        <span class="nam">proxies</span><span class="op">[</span><span class="str">'http'</span><span class="op">]</span> <span class="op">=</span> <span class="str">"%s://%s:%s"</span> <span class="op">%</span> <span class="op">(</span><span class="nam">http_scheme</span><span class="op">,</span> <span class="nam">http_host</span><span class="op">,</span> <span class="nam">http_port</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t83" class="par run show_par"><span class="n"><a href="#t83">83</a></span><span class="t">    <span class="key">elif</span> <span class="nam">http_url</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">83&#x202F;&#x219B;&#x202F;85</span><span class="annotate long">line 83 didn't jump to line 85, because the condition on line 83 was never true</span></span></p>
+    <p id="t84" class="pln"><span class="n"><a href="#t84">84</a></span><span class="t">        <span class="com"># (b) full url</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t85" class="mis show_mis"><span class="n"><a href="#t85">85</a></span><span class="t">        <span class="nam">parse_proxy_info</span><span class="op">(</span><span class="nam">http_url</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t86" class="mis show_mis"><span class="n"><a href="#t86">86</a></span><span class="t">        <span class="nam">proxies</span><span class="op">[</span><span class="str">'http'</span><span class="op">]</span> <span class="op">=</span> <span class="nam">http_url</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t87" class="par run show_par"><span class="n"><a href="#t87">87</a></span><span class="t">    <span class="key">elif</span> <span class="nam">http_port</span> <span class="op">!=</span> <span class="num">80</span> <span class="key">or</span> <span class="nam">http_scheme</span> <span class="op">!=</span> <span class="str">'http'</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">87&#x202F;&#x219B;&#x202F;88</span><span class="annotate long">line 87 didn't jump to line 88, because the condition on line 87 was never true</span></span></p>
+    <p id="t88" class="mis show_mis"><span class="n"><a href="#t88">88</a></span><span class="t">        <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"An `http_host` should be provided if you wish to change `http_port` or `http_scheme`"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t89" class="pln"><span class="n"><a href="#t89">89</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t90" class="pln"><span class="n"><a href="#t90">90</a></span><span class="t">    <span class="com"># HTTPS</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t91" class="par run show_par"><span class="n"><a href="#t91">91</a></span><span class="t">    <span class="key">if</span> <span class="nam">use_http_proxy_for_https_requests</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">91&#x202F;&#x219B;&#x202F;93</span><span class="annotate long">line 91 didn't jump to line 93, because the condition on line 91 was never true</span></span></p>
+    <p id="t92" class="pln"><span class="n"><a href="#t92">92</a></span><span class="t">        <span class="com"># (a) copy the information from http</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t93" class="mis show_mis"><span class="n"><a href="#t93">93</a></span><span class="t">        <span class="key">if</span> <span class="nam">https_host</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span> <span class="key">or</span> <span class="nam">https_url</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span> <span class="key">or</span> <span class="nam">https_port</span> <span class="op">!=</span> <span class="num">443</span> <span class="key">or</span> <span class="nam">https_scheme</span> <span class="op">!=</span> <span class="str">"https"</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t94" class="mis show_mis"><span class="n"><a href="#t94">94</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"`use_http_proxy_for_https_requests` was set to `True` but custom information for "</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t95" class="pln"><span class="n"><a href="#t95">95</a></span><span class="t">                             <span class="str">"https was provided."</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t96" class="mis show_mis"><span class="n"><a href="#t96">96</a></span><span class="t">        <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t97" class="mis show_mis"><span class="n"><a href="#t97">97</a></span><span class="t">            <span class="nam">proxies</span><span class="op">[</span><span class="str">'https'</span><span class="op">]</span> <span class="op">=</span> <span class="nam">proxies</span><span class="op">[</span><span class="str">'http'</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t98" class="mis show_mis"><span class="n"><a href="#t98">98</a></span><span class="t">        <span class="key">except</span> <span class="nam">KeyError</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t99" class="mis show_mis"><span class="n"><a href="#t99">99</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"`use_http_proxy_for_https_requests` was set to `True` but no information was "</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t100" class="pln"><span class="n"><a href="#t100">100</a></span><span class="t">                             <span class="str">"provided for the http proxy"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t101" class="par run show_par"><span class="n"><a href="#t101">101</a></span><span class="t">    <span class="key">elif</span> <span class="nam">https_host</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">101&#x202F;&#x219B;&#x202F;103</span><span class="annotate long">line 101 didn't jump to line 103, because the condition on line 101 was never true</span></span></p>
+    <p id="t102" class="pln"><span class="n"><a href="#t102">102</a></span><span class="t">        <span class="com"># (b) scheme + host + port</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t103" class="mis show_mis"><span class="n"><a href="#t103">103</a></span><span class="t">        <span class="key">if</span> <span class="nam">https_url</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t104" class="mis show_mis"><span class="n"><a href="#t104">104</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"Only one of `https_host` and `https_url` should be provided"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t105" class="mis show_mis"><span class="n"><a href="#t105">105</a></span><span class="t">        <span class="nam">proxies</span><span class="op">[</span><span class="str">'https'</span><span class="op">]</span> <span class="op">=</span> <span class="str">'%s://%s:%s'</span> <span class="op">%</span> <span class="op">(</span><span class="nam">https_scheme</span><span class="op">,</span> <span class="nam">https_host</span><span class="op">,</span> <span class="nam">https_port</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t106" class="par run show_par"><span class="n"><a href="#t106">106</a></span><span class="t">    <span class="key">elif</span> <span class="nam">https_url</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">106&#x202F;&#x219B;&#x202F;108</span><span class="annotate long">line 106 didn't jump to line 108, because the condition on line 106 was never true</span></span></p>
+    <p id="t107" class="pln"><span class="n"><a href="#t107">107</a></span><span class="t">        <span class="com"># (c) full url</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t108" class="mis show_mis"><span class="n"><a href="#t108">108</a></span><span class="t">        <span class="nam">proxies</span><span class="op">[</span><span class="str">'https'</span><span class="op">]</span> <span class="op">=</span> <span class="nam">https_url</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t109" class="par run show_par"><span class="n"><a href="#t109">109</a></span><span class="t">    <span class="key">elif</span> <span class="nam">https_port</span> <span class="op">!=</span> <span class="num">443</span> <span class="key">or</span> <span class="nam">https_scheme</span> <span class="op">!=</span> <span class="str">'https'</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">109&#x202F;&#x219B;&#x202F;110</span><span class="annotate long">line 109 didn't jump to line 110, because the condition on line 109 was never true</span></span></p>
+    <p id="t110" class="mis show_mis"><span class="n"><a href="#t110">110</a></span><span class="t">        <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"An `https_host` should be provided if you wish to change `https_port` or `https_scheme`"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t111" class="pln"><span class="n"><a href="#t111">111</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t112" class="pln"><span class="n"><a href="#t112">112</a></span><span class="t">    <span class="com"># Replace or update (default) the configuration</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t113" class="par run show_par"><span class="n"><a href="#t113">113</a></span><span class="t">    <span class="key">if</span> <span class="nam">len</span><span class="op">(</span><span class="nam">proxies</span><span class="op">)</span> <span class="op">></span> <span class="num">0</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">113&#x202F;&#x219B;&#x202F;114</span><span class="annotate long">line 113 didn't jump to line 114, because the condition on line 113 was never true</span></span></p>
+    <p id="t114" class="mis show_mis"><span class="n"><a href="#t114">114</a></span><span class="t">        <span class="key">if</span> <span class="nam">replace</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t115" class="mis show_mis"><span class="n"><a href="#t115">115</a></span><span class="t">            <span class="nam">session</span><span class="op">.</span><span class="nam">proxies</span> <span class="op">=</span> <span class="nam">proxies</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t116" class="pln"><span class="n"><a href="#t116">116</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t117" class="mis show_mis"><span class="n"><a href="#t117">117</a></span><span class="t">            <span class="nam">session</span><span class="op">.</span><span class="nam">proxies</span><span class="op">.</span><span class="nam">update</span><span class="op">(</span><span class="nam">proxies</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t118" class="pln"><span class="n"><a href="#t118">118</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t119" class="pln"><span class="n"><a href="#t119">119</a></span><span class="t">        <span class="com"># IMPORTANT : otherwise the environment variables will always have precedence over user-provided settings</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t120" class="mis show_mis"><span class="n"><a href="#t120">120</a></span><span class="t">        <span class="nam">session</span><span class="op">.</span><span class="nam">trust_env</span> <span class="op">=</span> <span class="key">False</span>&nbsp;</span><span class="r"></span></p>
+</div>
+<div id="footer">
+    <div class="content">
+        <p>
+            <a class="nav" href="index.html">&#xab; index</a> &nbsp; &nbsp; <a class="nav" href="https://coverage.readthedocs.io">coverage.py v5.5</a>,
+            created at 2021-04-12 17:36 +0000
+        </p>
+    </div>
+</div>
+</body>
+</html>
