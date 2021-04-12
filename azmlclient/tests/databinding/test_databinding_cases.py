@@ -5,7 +5,8 @@ try:
     from functools import lru_cache
 except ImportError:
     from functools32 import lru_cache
-from pytest_cases import cases_generator
+
+from pytest_cases import parametrize
 
 from azmlclient.base_databinding import convert_all_datetime_columns, localize_all_datetime_columns
 
@@ -60,7 +61,7 @@ TEST_DATA_DIR = os.path.join(THIS_DIR, 'test_data')
 CASE_NAMES = os.listdir(TEST_DATA_DIR)
 
 
-@cases_generator("{case_name}", case_name=CASE_NAMES)
+@parametrize(case_name=CASE_NAMES)
 def case_from_folders(case_name):
     """
     Generates all cases from the file system

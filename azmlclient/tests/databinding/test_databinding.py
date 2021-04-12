@@ -2,18 +2,17 @@ import json
 
 import pytest
 from pandas.util.testing import assert_frame_equal
-from pytest_cases import cases_data, pytest_fixture_plus
+from pytest_cases import parametrize_with_cases, fixture
 
-from azmlclient.tests.databinding import test_databinding_cases
 from azmlclient.tests.databinding.test_databinding_cases import DataBindingTestCase
 from azmlclient.base_databinding import df_to_azmltable, azmltable_to_df, azmltable_to_json, json_to_azmltable, \
     df_to_csv, csv_to_df
 
 
-@pytest_fixture_plus
-@cases_data(module=test_databinding_cases)
-def case(case_data):
-    return case_data.get()
+@fixture
+@parametrize_with_cases("c")
+def case(c):
+    return c
 
 
 @pytest.mark.parametrize("swagger_mode_on", [False, True], ids="swagger_mode_on={}".format)
