@@ -55,6 +55,8 @@ def client_cfg(request):
 def client_impl(client_cfg):
     # type: (...) -> DummyProvider
     client = DummyClient(client_config=client_cfg, with_plots=False)
+    # do not use the local env variable proxy
+    client.session.trust_env = False
     return client
 
 
