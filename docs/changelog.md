@@ -1,8 +1,14 @@
 # Changelog
 
-### 2.5.1 - Technical release
+### 2.6.0 - Better control of `Session`
 
-Technical release: migration to Github Actions.
+ - A single `Session` object is now managed by the `AzmlClient` instance. This object is created by default, and possibly configured with the information from the `ClientConfig`. It is automatically closed when the client instance is garbaged out. A custom `Session` can be passed instead of the automatically-created one. In that case it is not automatically configured from the `ClientConfig`, but it is easy to do so using `<config>.configure_session(session)`. Fixes [#15](https://github.com/smarie/python-azureml-client/issues/15) and [#16](https://github.com/smarie/python-azureml-client/issues/16).
+
+ - `create_session_for_proxy_from_strings` is deleted and `create_session_for_proxy` is deprecated. Users should now use `set_http_proxy(session, ...)` as the preferred way to configure a new `requests.Session()` object.
+
+ - Fixed a bug (`Series` has no `items()` attribute) on some versions of pandas.
+
+ - Migration to Github Actions.
 
 ### 2.5.0 - New `replace_NaN_with` and `replace_NaT_with` options
 
