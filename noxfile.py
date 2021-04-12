@@ -17,9 +17,10 @@ gh_org = "smarie"
 gh_repo = "python-azureml-client"
 
 ENVS = {
-    PY38: {"coverage": False, "pkg_specs": {"pip": ">19"}},
+    # TODO to make this work, autoclass should support 3.8 (or use pyfields)
+    # PY38: {"coverage": False, "pkg_specs": {"pip": ">19"}},
     PY27: {"coverage": False, "pkg_specs": {"pip": ">10", "more-itertools": "<6", "cherrypy": "<18"}},
-    PY35: {"coverage": False, "pkg_specs": {"pip": ">10"}},
+    PY35: {"coverage": False, "pkg_specs": {"pip": ">10", "pandas": "==0.18"}},
     PY36: {"coverage": False, "pkg_specs": {"pip": ">19"}},
     # IMPORTANT: this should be last so that the folder docs/reports is not deleted afterwards
     PY37: {"coverage": True, "pkg_specs": {"pip": ">19"}},  # , "pytest-html": "1.9.0"
