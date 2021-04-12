@@ -524,7 +524,7 @@ def convert_all_datetime_columns(df):
     :param df:
     :return:
     """
-    objColumns = [colName for colName, colType in df.dtypes.items() if colType == np.dtype('O')]
+    objColumns = [colName for colName, colType in df.dtypes.iteritems() if colType == np.dtype('O')]  # noqa
     for obj_col_name in objColumns:
         try:
             df[obj_col_name] = pandas.to_datetime(df[obj_col_name])
@@ -539,7 +539,7 @@ def localize_all_datetime_columns(df):
     :param df:
     :return:
     """
-    datetime_cols = [colName for colName, colType in df.dtypes.items() if is_datetime_dtype(colType)]
+    datetime_cols = [colName for colName, colType in df.dtypes.iteritems() if is_datetime_dtype(colType)]  # noqa
     for datetime_col in datetime_cols:
         # time is in ISO format, so the time column after import is UTC. We just have to declare it
         try:
