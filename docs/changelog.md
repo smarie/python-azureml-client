@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.5.1 - Technical release
+
+Technical release: migration to Github Actions.
+
 ### 2.5.0 - New `replace_NaN_with` and `replace_NaT_with` options
 
  - New `replace_NaN_with` and `replace_NaT_with` options to control how `NaN` and `NaT` get converted. Fixes [#11](https://github.com/smarie/python-azureml-client/issues/11)
