@@ -1,3 +1,7 @@
+# Authors: Sylvain MARIE <sylvain.marie@se.com>
+#          + All contributors to <https://github.com/smarie/python-azureml-client>
+#
+# License: 3-clause BSD, <https://github.com/smarie/python-azureml-client/blob/master/LICENSE>
 from __future__ import print_function
 import csv
 import json

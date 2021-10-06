@@ -1,3 +1,7 @@
+# Authors: Sylvain MARIE <sylvain.marie@se.com>
+#          + All contributors to <https://github.com/smarie/python-azureml-client>
+#
+# License: 3-clause BSD, <https://github.com/smarie/python-azureml-client/blob/master/LICENSE>
 try:  # python 3+
     from urllib.parse import urlparse
 except ImportError:

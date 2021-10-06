@@ -1,3 +1,7 @@
+# Authors: Sylvain MARIE <sylvain.marie@se.com>
+#          + All contributors to <https://github.com/smarie/python-azureml-client>
+#
+# License: 3-clause BSD, <https://github.com/smarie/python-azureml-client/blob/master/LICENSE>
 import sys
 from contextlib import contextmanager
 from inspect import getmembers, isroutine

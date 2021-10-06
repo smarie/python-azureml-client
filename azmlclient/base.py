@@ -1,3 +1,7 @@
+# Authors: Sylvain MARIE <sylvain.marie@se.com>
+#          + All contributors to <https://github.com/smarie/python-azureml-client>
+#
+# License: 3-clause BSD, <https://github.com/smarie/python-azureml-client/blob/master/LICENSE>
 import json
 import time
 
@@ -189,12 +193,14 @@ def execute_bes(api_key,                              # type: str
 
     # 1- Push inputs to blob storage and create output references
     print('Pushing inputs to blob storage')
-    input_refs, output_refs = batch_client.push_inputs_to_blob__and__create_output_references(inputs,
-                                                                                              output_names=output_names,
-                                                                                              blob_service=blob_service,
-                                                                                              blob_container=blob_container,
-                                                                                              blob_path_prefix=blob_path_prefix,
-                                                                                              charset=blob_charset)
+    input_refs, output_refs = batch_client.push_inputs_to_blob__and__create_output_references(
+        inputs,
+        output_names=output_names,
+        blob_service=blob_service,
+        blob_container=blob_container,
+        blob_path_prefix=blob_path_prefix,
+        charset=blob_charset
+    )
 
     # 2- Create the query body
     request_body = batch_client.create_request_body(input_refs, params, output_refs)
@@ -330,7 +336,7 @@ class BaseHttpClient(object):
             response = self.session.request(method, url, headers=headers, data=body or None)
 
             # Parse the response
-            http_status = int(response.status_code)
+            # http_status = int(response.status_code)
 
             # Possibly raise associated exceptions
             response.raise_for_status()
@@ -509,7 +515,7 @@ class BatchClient(BaseHttpClient):
                  ):
         # check that the `azure-storage` package is installed
         try:
-            from azure.storage.blob import BlockBlobService
+            from azure.storage.blob import BlockBlobService  # noqa
         except ImportError as e:
             raise_from(ValueError("Please install `azure-storage==0.33` to use BATCH mode"), e)
 
@@ -517,7 +523,7 @@ class BatchClient(BaseHttpClient):
 
     def push_inputs_to_blob__and__create_output_references(self,
                                                            inputs_df_dict,         # type: Dict[str, pd.DataFrame]
-                                                           blob_service,           # type: BlockBlobService
+                                                           blob_service,           # type: BlockBlobService  # noqa
                                                            blob_container,         # type: str
                                                            blob_path_prefix=None,  # type: str
                                                            charset=None,           # type: str
@@ -552,17 +558,14 @@ class BatchClient(BaseHttpClient):
         unique_blob_name_prefix = now.strftime("%Y-%m-%d_%H%M%S_%f")
 
         # 2- store INPUTS and retrieve references
-        input_refs = dfs_to_blob_refs(inputs_df_dict, blob_service=blob_service,
-                                                           blob_container=blob_container,
-                                                           blob_path_prefix=blob_path_prefix,
-                                                           blob_name_prefix=unique_blob_name_prefix + '-input-',
-                                                           charset=charset)
+        input_refs = dfs_to_blob_refs(inputs_df_dict, blob_service=blob_service, blob_container=blob_container,
+                                      blob_path_prefix=blob_path_prefix,
+                                      blob_name_prefix=unique_blob_name_prefix + '-input-', charset=charset)
 
         # 3- create OUTPUT references
         output_refs = create_blob_refs(blob_names=output_names, blob_service=blob_service,
-                                                            blob_container=blob_container,
-                                                            blob_path_prefix=blob_path_prefix,
-                                                            blob_name_prefix=unique_blob_name_prefix + '-output-')
+                                       blob_container=blob_container, blob_path_prefix=blob_path_prefix,
+                                       blob_name_prefix=unique_blob_name_prefix + '-output-')
 
         return input_refs, output_refs
 
@@ -573,11 +576,14 @@ class BatchClient(BaseHttpClient):
                             ):
         # type: (...) -> str
         """
-        Helper method to create a JSON AzureML web service input in Batch mode, from 'by reference' inputs, and parameters as DataFrame
+        Helper method to create a JSON AzureML web service input in Batch mode, from 'by reference' inputs, and
+        parameters as DataFrame
 
-        :param input_refs: a dictionary containing input names and input references (each input reference is a dictionary)
+        :param input_refs: a dictionary containing input names and input references (each input reference is a
+            dictionary)
         :param params_df_or_dict: a dictionary of parameter names and values
-        :param output_refs: a dictionary containing output names and output references (each output reference is a dictionary)
+        :param output_refs: a dictionary containing output names and output references (each output reference is a
+            dictionary)
         :return: a string representation of the request JSON body (not yet encoded in bytes)
         """
 
