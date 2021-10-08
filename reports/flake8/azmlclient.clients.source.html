@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>azmlclient/clients.py - flake8 annotated source</title>
+      <meta http-equiv="Content-Type" value="text/html; charset=UTF-8">
+      <link rel="stylesheet" href="styles.css">
+   </head>
+   <body>
+      <div id="masthead" class="sev-1"></div>
+      <div id="page">
+         <h1>
+            <a href="azmlclient.clients.report.html">
+               <img src="back.svg" alt="&#x2B05;">
+               azmlclient/clients.py source
+            </a>
+         </h1>
+
+         <div id="doc">
+            <div id="l1"
+               class="code sev- "><tt><i>1</i> <span class="c1"># Authors: Sylvain MARIE &lt;sylvain.marie@se.com&gt;</span></tt>
+            </div>
+            <div id="l2"
+               class="code sev- "><tt><i>2</i> <span class="c1">#          + All contributors to &lt;https://github.com/smarie/python-azureml-client&gt;</span></tt>
+            </div>
+            <div id="l3"
+               class="code sev- "><tt><i>3</i> <span class="c1">#</span></tt>
+            </div>
+            <div id="l4"
+               class="code sev- "><tt><i>4</i> <span class="c1"># License: 3-clause BSD, &lt;https://github.com/smarie/python-azureml-client/blob/master/LICENSE&gt;</span></tt>
+            </div>
+            <div id="l5"
+               class="code sev- "><tt><i>5</i> <span class="kn">import</span> <span class="nn">sys</span></tt>
+            </div>
+            <div id="l6"
+               class="code sev- "><tt><i>6</i> <span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span></tt>
+            </div>
+            <div id="l7"
+               class="code sev- "><tt><i>7</i> <span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">getmembers</span><span class="p">,</span> <span class="n">isroutine</span></tt>
+            </div>
+            <div id="l8"
+               class="code sev- "><tt><i>8</i> <span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">getLogger</span><span class="p">,</span> <span class="n">StreamHandler</span><span class="p">,</span> <span class="n">INFO</span></tt>
+            </div>
+            <div id="l9"
+               class="code sev- "><tt><i>9</i> <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span></tt>
+            </div>
+            <div id="l10"
+               class="code sev- "><tt><i>10</i> &nbsp;</tt>
+            </div>
+            <div id="l11"
+               class="code sev- "><tt><i>11</i> <span class="k">try</span><span class="p">:</span>  <span class="c1"># python 3+</span></tt>
+            </div>
+            <div id="l12"
+               class="code sev- "><tt><i>12</i>     <span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span></tt>
+            </div>
+            <div id="l13"
+               class="code sev- "><tt><i>13</i> <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span></tt>
+            </div>
+            <div id="l14"
+               class="code sev-1  le">
+               <ul class="violations">
+               
+                  <li>
+                     <span class="count sev-1">
+                        F401
+                     </span>
+                     'ConfigParser.ConfigParser' imported but unused</li>
+               
+               </ul><tt><i>14</i>     <span class="kn">from</span> <span class="nn">ConfigParser</span> <span class="kn">import</span> <span class="n">ConfigParser</span></tt>
+            </div>
+            <div id="l15"
+               class="code sev- "><tt><i>15</i> &nbsp;</tt>
+            </div>
+            <div id="l16"
+               class="code sev- "><tt><i>16</i> <span class="k">try</span><span class="p">:</span>  <span class="c1"># python 3.5+</span></tt>
+            </div>
+            <div id="l17"
+               class="code sev- "><tt><i>17</i>     <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span></tt>
+            </div>
+            <div id="l18"
+               class="code sev- "><tt><i>18</i>     <span class="kn">from</span> <span class="nn">logging</span> <span class="kn">import</span> <span class="n">Logger</span></tt>
+            </div>
+            <div id="l19"
+               class="code sev- "><tt><i>19</i> <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span></tt>
+            </div>
+            <div id="l20"
+               class="code sev- "><tt><i>20</i>     <span class="k">pass</span></tt>
+            </div>
+            <div id="l21"
+               class="code sev- "><tt><i>21</i> &nbsp;</tt>
+            </div>
+            <div id="l22"
+               class="code sev- "><tt><i>22</i> <span class="kn">from</span> <span class="nn">decopatch</span> <span class="kn">import</span> <span class="n">function_decorator</span><span class="p">,</span> <span class="n">DECORATED</span></tt>
+            </div>
+            <div id="l23"
+               class="code sev- "><tt><i>23</i> <span class="kn">from</span> <span class="nn">makefun</span> <span class="kn">import</span> <span class="n">wraps</span></tt>
+            </div>
+            <div id="l24"
+               class="code sev- "><tt><i>24</i> <span class="kn">from</span> <span class="nn">requests</span> <span class="kn">import</span> <span class="n">Session</span></tt>
+            </div>
+            <div id="l25"
+               class="code sev- "><tt><i>25</i> &nbsp;</tt>
+            </div>
+            <div id="l26"
+               class="code sev- "><tt><i>26</i> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span></tt>
+            </div>
+            <div id="l27"
+               class="code sev- "><tt><i>27</i> &nbsp;</tt>
+            </div>
+            <div id="l28"
+               class="code sev- "><tt><i>28</i> <span class="kn">from</span> <span class="nn">azmlclient.clients_callmodes</span> <span class="kn">import</span> <span class="n">CallMode</span><span class="p">,</span> <span class="n">Batch</span><span class="p">,</span> <span class="n">RequestResponse</span><span class="p">,</span> <span class="n">LocalCallMode</span></tt>
+            </div>
+            <div id="l29"
+               class="code sev- "><tt><i>29</i> <span class="kn">from</span> <span class="nn">azmlclient.clients_config</span> <span class="kn">import</span> <span class="n">ClientConfig</span></tt>
+            </div>
+            <div id="l30"
+               class="code sev- "><tt><i>30</i> <span class="kn">from</span> <span class="nn">azmlclient.utils_requests</span> <span class="kn">import</span> <span class="n">debug_requests</span></tt>
+            </div>
+            <div id="l31"
+               class="code sev- "><tt><i>31</i> &nbsp;</tt>
+            </div>
+            <div id="l32"
+               class="code sev- "><tt><i>32</i> &nbsp;</tt>
+            </div>
+            <div id="l33"
+               class="code sev- "><tt><i>33</i> <span class="c1"># default logger that may be used by clients</span></tt>
+            </div>
+            <div id="l34"
+               class="code sev- "><tt><i>34</i> <span class="n">default_logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;azmlclient&#39;</span><span class="p">)</span></tt>
+            </div>
+            <div id="l35"
+               class="code sev- "><tt><i>35</i> <span class="n">ch</span> <span class="o">=</span> <span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span></tt>
+            </div>
+            <div id="l36"
+               class="code sev- "><tt><i>36</i> <span class="n">default_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span></tt>
+            </div>
+            <div id="l37"
+               class="code sev- "><tt><i>37</i> <span class="n">default_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span></tt>
+            </div>
+            <div id="l38"
+               class="code sev- "><tt><i>38</i> &nbsp;</tt>
+            </div>
+            <div id="l39"
+               class="code sev- "><tt><i>39</i> &nbsp;</tt>
+            </div>
+            <div id="l40"
+               class="code sev- "><tt><i>40</i> <span class="n">AZML_SERVICE_ID</span> <span class="o">=</span> <span class="s1">&#39;__azml_service__&#39;</span></tt>
+            </div>
+            <div id="l41"
+               class="code sev- "><tt><i>41</i> &nbsp;</tt>
+            </div>
+            <div id="l42"
+               class="code sev- "><tt><i>42</i> &nbsp;</tt>
+            </div>
+            <div id="l43"
+               class="code sev- "><tt><i>43</i> <span class="k">class</span> <span class="nc">LocalCallModeNotAllowed</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span></tt>
+            </div>
+            <div id="l44"
+               class="code sev- "><tt><i>44</i>     <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l45"
+               class="code sev- "><tt><i>45</i> <span class="sd">    Exception raised when users call a method corresponding to a</span></tt>
+            </div>
+            <div id="l46"
+               class="code sev- "><tt><i>46</i> <span class="sd">    &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l47"
+               class="code sev- "><tt><i>47</i>     <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;f&#39;</span><span class="p">,</span></tt>
+            </div>
+            <div id="l48"
+               class="code sev- "><tt><i>48</i> &nbsp;</tt>
+            </div>
+            <div id="l49"
+               class="code sev- "><tt><i>49</i>     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span></tt>
+            </div>
+            <div id="l50"
+               class="code sev- "><tt><i>50</i>         <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">f</span></tt>
+            </div>
+            <div id="l51"
+               class="code sev- "><tt><i>51</i>         <span class="nb">super</span><span class="p">(</span><span class="n">LocalCallModeNotAllowed</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span></tt>
+            </div>
+            <div id="l52"
+               class="code sev- "><tt><i>52</i> &nbsp;</tt>
+            </div>
+            <div id="l53"
+               class="code sev- "><tt><i>53</i>     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l54"
+               class="code sev- "><tt><i>54</i>         <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></tt>
+            </div>
+            <div id="l55"
+               class="code sev- "><tt><i>55</i> &nbsp;</tt>
+            </div>
+            <div id="l56"
+               class="code sev- "><tt><i>56</i>     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l57"
+               class="code sev- "><tt><i>57</i>         <span class="n">azml_service_name</span> <span class="o">=</span> <span class="n">get_azureml_service_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">)</span></tt>
+            </div>
+            <div id="l58"
+               class="code sev- "><tt><i>58</i>         <span class="k">return</span> <span class="s2">&quot;function &#39;</span><span class="si">%s</span><span class="s2">&#39; (service &#39;</span><span class="si">%s</span><span class="s2">&#39;) is remote-only and can not be executed in local mode &quot;</span> \</tt>
+            </div>
+            <div id="l59"
+               class="code sev- "><tt><i>59</i>                <span class="s2">&quot;(`allow_local=False`). Please change call mode to request-response or batch before using it.&quot;</span> \</tt>
+            </div>
+            <div id="l60"
+               class="code sev- "><tt><i>60</i>                <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">azml_service_name</span><span class="p">)</span></tt>
+            </div>
+            <div id="l61"
+               class="code sev- "><tt><i>61</i> &nbsp;</tt>
+            </div>
+            <div id="l62"
+               class="code sev- "><tt><i>62</i> &nbsp;</tt>
+            </div>
+            <div id="l63"
+               class="code sev- "><tt><i>63</i> <span class="nd">@function_decorator</span></tt>
+            </div>
+            <div id="l64"
+               class="code sev- "><tt><i>64</i> <span class="k">def</span> <span class="nf">azureml_service</span><span class="p">(</span><span class="n">service_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># type: str</span></tt>
+            </div>
+            <div id="l65"
+               class="code sev- "><tt><i>65</i>                     <span class="n">remote_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># type: bool</span></tt>
+            </div>
+            <div id="l66"
+               class="code sev- "><tt><i>66</i>                     <span class="n">f</span><span class="o">=</span><span class="n">DECORATED</span><span class="p">,</span></tt>
+            </div>
+            <div id="l67"
+               class="code sev- "><tt><i>67</i>                     <span class="p">):</span></tt>
+            </div>
+            <div id="l68"
+               class="code sev- "><tt><i>68</i>     <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l69"
+               class="code sev- "><tt><i>69</i> <span class="sd">    A decorator for methods in your `AzureMLClient` subclasses, that you should use to indicate that a given method</span></tt>
+            </div>
+            <div id="l70"
+               class="code sev- "><tt><i>70</i> <span class="sd">    corresponds to an AzureML service. That way, the `AzureMLClient` base class will be able to link this method</span></tt>
+            </div>
+            <div id="l71"
+               class="code sev- "><tt><i>71</i> <span class="sd">    with local implementation and with the service configuration (url, api key).</span></tt>
+            </div>
+            <div id="l72"
+               class="code sev- "><tt><i>72</i> &nbsp;</tt>
+            </div>
+            <div id="l73"
+               class="code sev- "><tt><i>73</i> <span class="sd">    This decorator performs two things:</span></tt>
+            </div>
+            <div id="l74"
+               class="code sev- "><tt><i>74</i> <span class="sd">     - It wraps the decorated method into a method able to route &quot;local&quot;-mode calls to `self.call_local_service`</span></tt>
+            </div>
+            <div id="l75"
+               class="code sev- "><tt><i>75</i> <span class="sd">     - It adds the `AZML_SERVICE_ID` attribute with the `service_name` so that the method is known as being</span></tt>
+            </div>
+            <div id="l76"
+               class="code sev- "><tt><i>76</i> <span class="sd">       AzureML-related, and therefore the appropriate service configuration can be looked up.</span></tt>
+            </div>
+            <div id="l77"
+               class="code sev- "><tt><i>77</i> &nbsp;</tt>
+            </div>
+            <div id="l78"
+               class="code sev- "><tt><i>78</i> <span class="sd">    :param service_name: the optional service name appearing in the `AzureMLClient` configuration (`ClientConfig`). By</span></tt>
+            </div>
+            <div id="l79"
+               class="code sev- "><tt><i>79</i> <span class="sd">        default this is `None` and means that the method name should be used as the service name.</span></tt>
+            </div>
+            <div id="l80"
+               class="code sev- "><tt><i>80</i> <span class="sd">    :param remote_only: a boolean (default False) indicating if a service should be considered remote-only. If True, an</span></tt>
+            </div>
+            <div id="l81"
+               class="code sev- "><tt><i>81</i> <span class="sd">        appropriate exception will be raised if the service is used in local mode.</span></tt>
+            </div>
+            <div id="l82"
+               class="code sev- "><tt><i>82</i> <span class="sd">    &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l83"
+               class="code sev- "><tt><i>83</i>     <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></tt>
+            </div>
+            <div id="l84"
+               class="code sev- "><tt><i>84</i>     <span class="k">def</span> <span class="nf">f_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="c1"># type: AzureMLClient</span></tt>
+            </div>
+            <div id="l85"
+               class="code sev- "><tt><i>85</i>                   <span class="o">*</span><span class="n">args</span><span class="p">,</span></tt>
+            </div>
+            <div id="l86"
+               class="code sev- "><tt><i>86</i>                   <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span></tt>
+            </div>
+            <div id="l87"
+               class="code sev- "><tt><i>87</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l88"
+               class="code sev- "><tt><i>88</i> &nbsp;</tt>
+            </div>
+            <div id="l89"
+               class="code sev- "><tt><i>89</i> <span class="sd">        :param self:</span></tt>
+            </div>
+            <div id="l90"
+               class="code sev- "><tt><i>90</i> <span class="sd">        :param args:</span></tt>
+            </div>
+            <div id="l91"
+               class="code sev- "><tt><i>91</i> <span class="sd">        :param kwargs:</span></tt>
+            </div>
+            <div id="l92"
+               class="code sev- "><tt><i>92</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l93"
+               class="code sev- "><tt><i>93</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l94"
+               class="code sev- "><tt><i>94</i>         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local_mode</span><span class="p">():</span></tt>
+            </div>
+            <div id="l95"
+               class="code sev- "><tt><i>95</i>             <span class="k">if</span> <span class="ow">not</span> <span class="n">remote_only</span><span class="p">:</span></tt>
+            </div>
+            <div id="l96"
+               class="code sev- "><tt><i>96</i>                 <span class="c1"># execute the same method on local implementor rather than client.</span></tt>
+            </div>
+            <div id="l97"
+               class="code sev- "><tt><i>97</i>                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_local_service</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></tt>
+            </div>
+            <div id="l98"
+               class="code sev- "><tt><i>98</i>             <span class="k">else</span><span class="p">:</span></tt>
+            </div>
+            <div id="l99"
+               class="code sev- "><tt><i>99</i>                 <span class="k">raise</span> <span class="n">LocalCallModeNotAllowed</span><span class="p">(</span><span class="n">f_wrapper</span><span class="p">)</span></tt>
+            </div>
+            <div id="l100"
+               class="code sev- "><tt><i>100</i>         <span class="k">else</span><span class="p">:</span></tt>
+            </div>
+            <div id="l101"
+               class="code sev- "><tt><i>101</i>             <span class="c1"># execute as usual</span></tt>
+            </div>
+            <div id="l102"
+               class="code sev- "><tt><i>102</i>             <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></tt>
+            </div>
+            <div id="l103"
+               class="code sev- "><tt><i>103</i> &nbsp;</tt>
+            </div>
+            <div id="l104"
+               class="code sev- "><tt><i>104</i>     <span class="c1"># tag the method as being related to an AzureML service with given id</span></tt>
+            </div>
+            <div id="l105"
+               class="code sev- "><tt><i>105</i>     <span class="nb">setattr</span><span class="p">(</span><span class="n">f_wrapper</span><span class="p">,</span> <span class="n">AZML_SERVICE_ID</span><span class="p">,</span> <span class="n">service_name</span><span class="p">)</span></tt>
+            </div>
+            <div id="l106"
+               class="code sev- "><tt><i>106</i>     <span class="k">return</span> <span class="n">f_wrapper</span></tt>
+            </div>
+            <div id="l107"
+               class="code sev- "><tt><i>107</i> &nbsp;</tt>
+            </div>
+            <div id="l108"
+               class="code sev- "><tt><i>108</i> &nbsp;</tt>
+            </div>
+            <div id="l109"
+               class="code sev- "><tt><i>109</i> <span class="k">def</span> <span class="nf">get_azureml_service_name</span><span class="p">(</span><span class="n">f</span><span class="p">):</span></tt>
+            </div>
+            <div id="l110"
+               class="code sev- "><tt><i>110</i>     <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l111"
+               class="code sev- "><tt><i>111</i> <span class="sd">    Returns the AzureML service name associated with method `f`.</span></tt>
+            </div>
+            <div id="l112"
+               class="code sev- "><tt><i>112</i> <span class="sd">    :param f:</span></tt>
+            </div>
+            <div id="l113"
+               class="code sev- "><tt><i>113</i> <span class="sd">    :return:</span></tt>
+            </div>
+            <div id="l114"
+               class="code sev- "><tt><i>114</i> <span class="sd">    &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l115"
+               class="code sev- "><tt><i>115</i>     <span class="k">try</span><span class="p">:</span></tt>
+            </div>
+            <div id="l116"
+               class="code sev- "><tt><i>116</i>         <span class="c1"># If this is the bound (=instance) method, get the unbound (=class) one</span></tt>
+            </div>
+            <div id="l117"
+               class="code sev- "><tt><i>117</i>         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;__func__&#39;</span><span class="p">):</span></tt>
+            </div>
+            <div id="l118"
+               class="code sev- "><tt><i>118</i>             <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="vm">__func__</span></tt>
+            </div>
+            <div id="l119"
+               class="code sev- "><tt><i>119</i>         <span class="n">azml_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">AZML_SERVICE_ID</span><span class="p">)</span></tt>
+            </div>
+            <div id="l120"
+               class="code sev- "><tt><i>120</i>     <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span></tt>
+            </div>
+            <div id="l121"
+               class="code sev- "><tt><i>121</i>         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Method &#39;</span><span class="si">%s</span><span class="s2">&#39; can not be bound to an AzureML service, please decorate it with &quot;</span></tt>
+            </div>
+            <div id="l122"
+               class="code sev- "><tt><i>122</i>                          <span class="s2">&quot;@azureml_service.&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span></tt>
+            </div>
+            <div id="l123"
+               class="code sev- "><tt><i>123</i>     <span class="k">else</span><span class="p">:</span></tt>
+            </div>
+            <div id="l124"
+               class="code sev- "><tt><i>124</i>         <span class="k">return</span> <span class="n">azml_name</span> <span class="k">if</span> <span class="n">azml_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">f</span><span class="o">.</span><span class="vm">__name__</span></tt>
+            </div>
+            <div id="l125"
+               class="code sev- "><tt><i>125</i> &nbsp;</tt>
+            </div>
+            <div id="l126"
+               class="code sev- "><tt><i>126</i> &nbsp;</tt>
+            </div>
+            <div id="l127"
+               class="code sev- "><tt><i>127</i> <span class="k">class</span> <span class="nc">AzureMLClient</span><span class="p">:</span></tt>
+            </div>
+            <div id="l128"
+               class="code sev- "><tt><i>128</i>     <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l129"
+               class="code sev- "><tt><i>129</i> <span class="sd">    Base class for AzureML clients.</span></tt>
+            </div>
+            <div id="l130"
+               class="code sev- "><tt><i>130</i> &nbsp;</tt>
+            </div>
+            <div id="l131"
+               class="code sev- "><tt><i>131</i> <span class="sd">    A client is configured with a mandatory `ClientConfig` object describing global and per-service options (endpoint</span></tt>
+            </div>
+            <div id="l132"
+               class="code sev- "><tt><i>132</i> <span class="sd">    urls, api keys).</span></tt>
+            </div>
+            <div id="l133"
+               class="code sev- "><tt><i>133</i> &nbsp;</tt>
+            </div>
+            <div id="l134"
+               class="code sev- "><tt><i>134</i> <span class="sd">    It provides a way to create them from a configuration containing endpoint definitions,</span></tt>
+            </div>
+            <div id="l135"
+               class="code sev- "><tt><i>135</i> <span class="sd">    and to declare a local implementation</span></tt>
+            </div>
+            <div id="l136"
+               class="code sev- "><tt><i>136</i> <span class="sd">    &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l137"
+               class="code sev- "><tt><i>137</i> &nbsp;</tt>
+            </div>
+            <div id="l138"
+               class="code sev- "><tt><i>138</i>     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l139"
+               class="code sev- "><tt><i>139</i>                  <span class="n">client_config</span><span class="p">,</span>           <span class="c1"># type: ClientConfig</span></tt>
+            </div>
+            <div id="l140"
+               class="code sev- "><tt><i>140</i>                  <span class="n">logger</span><span class="o">=</span><span class="n">default_logger</span><span class="p">,</span>   <span class="c1"># type: Logger</span></tt>
+            </div>
+            <div id="l141"
+               class="code sev- "><tt><i>141</i>                  <span class="n">default_call_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># type: CallMode</span></tt>
+            </div>
+            <div id="l142"
+               class="code sev- "><tt><i>142</i>                  <span class="n">requests_session</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>   <span class="c1"># type: Session</span></tt>
+            </div>
+            <div id="l143"
+               class="code sev- "><tt><i>143</i>                  <span class="n">auto_close_session</span><span class="o">=</span><span class="kc">None</span>  <span class="c1"># type: bool</span></tt>
+            </div>
+            <div id="l144"
+               class="code sev- "><tt><i>144</i>                  <span class="p">):</span></tt>
+            </div>
+            <div id="l145"
+               class="code sev- "><tt><i>145</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l146"
+               class="code sev- "><tt><i>146</i> <span class="sd">        Creates an `AzureMLClient` with an initial `ClientConfig` containing the global and per-service configurations.</span></tt>
+            </div>
+            <div id="l147"
+               class="code sev- "><tt><i>147</i> &nbsp;</tt>
+            </div>
+            <div id="l148"
+               class="code sev- "><tt><i>148</i> <span class="sd">        Constructor with a global configuration and service endpoint configurations. The service endpoint</span></tt>
+            </div>
+            <div id="l149"
+               class="code sev- "><tt><i>149</i> <span class="sd">        configurations should be provided in a dictionary with keys being the service names. Only names declared in the</span></tt>
+            </div>
+            <div id="l150"
+               class="code sev- "><tt><i>150</i> <span class="sd">        &#39;services&#39; meta attribute of the class will be accepted, otherwise and error will be raised. Note that you may</span></tt>
+            </div>
+            <div id="l151"
+               class="code sev- "><tt><i>151</i> <span class="sd">        provide configurations for some services only.</span></tt>
+            </div>
+            <div id="l152"
+               class="code sev- "><tt><i>152</i> &nbsp;</tt>
+            </div>
+            <div id="l153"
+               class="code sev- "><tt><i>153</i> <span class="sd">        A `requests.Session` object is automatically created when the client is created, and possibly configured with</span></tt>
+            </div>
+            <div id="l154"
+               class="code sev- "><tt><i>154</i> <span class="sd">        the proxy information obtained from the `ClientConfig`. The `Session` is automatically closed when the client</span></tt>
+            </div>
+            <div id="l155"
+               class="code sev- "><tt><i>155</i> <span class="sd">        instance is garbaged out. A custom `Session` can be passed to the constructor instead. It won&#39;t be closed nor</span></tt>
+            </div>
+            <div id="l156"
+               class="code sev- "><tt><i>156</i> <span class="sd">        configured by default, the user should do it (using `session.close()` and `&lt;config&gt;.configure_session(session)`</span></tt>
+            </div>
+            <div id="l157"
+               class="code sev- "><tt><i>157</i> <span class="sd">        respectively).</span></tt>
+            </div>
+            <div id="l158"
+               class="code sev- "><tt><i>158</i> &nbsp;</tt>
+            </div>
+            <div id="l159"
+               class="code sev- "><tt><i>159</i> <span class="sd">        :param client_config: a configuration for this component client. It should be valid = contain sections for</span></tt>
+            </div>
+            <div id="l160"
+               class="code sev- "><tt><i>160</i> <span class="sd">            each service in this client. The configuration can contain proxy information, in which case it will</span></tt>
+            </div>
+            <div id="l161"
+               class="code sev- "><tt><i>161</i> <span class="sd">            be used to configure the underlying requests Session that is created.</span></tt>
+            </div>
+            <div id="l162"
+               class="code sev- "><tt><i>162</i> <span class="sd">        :param logger:</span></tt>
+            </div>
+            <div id="l163"
+               class="code sev- "><tt><i>163</i> <span class="sd">        :param default_call_mode: (advanced) if a non-None `CallMode` instance is provided, it will be used as the</span></tt>
+            </div>
+            <div id="l164"
+               class="code sev- "><tt><i>164</i> <span class="sd">            default call mode for this client. Otherwise by default a request-response call mode will be set as the</span></tt>
+            </div>
+            <div id="l165"
+               class="code sev- "><tt><i>165</i> <span class="sd">            default call mode (`RequestResponse()`)</span></tt>
+            </div>
+            <div id="l166"
+               class="code sev- "><tt><i>166</i> <span class="sd">        :param requests_session: (advanced) an optional `Session` object to use (from `requests` lib). If `None` is</span></tt>
+            </div>
+            <div id="l167"
+               class="code sev- "><tt><i>167</i> <span class="sd">            provided, a new `Session` will be used, possibly configured with the proxy information in the `ClientConfig`</span></tt>
+            </div>
+            <div id="l168"
+               class="code sev- "><tt><i>168</i> <span class="sd">            and deleted when this object is garbaged out. If a custom object is provided, you should close it yourself</span></tt>
+            </div>
+            <div id="l169"
+               class="code sev- "><tt><i>169</i> <span class="sd">            or switch `auto_close_session` to `True` explicitly. You should also configure it yourself, for example</span></tt>
+            </div>
+            <div id="l170"
+               class="code sev- "><tt><i>170</i> <span class="sd">            with `&lt;config&gt;.configure_session(session)`.</span></tt>
+            </div>
+            <div id="l171"
+               class="code sev- "><tt><i>171</i> <span class="sd">        :param auto_close_session: an optional boolean indicating if `self.session` should be closed when this object</span></tt>
+            </div>
+            <div id="l172"
+               class="code sev- "><tt><i>172</i> <span class="sd">            is garbaged out. By default this is `None` and means &quot;`True` if no custom `requests_session` is passed, else</span></tt>
+            </div>
+            <div id="l173"
+               class="code sev- "><tt><i>173</i> <span class="sd">            `False`&quot;). Turning this to `False` can leave hanging Sockets unclosed.</span></tt>
+            </div>
+            <div id="l174"
+               class="code sev- "><tt><i>174</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l175"
+               class="code sev- "><tt><i>175</i>         <span class="c1"># save the attributes</span></tt>
+            </div>
+            <div id="l176"
+               class="code sev- "><tt><i>176</i>         <span class="bp">self</span><span class="o">.</span><span class="n">client_config</span> <span class="o">=</span> <span class="n">client_config</span></tt>
+            </div>
+            <div id="l177"
+               class="code sev- "><tt><i>177</i>         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span></tt>
+            </div>
+            <div id="l178"
+               class="code sev- "><tt><i>178</i>         <span class="k">if</span> <span class="n">default_call_mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span></tt>
+            </div>
+            <div id="l179"
+               class="code sev- "><tt><i>179</i>             <span class="c1"># by default make this a request response</span></tt>
+            </div>
+            <div id="l180"
+               class="code sev- "><tt><i>180</i>             <span class="n">default_call_mode</span> <span class="o">=</span> <span class="n">RequestResponse</span><span class="p">()</span></tt>
+            </div>
+            <div id="l181"
+               class="code sev- "><tt><i>181</i>         <span class="bp">self</span><span class="o">.</span><span class="n">_current_call_mode</span> <span class="o">=</span> <span class="n">default_call_mode</span></tt>
+            </div>
+            <div id="l182"
+               class="code sev- "><tt><i>182</i> &nbsp;</tt>
+            </div>
+            <div id="l183"
+               class="code sev- "><tt><i>183</i>         <span class="c1"># init the local impl property</span></tt>
+            </div>
+            <div id="l184"
+               class="code sev- "><tt><i>184</i>         <span class="bp">self</span><span class="o">.</span><span class="n">_local_impl</span> <span class="o">=</span> <span class="kc">None</span></tt>
+            </div>
+            <div id="l185"
+               class="code sev- "><tt><i>185</i> &nbsp;</tt>
+            </div>
+            <div id="l186"
+               class="code sev- "><tt><i>186</i>         <span class="k">if</span> <span class="n">requests_session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span></tt>
+            </div>
+            <div id="l187"
+               class="code sev- "><tt><i>187</i>             <span class="c1"># create and configure a session</span></tt>
+            </div>
+            <div id="l188"
+               class="code sev- "><tt><i>188</i>             <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span></tt>
+            </div>
+            <div id="l189"
+               class="code sev- "><tt><i>189</i>             <span class="bp">self</span><span class="o">.</span><span class="n">global_cfg</span><span class="o">.</span><span class="n">configure_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span></tt>
+            </div>
+            <div id="l190"
+               class="code sev- "><tt><i>190</i>         <span class="k">else</span><span class="p">:</span></tt>
+            </div>
+            <div id="l191"
+               class="code sev- "><tt><i>191</i>             <span class="c1"># custom provided : do not configure it</span></tt>
+            </div>
+            <div id="l192"
+               class="code sev- "><tt><i>192</i>             <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">requests_session</span></tt>
+            </div>
+            <div id="l193"
+               class="code sev- "><tt><i>193</i> &nbsp;</tt>
+            </div>
+            <div id="l194"
+               class="code sev- "><tt><i>194</i>         <span class="c1"># auto-close behaviour</span></tt>
+            </div>
+            <div id="l195"
+               class="code sev- "><tt><i>195</i>         <span class="k">if</span> <span class="n">auto_close_session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span></tt>
+            </div>
+            <div id="l196"
+               class="code sev- "><tt><i>196</i>             <span class="c1"># default: only auto-close if this session was created by us.</span></tt>
+            </div>
+            <div id="l197"
+               class="code sev- "><tt><i>197</i>             <span class="n">auto_close_session</span> <span class="o">=</span> <span class="n">requests_session</span> <span class="ow">is</span> <span class="kc">None</span></tt>
+            </div>
+            <div id="l198"
+               class="code sev- "><tt><i>198</i>         <span class="bp">self</span><span class="o">.</span><span class="n">auto_close_session</span> <span class="o">=</span> <span class="n">auto_close_session</span></tt>
+            </div>
+            <div id="l199"
+               class="code sev- "><tt><i>199</i> &nbsp;</tt>
+            </div>
+            <div id="l200"
+               class="code sev- "><tt><i>200</i>     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l201"
+               class="code sev- "><tt><i>201</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l202"
+               class="code sev- "><tt><i>202</i> <span class="sd">        This is called when the garbage collector deletes this object.</span></tt>
+            </div>
+            <div id="l203"
+               class="code sev- "><tt><i>203</i> <span class="sd">        Let&#39;s use this opportunity to close the requests Session to avoid</span></tt>
+            </div>
+            <div id="l204"
+               class="code sev- "><tt><i>204</i> <span class="sd">        leaving hanging Sockets, see https://github.com/smarie/python-odsclient/issues/27</span></tt>
+            </div>
+            <div id="l205"
+               class="code sev- "><tt><i>205</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l206"
+               class="code sev- "><tt><i>206</i>         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_close_session</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span></tt>
+            </div>
+            <div id="l207"
+               class="code sev- "><tt><i>207</i>             <span class="k">try</span><span class="p">:</span></tt>
+            </div>
+            <div id="l208"
+               class="code sev- "><tt><i>208</i>                 <span class="c1"># close the underlying `requests.Session`</span></tt>
+            </div>
+            <div id="l209"
+               class="code sev- "><tt><i>209</i>                 <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></tt>
+            </div>
+            <div id="l210"
+               class="code sev- "><tt><i>210</i>             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span></tt>
+            </div>
+            <div id="l211"
+               class="code sev- "><tt><i>211</i>                 <span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Error while closing session: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span></tt>
+            </div>
+            <div id="l212"
+               class="code sev- "><tt><i>212</i> &nbsp;</tt>
+            </div>
+            <div id="l213"
+               class="code sev- "><tt><i>213</i>     <span class="c1"># --------- remote service calls implementation</span></tt>
+            </div>
+            <div id="l214"
+               class="code sev- "><tt><i>214</i> &nbsp;</tt>
+            </div>
+            <div id="l215"
+               class="code sev- "><tt><i>215</i>     <span class="nd">@property</span></tt>
+            </div>
+            <div id="l216"
+               class="code sev- "><tt><i>216</i>     <span class="k">def</span> <span class="nf">service_methods</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l217"
+               class="code sev- "><tt><i>217</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l218"
+               class="code sev- "><tt><i>218</i> <span class="sd">        returns a dictionary of all service methods referenced by AzureML service name.</span></tt>
+            </div>
+            <div id="l219"
+               class="code sev- "><tt><i>219</i> <span class="sd">        These are all methods in the class that have been decorated with `@azureml_service`</span></tt>
+            </div>
+            <div id="l220"
+               class="code sev- "><tt><i>220</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l221"
+               class="code sev- "><tt><i>221</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l222"
+               class="code sev- "><tt><i>222</i>         <span class="k">return</span> <span class="p">{</span><span class="n">get_azureml_service_name</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></tt>
+            </div>
+            <div id="l223"
+               class="code sev- "><tt><i>223</i>                 <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">getmembers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">isroutine</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">AZML_SERVICE_ID</span><span class="p">))}</span></tt>
+            </div>
+            <div id="l224"
+               class="code sev- "><tt><i>224</i> &nbsp;</tt>
+            </div>
+            <div id="l225"
+               class="code sev- "><tt><i>225</i>     <span class="nd">@property</span></tt>
+            </div>
+            <div id="l226"
+               class="code sev- "><tt><i>226</i>     <span class="k">def</span> <span class="nf">service_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l227"
+               class="code sev- "><tt><i>227</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l228"
+               class="code sev- "><tt><i>228</i> <span class="sd">        Returns the list of all service names - basically the names of the `service_methods`</span></tt>
+            </div>
+            <div id="l229"
+               class="code sev- "><tt><i>229</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l230"
+               class="code sev- "><tt><i>230</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l231"
+               class="code sev- "><tt><i>231</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">service_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></tt>
+            </div>
+            <div id="l232"
+               class="code sev- "><tt><i>232</i> &nbsp;</tt>
+            </div>
+            <div id="l233"
+               class="code sev- "><tt><i>233</i>     <span class="c1"># --------- local implementor</span></tt>
+            </div>
+            <div id="l234"
+               class="code sev- "><tt><i>234</i> &nbsp;</tt>
+            </div>
+            <div id="l235"
+               class="code sev- "><tt><i>235</i>     <span class="k">def</span> <span class="nf">__init_local_impl__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l236"
+               class="code sev- "><tt><i>236</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l237"
+               class="code sev- "><tt><i>237</i> <span class="sd">        Implementors should create a local implementation and return it</span></tt>
+            </div>
+            <div id="l238"
+               class="code sev- "><tt><i>238</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l239"
+               class="code sev- "><tt><i>239</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l240"
+               class="code sev- "><tt><i>240</i>         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Local execution is not available for this client. Please override &quot;</span></tt>
+            </div>
+            <div id="l241"
+               class="code sev- "><tt><i>241</i>                                   <span class="s2">&quot;`__init_local_impl__` or set a non-none `self._local_impl` if you wish local calls &quot;</span></tt>
+            </div>
+            <div id="l242"
+               class="code sev- "><tt><i>242</i>                                   <span class="s2">&quot;to be made available&quot;</span><span class="p">)</span></tt>
+            </div>
+            <div id="l243"
+               class="code sev- "><tt><i>243</i> &nbsp;</tt>
+            </div>
+            <div id="l244"
+               class="code sev- "><tt><i>244</i>     <span class="nd">@property</span></tt>
+            </div>
+            <div id="l245"
+               class="code sev- "><tt><i>245</i>     <span class="k">def</span> <span class="nf">local_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l246"
+               class="code sev- "><tt><i>246</i>         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_impl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span></tt>
+            </div>
+            <div id="l247"
+               class="code sev- "><tt><i>247</i>             <span class="bp">self</span><span class="o">.</span><span class="n">_local_impl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__init_local_impl__</span><span class="p">()</span></tt>
+            </div>
+            <div id="l248"
+               class="code sev- "><tt><i>248</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_impl</span></tt>
+            </div>
+            <div id="l249"
+               class="code sev- "><tt><i>249</i> &nbsp;</tt>
+            </div>
+            <div id="l250"
+               class="code sev- "><tt><i>250</i>     <span class="k">def</span> <span class="nf">call_local_service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l251"
+               class="code sev- "><tt><i>251</i>                            <span class="n">function_name</span><span class="p">,</span>  <span class="c1"># type: str</span></tt>
+            </div>
+            <div id="l252"
+               class="code sev- "><tt><i>252</i>                            <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span></tt>
+            </div>
+            <div id="l253"
+               class="code sev- "><tt><i>253</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l254"
+               class="code sev- "><tt><i>254</i> <span class="sd">        This method is called automatically when a service method (i.e. decorated with `@azureml_service`)</span></tt>
+            </div>
+            <div id="l255"
+               class="code sev- "><tt><i>255</i> <span class="sd">        is called and this instance is in &quot;local&quot; mode. It delegates to local.</span></tt>
+            </div>
+            <div id="l256"
+               class="code sev- "><tt><i>256</i> &nbsp;</tt>
+            </div>
+            <div id="l257"
+               class="code sev- "><tt><i>257</i> <span class="sd">        :param function_name:</span></tt>
+            </div>
+            <div id="l258"
+               class="code sev- "><tt><i>258</i> <span class="sd">        :param args:</span></tt>
+            </div>
+            <div id="l259"
+               class="code sev- "><tt><i>259</i> <span class="sd">        :param kwargs:</span></tt>
+            </div>
+            <div id="l260"
+               class="code sev- "><tt><i>260</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l261"
+               class="code sev- "><tt><i>261</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l262"
+               class="code sev- "><tt><i>262</i>         <span class="n">local_provider</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_impl</span></tt>
+            </div>
+            <div id="l263"
+               class="code sev- "><tt><i>263</i>         <span class="n">local_method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">local_provider</span><span class="p">,</span> <span class="n">function_name</span><span class="p">)</span></tt>
+            </div>
+            <div id="l264"
+               class="code sev- "><tt><i>264</i>         <span class="k">return</span> <span class="n">local_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></tt>
+            </div>
+            <div id="l265"
+               class="code sev- "><tt><i>265</i> &nbsp;</tt>
+            </div>
+            <div id="l266"
+               class="code sev- "><tt><i>266</i>     <span class="c1"># --------- configuration</span></tt>
+            </div>
+            <div id="l267"
+               class="code sev- "><tt><i>267</i> &nbsp;</tt>
+            </div>
+            <div id="l268"
+               class="code sev- "><tt><i>268</i>     <span class="nd">@property</span></tt>
+            </div>
+            <div id="l269"
+               class="code sev- "><tt><i>269</i>     <span class="k">def</span> <span class="nf">client_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l270"
+               class="code sev- "><tt><i>270</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client_config</span></tt>
+            </div>
+            <div id="l271"
+               class="code sev- "><tt><i>271</i> &nbsp;</tt>
+            </div>
+            <div id="l272"
+               class="code sev- "><tt><i>272</i>     <span class="nd">@client_config</span><span class="o">.</span><span class="n">setter</span></tt>
+            </div>
+            <div id="l273"
+               class="code sev- "><tt><i>273</i>     <span class="k">def</span> <span class="nf">client_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l274"
+               class="code sev- "><tt><i>274</i>                       <span class="n">client_config</span>  <span class="c1"># type: ClientConfig</span></tt>
+            </div>
+            <div id="l275"
+               class="code sev- "><tt><i>275</i>                       <span class="p">):</span></tt>
+            </div>
+            <div id="l276"
+               class="code sev- "><tt><i>276</i>         <span class="c1"># validate configuration before accepting it</span></tt>
+            </div>
+            <div id="l277"
+               class="code sev- "><tt><i>277</i>         <span class="n">client_config</span><span class="o">.</span><span class="n">assert_valid_for_services</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">service_names</span><span class="p">)</span></tt>
+            </div>
+            <div id="l278"
+               class="code sev- "><tt><i>278</i>         <span class="bp">self</span><span class="o">.</span><span class="n">_client_config</span> <span class="o">=</span> <span class="n">client_config</span></tt>
+            </div>
+            <div id="l279"
+               class="code sev- "><tt><i>279</i> &nbsp;</tt>
+            </div>
+            <div id="l280"
+               class="code sev- "><tt><i>280</i>     <span class="c1"># ------ convenience methods</span></tt>
+            </div>
+            <div id="l281"
+               class="code sev- "><tt><i>281</i> &nbsp;</tt>
+            </div>
+            <div id="l282"
+               class="code sev- "><tt><i>282</i>     <span class="nd">@property</span></tt>
+            </div>
+            <div id="l283"
+               class="code sev- "><tt><i>283</i>     <span class="k">def</span> <span class="nf">global_cfg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l284"
+               class="code sev- "><tt><i>284</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_config</span><span class="o">.</span><span class="n">global_config</span></tt>
+            </div>
+            <div id="l285"
+               class="code sev- "><tt><i>285</i> &nbsp;</tt>
+            </div>
+            <div id="l286"
+               class="code sev- "><tt><i>286</i>     <span class="nd">@property</span></tt>
+            </div>
+            <div id="l287"
+               class="code sev- "><tt><i>287</i>     <span class="k">def</span> <span class="nf">services_cfg_dct</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l288"
+               class="code sev- "><tt><i>288</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_config</span><span class="o">.</span><span class="n">services_configs</span></tt>
+            </div>
+            <div id="l289"
+               class="code sev- "><tt><i>289</i> &nbsp;</tt>
+            </div>
+            <div id="l290"
+               class="code sev- "><tt><i>290</i>     <span class="c1"># ------ call modes</span></tt>
+            </div>
+            <div id="l291"
+               class="code sev- "><tt><i>291</i>     <span class="nd">@property</span></tt>
+            </div>
+            <div id="l292"
+               class="code sev- "><tt><i>292</i>     <span class="k">def</span> <span class="nf">current_call_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l293"
+               class="code sev- "><tt><i>293</i>         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_call_mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span></tt>
+            </div>
+            <div id="l294"
+               class="code sev- "><tt><i>294</i>             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Current call mode is None. Please set a call mode (local, rr, batch...) by using the &quot;</span></tt>
+            </div>
+            <div id="l295"
+               class="code sev- "><tt><i>295</i>                              <span class="s2">&quot;appropriate context manager&quot;</span><span class="p">)</span></tt>
+            </div>
+            <div id="l296"
+               class="code sev- "><tt><i>296</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_call_mode</span></tt>
+            </div>
+            <div id="l297"
+               class="code sev- "><tt><i>297</i> &nbsp;</tt>
+            </div>
+            <div id="l298"
+               class="code sev- "><tt><i>298</i>     <span class="nd">@current_call_mode</span><span class="o">.</span><span class="n">setter</span></tt>
+            </div>
+            <div id="l299"
+               class="code sev- "><tt><i>299</i>     <span class="k">def</span> <span class="nf">current_call_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_call_mode</span><span class="p">):</span></tt>
+            </div>
+            <div id="l300"
+               class="code sev- "><tt><i>300</i>         <span class="bp">self</span><span class="o">.</span><span class="n">_current_call_mode</span> <span class="o">=</span> <span class="n">current_call_mode</span></tt>
+            </div>
+            <div id="l301"
+               class="code sev- "><tt><i>301</i> &nbsp;</tt>
+            </div>
+            <div id="l302"
+               class="code sev- "><tt><i>302</i>     <span class="k">def</span> <span class="nf">is_local_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l303"
+               class="code sev- "><tt><i>303</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l304"
+               class="code sev- "><tt><i>304</i> &nbsp;</tt>
+            </div>
+            <div id="l305"
+               class="code sev- "><tt><i>305</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l306"
+               class="code sev- "><tt><i>306</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l307"
+               class="code sev- "><tt><i>307</i>         <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_call_mode</span><span class="p">,</span> <span class="n">LocalCallMode</span><span class="p">)</span></tt>
+            </div>
+            <div id="l308"
+               class="code sev- "><tt><i>308</i> &nbsp;</tt>
+            </div>
+            <div id="l309"
+               class="code sev- "><tt><i>309</i>     <span class="c1"># --- context managers to switch call mode</span></tt>
+            </div>
+            <div id="l310"
+               class="code sev- "><tt><i>310</i> &nbsp;</tt>
+            </div>
+            <div id="l311"
+               class="code sev- "><tt><i>311</i>     <span class="k">def</span> <span class="nf">local_calls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l312"
+               class="code sev- "><tt><i>312</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l313"
+               class="code sev- "><tt><i>313</i> <span class="sd">        Alias for the `call_mode` context manager to temporarily switch this client to &#39;local&#39; mode</span></tt>
+            </div>
+            <div id="l314"
+               class="code sev- "><tt><i>314</i> &nbsp;</tt>
+            </div>
+            <div id="l315"
+               class="code sev- "><tt><i>315</i> <span class="sd">        &gt;&gt;&gt; with client.local_calls():</span></tt>
+            </div>
+            <div id="l316"
+               class="code sev- "><tt><i>316</i> <span class="sd">        &gt;&gt;&gt;     client.my_service(foo)</span></tt>
+            </div>
+            <div id="l317"
+               class="code sev- "><tt><i>317</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l318"
+               class="code sev- "><tt><i>318</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_mode</span><span class="p">(</span><span class="n">LocalCallMode</span><span class="p">())</span></tt>
+            </div>
+            <div id="l319"
+               class="code sev- "><tt><i>319</i> &nbsp;</tt>
+            </div>
+            <div id="l320"
+               class="code sev- "><tt><i>320</i>     <span class="k">def</span> <span class="nf">rr_calls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l321"
+               class="code sev- "><tt><i>321</i>                  <span class="n">use_swagger_format</span><span class="o">=</span><span class="kc">False</span>  <span class="c1"># type: bool</span></tt>
+            </div>
+            <div id="l322"
+               class="code sev- "><tt><i>322</i>                  <span class="p">):</span></tt>
+            </div>
+            <div id="l323"
+               class="code sev- "><tt><i>323</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l324"
+               class="code sev- "><tt><i>324</i> <span class="sd">        Alias for the `call_mode` context manager to temporarily switch this client to &#39;request response&#39; mode</span></tt>
+            </div>
+            <div id="l325"
+               class="code sev- "><tt><i>325</i> &nbsp;</tt>
+            </div>
+            <div id="l326"
+               class="code sev- "><tt><i>326</i> <span class="sd">        &gt;&gt;&gt; with client.rr_calls():</span></tt>
+            </div>
+            <div id="l327"
+               class="code sev- "><tt><i>327</i> <span class="sd">        &gt;&gt;&gt;     client.my_service(foo)</span></tt>
+            </div>
+            <div id="l328"
+               class="code sev- "><tt><i>328</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l329"
+               class="code sev- "><tt><i>329</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_mode</span><span class="p">(</span><span class="n">RequestResponse</span><span class="p">(</span><span class="n">use_swagger_format</span><span class="o">=</span><span class="n">use_swagger_format</span><span class="p">))</span></tt>
+            </div>
+            <div id="l330"
+               class="code sev- "><tt><i>330</i> &nbsp;</tt>
+            </div>
+            <div id="l331"
+               class="code sev- "><tt><i>331</i>     <span class="k">def</span> <span class="nf">batch_calls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l332"
+               class="code sev- "><tt><i>332</i>                     <span class="n">polling_period_seconds</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>  <span class="c1"># type: int</span></tt>
+            </div>
+            <div id="l333"
+               class="code sev- "><tt><i>333</i>                     <span class="p">):</span></tt>
+            </div>
+            <div id="l334"
+               class="code sev- "><tt><i>334</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l335"
+               class="code sev- "><tt><i>335</i> <span class="sd">        Alias for the `call_mode` context manager to temporarily switch this client to &#39;batch&#39; mode</span></tt>
+            </div>
+            <div id="l336"
+               class="code sev- "><tt><i>336</i> &nbsp;</tt>
+            </div>
+            <div id="l337"
+               class="code sev- "><tt><i>337</i> <span class="sd">        &gt;&gt;&gt; with client.batch_calls(polling_period_seconds=5):</span></tt>
+            </div>
+            <div id="l338"
+               class="code sev- "><tt><i>338</i> <span class="sd">        &gt;&gt;&gt;     client.my_service(foo)</span></tt>
+            </div>
+            <div id="l339"
+               class="code sev- "><tt><i>339</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l340"
+               class="code sev- "><tt><i>340</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_mode</span><span class="p">(</span><span class="n">Batch</span><span class="p">(</span><span class="n">polling_period_seconds</span><span class="o">=</span><span class="n">polling_period_seconds</span><span class="p">))</span></tt>
+            </div>
+            <div id="l341"
+               class="code sev- "><tt><i>341</i> &nbsp;</tt>
+            </div>
+            <div id="l342"
+               class="code sev- "><tt><i>342</i>     <span class="nd">@contextmanager</span></tt>
+            </div>
+            <div id="l343"
+               class="code sev- "><tt><i>343</i>     <span class="k">def</span> <span class="nf">call_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l344"
+               class="code sev- "><tt><i>344</i>                   <span class="n">mode</span>  <span class="c1"># type: CallMode</span></tt>
+            </div>
+            <div id="l345"
+               class="code sev- "><tt><i>345</i>                   <span class="p">):</span></tt>
+            </div>
+            <div id="l346"
+               class="code sev- "><tt><i>346</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l347"
+               class="code sev- "><tt><i>347</i> <span class="sd">        Context manager to temporarily switch this client to `mode` CallMode</span></tt>
+            </div>
+            <div id="l348"
+               class="code sev- "><tt><i>348</i> &nbsp;</tt>
+            </div>
+            <div id="l349"
+               class="code sev- "><tt><i>349</i> <span class="sd">        &gt;&gt;&gt; with client.call_mode(Batch(polling_period_seconds=20)):</span></tt>
+            </div>
+            <div id="l350"
+               class="code sev- "><tt><i>350</i> <span class="sd">        &gt;&gt;&gt;     client.my_service(foo)</span></tt>
+            </div>
+            <div id="l351"
+               class="code sev- "><tt><i>351</i> &nbsp;</tt>
+            </div>
+            <div id="l352"
+               class="code sev- "><tt><i>352</i> <span class="sd">        :param mode: the `CallMode` to switch to</span></tt>
+            </div>
+            <div id="l353"
+               class="code sev- "><tt><i>353</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l354"
+               class="code sev- "><tt><i>354</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l355"
+               class="code sev- "><tt><i>355</i>         <span class="n">previous_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_call_mode</span></tt>
+            </div>
+            <div id="l356"
+               class="code sev- "><tt><i>356</i>         <span class="bp">self</span><span class="o">.</span><span class="n">current_call_mode</span> <span class="o">=</span> <span class="n">mode</span></tt>
+            </div>
+            <div id="l357"
+               class="code sev- "><tt><i>357</i>         <span class="k">yield</span></tt>
+            </div>
+            <div id="l358"
+               class="code sev- "><tt><i>358</i>         <span class="bp">self</span><span class="o">.</span><span class="n">current_call_mode</span> <span class="o">=</span> <span class="n">previous_mode</span></tt>
+            </div>
+            <div id="l359"
+               class="code sev- "><tt><i>359</i> &nbsp;</tt>
+            </div>
+            <div id="l360"
+               class="code sev- "><tt><i>360</i>     <span class="k">def</span> <span class="nf">debug_requests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></tt>
+            </div>
+            <div id="l361"
+               class="code sev- "><tt><i>361</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l362"
+               class="code sev- "><tt><i>362</i> <span class="sd">        Context manager to temporarily enable debug mode on requests.</span></tt>
+            </div>
+            <div id="l363"
+               class="code sev- "><tt><i>363</i> &nbsp;</tt>
+            </div>
+            <div id="l364"
+               class="code sev- "><tt><i>364</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l365"
+               class="code sev- "><tt><i>365</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l366"
+               class="code sev- "><tt><i>366</i>         <span class="k">return</span> <span class="n">debug_requests</span><span class="p">()</span></tt>
+            </div>
+            <div id="l367"
+               class="code sev- "><tt><i>367</i> &nbsp;</tt>
+            </div>
+            <div id="l368"
+               class="code sev- "><tt><i>368</i>     <span class="c1"># ------</span></tt>
+            </div>
+            <div id="l369"
+               class="code sev- "><tt><i>369</i> &nbsp;</tt>
+            </div>
+            <div id="l370"
+               class="code sev- "><tt><i>370</i>     <span class="k">def</span> <span class="nf">call_azureml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span></tt>
+            </div>
+            <div id="l371"
+               class="code sev- "><tt><i>371</i>                      <span class="n">service_id</span><span class="p">,</span>       <span class="c1"># type: Union[str, Callable]</span></tt>
+            </div>
+            <div id="l372"
+               class="code sev- "><tt><i>372</i>                      <span class="n">ws_inputs</span><span class="p">,</span>        <span class="c1"># type: Dict[str, pd.DataFrame]</span></tt>
+            </div>
+            <div id="l373"
+               class="code sev- "><tt><i>373</i>                      <span class="n">ws_output_names</span><span class="p">,</span>  <span class="c1"># type: Optional[List[str]]</span></tt>
+            </div>
+            <div id="l374"
+               class="code sev- "><tt><i>374</i>                      <span class="n">ws_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>   <span class="c1"># type: Dict[str, str]</span></tt>
+            </div>
+            <div id="l375"
+               class="code sev- "><tt><i>375</i>                      <span class="p">):</span></tt>
+            </div>
+            <div id="l376"
+               class="code sev- "><tt><i>376</i>         <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l377"
+               class="code sev- "><tt><i>377</i> <span class="sd">        Calls the service identified with id service_id in the services configuration.</span></tt>
+            </div>
+            <div id="l378"
+               class="code sev- "><tt><i>378</i> &nbsp;</tt>
+            </div>
+            <div id="l379"
+               class="code sev- "><tt><i>379</i> <span class="sd">        Inputs</span></tt>
+            </div>
+            <div id="l380"
+               class="code sev- "><tt><i>380</i> &nbsp;</tt>
+            </div>
+            <div id="l381"
+               class="code sev- "><tt><i>381</i> <span class="sd">        :param service_id: a string identifier or a method representing the service</span></tt>
+            </div>
+            <div id="l382"
+               class="code sev- "><tt><i>382</i> <span class="sd">        :param ws_inputs: a (name, DataFrame) dictionary of web service inputs</span></tt>
+            </div>
+            <div id="l383"
+               class="code sev- "><tt><i>383</i> <span class="sd">        :param ws_output_names: a list of web service outputs, or `None` to allow all outputs to be received</span></tt>
+            </div>
+            <div id="l384"
+               class="code sev- "><tt><i>384</i> <span class="sd">        :param ws_params: a (param_name, value) dictionary of web service parameters</span></tt>
+            </div>
+            <div id="l385"
+               class="code sev- "><tt><i>385</i> <span class="sd">        :return:</span></tt>
+            </div>
+            <div id="l386"
+               class="code sev- "><tt><i>386</i> <span class="sd">        &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l387"
+               class="code sev- "><tt><i>387</i>         <span class="c1"># -- one can provide a method as the service id</span></tt>
+            </div>
+            <div id="l388"
+               class="code sev- "><tt><i>388</i>         <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">service_id</span><span class="p">):</span></tt>
+            </div>
+            <div id="l389"
+               class="code sev- "><tt><i>389</i>             <span class="n">service_id</span> <span class="o">=</span> <span class="n">get_azureml_service_name</span><span class="p">(</span><span class="n">service_id</span><span class="p">)</span></tt>
+            </div>
+            <div id="l390"
+               class="code sev- "><tt><i>390</i> &nbsp;</tt>
+            </div>
+            <div id="l391"
+               class="code sev- "><tt><i>391</i>         <span class="c1"># -- Retrieve service configuration</span></tt>
+            </div>
+            <div id="l392"
+               class="code sev- "><tt><i>392</i>         <span class="k">if</span> <span class="n">service_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_config</span><span class="o">.</span><span class="n">services_configs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span></tt>
+            </div>
+            <div id="l393"
+               class="code sev- "><tt><i>393</i>             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown service_id: </span><span class="se">\&#39;</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">service_id</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span></tt>
+            </div>
+            <div id="l394"
+               class="code sev- "><tt><i>394</i>         <span class="k">else</span><span class="p">:</span></tt>
+            </div>
+            <div id="l395"
+               class="code sev- "><tt><i>395</i>             <span class="n">service_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_config</span><span class="o">.</span><span class="n">services_configs</span><span class="p">[</span><span class="n">service_id</span><span class="p">]</span></tt>
+            </div>
+            <div id="l396"
+               class="code sev- "><tt><i>396</i> &nbsp;</tt>
+            </div>
+            <div id="l397"
+               class="code sev- "><tt><i>397</i>         <span class="c1"># -- Perform call according to options</span></tt>
+            </div>
+            <div id="l398"
+               class="code sev- "><tt><i>398</i>         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_call_mode</span><span class="o">.</span><span class="n">call_azureml</span><span class="p">(</span><span class="n">service_id</span><span class="p">,</span></tt>
+            </div>
+            <div id="l399"
+               class="code sev- "><tt><i>399</i>                                                    <span class="n">service_config</span><span class="o">=</span><span class="n">service_config</span><span class="p">,</span> <span class="n">ws_inputs</span><span class="o">=</span><span class="n">ws_inputs</span><span class="p">,</span></tt>
+            </div>
+            <div id="l400"
+               class="code sev- "><tt><i>400</i>                                                    <span class="n">ws_output_names</span><span class="o">=</span><span class="n">ws_output_names</span><span class="p">,</span> <span class="n">ws_params</span><span class="o">=</span><span class="n">ws_params</span><span class="p">,</span></tt>
+            </div>
+            <div id="l401"
+               class="code sev- "><tt><i>401</i>                                                    <span class="n">session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span></tt>
+            </div>
+            <div id="l402"
+               class="code sev- "><tt><i>402</i> &nbsp;</tt>
+            </div>
+            <div id="l403"
+               class="code sev- "><tt><i>403</i> &nbsp;</tt>
+            </div>
+            <div id="l404"
+               class="code sev- "><tt><i>404</i> <span class="k">def</span> <span class="nf">unpack_single_value_from_df</span><span class="p">(</span><span class="n">name</span><span class="p">,</span>             <span class="c1"># type: str</span></tt>
+            </div>
+            <div id="l405"
+               class="code sev- "><tt><i>405</i>                                 <span class="n">df</span><span class="p">,</span>               <span class="c1"># type: pd.DataFrame</span></tt>
+            </div>
+            <div id="l406"
+               class="code sev- "><tt><i>406</i>                                 <span class="n">allow_empty</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># type: bool</span></tt>
+            </div>
+            <div id="l407"
+               class="code sev- "><tt><i>407</i>                                 <span class="p">):</span></tt>
+            </div>
+            <div id="l408"
+               class="code sev- "><tt><i>408</i>     <span class="sd">&quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l409"
+               class="code sev- "><tt><i>409</i> <span class="sd">    Utility method to unpack a single value from a DataFrame.</span></tt>
+            </div>
+            <div id="l410"
+               class="code sev- "><tt><i>410</i> <span class="sd">    If allow_empty is True (default), an empty DataFrame will be accepted and None will be returned.</span></tt>
+            </div>
+            <div id="l411"
+               class="code sev- "><tt><i>411</i> &nbsp;</tt>
+            </div>
+            <div id="l412"
+               class="code sev- "><tt><i>412</i> <span class="sd">    :param name: the name of the DataFrame, for validation purposes</span></tt>
+            </div>
+            <div id="l413"
+               class="code sev- "><tt><i>413</i> <span class="sd">    :param df:</span></tt>
+            </div>
+            <div id="l414"
+               class="code sev- "><tt><i>414</i> <span class="sd">    :param allow_empty:</span></tt>
+            </div>
+            <div id="l415"
+               class="code sev- "><tt><i>415</i> <span class="sd">    :return:</span></tt>
+            </div>
+            <div id="l416"
+               class="code sev- "><tt><i>416</i> <span class="sd">    &quot;&quot;&quot;</span></tt>
+            </div>
+            <div id="l417"
+               class="code sev- "><tt><i>417</i>     <span class="n">values</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span></tt>
+            </div>
+            <div id="l418"
+               class="code sev- "><tt><i>418</i>     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span></tt>
+            </div>
+            <div id="l419"
+               class="code sev- "><tt><i>419</i>         <span class="k">return</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></tt>
+            </div>
+            <div id="l420"
+               class="code sev- "><tt><i>420</i>     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">allow_empty</span><span class="p">:</span></tt>
+            </div>
+            <div id="l421"
+               class="code sev- "><tt><i>421</i>         <span class="k">return</span> <span class="kc">None</span></tt>
+            </div>
+            <div id="l422"
+               class="code sev- "><tt><i>422</i>     <span class="k">else</span><span class="p">:</span></tt>
+            </div>
+            <div id="l423"
+               class="code sev- "><tt><i>423</i>         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;DataFrame &#39;</span><span class="si">%s</span><span class="s2">&#39; is supposed to contain a single value but does not: </span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span></tt>
+            </div>
+            
+         </div>
+      </div>
+   </body>
+</html>
